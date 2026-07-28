@@ -60,7 +60,7 @@ function KanbanPage() {
                     <Link to="/materials/$id" params={{ id: m.id }} className="text-sm font-medium line-clamp-2 hover:text-primary block">{m.title}</Link>
                     <div className="flex items-center justify-between mt-2">
                       <div className="flex gap-1">
-                        <Badge variant="outline" className="text-xs">{m.category}</Badge>
+                        
                         <Badge variant="outline" className="text-xs">{(m.engagement_score ?? 0).toFixed(1)}</Badge>
                       </div>
                       {nextStatus && (

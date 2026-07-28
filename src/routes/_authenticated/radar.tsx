@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState, useMemo } from "react";
-import { Plus, Sparkles, ExternalLink, Crown, FileText, ChevronDown } from "lucide-react";
+import { Plus, Sparkles, ExternalLink, Crown, FileText, ChevronDown, Eye, ThumbsUp, MessageSquare } from "lucide-react";
 import { computeScore, type ScoreFactor } from "@/lib/scoring";
 import { ingestUrl } from "@/lib/youtube.functions";
 import { toast } from "sonner";
@@ -151,20 +151,28 @@ function MaterialCard({ m }: { m: any }) {
           </CardTitle>
         </div>
         <div className="text-right">
-          <div className="font-serif text-2xl text-primary">{(m.computedScore ?? m.engagement_score ?? 0).toFixed(2)}</div>
-          <div className="text-xs text-muted-foreground">Score</div>
+          <div className="font-serif text-2xl text-primary">{Math.round(m.computedScore ?? m.engagement_score ?? 0)}<span className="text-sm text-muted-foreground">/100</span></div>
+          <div className="text-xs text-muted-foreground">Рейтинг</div>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="flex items-center justify-between text-xs text-muted-foreground gap-3 flex-wrap">
-          <div className="flex gap-3 flex-wrap">
-            {factors.map(f => (
-              <span key={f.key} title={f.description}>{f.label}: {f.normalized.toFixed(2)}</span>
-            ))}
+        <div className="flex items-center justify-between text-sm gap-3 flex-wrap">
+          <div className="flex gap-4 flex-wrap text-muted-foreground">
+            <span className="flex items-center gap-1"><Eye className="w-4 h-4" />{(m.views ?? 0).toLocaleString("ru-RU")}</span>
+            <span className="flex items-center gap-1"><ThumbsUp className="w-4 h-4" />{(m.reactions ?? 0).toLocaleString("ru-RU")}</span>
+            <span className="flex items-center gap-1"><MessageSquare className="w-4 h-4" />{(m.comments_count ?? 0).toLocaleString("ru-RU")}</span>
           </div>
-          <div className="flex items-center gap-3">
-            {m.drive_file_url && <a href={m.drive_file_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-primary"><FileText className="w-3 h-3" />Google Диск</a>}
-            {m.url && <a href={m.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-primary"><ExternalLink className="w-3 h-3" />Оригинал</a>}
+          <div className="flex items-center gap-2">
+            {m.drive_file_url && (
+              <a href={m.drive_file_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border hover:bg-accent hover:text-accent-foreground">
+                <FileText className="w-3 h-3" />Google Диск
+              </a>
+            )}
+            {m.url && (
+              <a href={m.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
+                <ExternalLink className="w-3 h-3" />Открыть оригинал
+              </a>
+            )}
           </div>
         </div>
 
@@ -179,7 +187,7 @@ function MaterialCard({ m }: { m: any }) {
             <div className="rounded-md border bg-muted/30 p-3 space-y-3">
               <div className="text-xs text-muted-foreground">
                 Позиция <span className="font-medium text-foreground">#{m.rank}</span> из {m.total}.
-                {topFactor && <> Наибольший вклад — <span className="font-medium text-foreground">{topFactor.label.toLowerCase()}</span> (+{topFactor.contribution.toFixed(3)}).</>}
+                {topFactor && <> Наибольший вклад — <span className="font-medium text-foreground">{topFactor.label.toLowerCase()}</span> (+{Math.round(topFactor.contribution * 100)} баллов).</>}
               </div>
               <div className="space-y-2">
                 {factors.map(f => (
@@ -189,7 +197,7 @@ function MaterialCard({ m }: { m: any }) {
                         <span className="font-medium">{f.label}</span>
                         <span className="text-muted-foreground"> · вес {(f.weight * 100).toFixed(0)}% · {formatRaw(f.key, f.raw)}</span>
                       </div>
-                      <span className="font-mono">+{f.contribution.toFixed(3)}</span>
+                      <span className="font-mono">+{Math.round(f.contribution * 100)}</span>
                     </div>
                     <div className="h-1.5 rounded-full bg-border overflow-hidden">
                       <div className="h-full bg-primary" style={{ width: `${Math.round(f.normalized * 100)}%` }} />
@@ -199,8 +207,8 @@ function MaterialCard({ m }: { m: any }) {
                 ))}
               </div>
               <div className="flex items-center justify-between border-t pt-2 text-sm">
-                <span className="text-muted-foreground">Итоговый Score</span>
-                <span className="font-serif text-lg text-primary">{(m.computedScore ?? 0).toFixed(3)}</span>
+                <span className="text-muted-foreground">Итоговый рейтинг</span>
+                <span className="font-serif text-lg text-primary">{Math.round(m.computedScore ?? 0)} / 100</span>
               </div>
             </div>
           </CollapsibleContent>

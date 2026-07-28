@@ -81,7 +81,12 @@ export const ingestUrl = createServerFn({ method: "POST" })
     }
 
     const canonicalUrl = `https://www.youtube.com/watch?v=${videoId}`;
-    const [meta, segments] = await Promise.all([fetchOembed(videoId), fetchTranscript(videoId)]);
+    const { fetchVideoStats } = await import("./youtube-stats.server");
+    const [meta, segments, stats] = await Promise.all([
+      fetchOembed(videoId),
+      fetchTranscript(videoId),
+      fetchVideoStats(videoId),
+    ]);
     const transcriptText = segments.map(s => s.text).join(" ");
 
     const payload = {
@@ -95,6 +100,9 @@ export const ingestUrl = createServerFn({ method: "POST" })
       status: "found",
       raw_transcript: transcriptText || null,
       transcript_segments: segments,
+      views: stats?.views ?? 0,
+      reactions: stats?.likes ?? 0,
+      comments_count: stats?.comments ?? 0,
       engagement_score: 0,
     };
 

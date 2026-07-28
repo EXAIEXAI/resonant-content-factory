@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState } from "react";
 import { Sparkles, ArrowLeft, MessageSquare, ThumbsUp, ThumbsDown, HelpCircle, Quote } from "lucide-react";
 import { analyzeMaterial, generateContent } from "@/lib/ai.functions";
+import { formatTimecode as formatTC } from "@/lib/youtube";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/materials/$id")({
@@ -127,7 +128,28 @@ function MaterialPage() {
                 </ul>
               </div>
             )}
-            {m.raw_transcript && (
+            {Array.isArray(m.transcript_segments) && m.transcript_segments.length > 0 && (
+              <details className="text-xs" open>
+                <summary className="cursor-pointer text-muted-foreground">Транскрипт с таймкодами ({m.transcript_segments.length})</summary>
+                <div className="mt-2 max-h-80 overflow-auto space-y-1">
+                  {(m.transcript_segments as any[]).map((s, i) => {
+                    const tc = formatTC(s.start);
+                    const link = m.external_id ? `https://www.youtube.com/watch?v=${m.external_id}&t=${Math.floor(s.start)}s` : null;
+                    return (
+                      <div key={i} className="flex gap-2">
+                        {link ? (
+                          <a href={link} target="_blank" rel="noreferrer" className="font-mono text-primary shrink-0 w-14">{tc}</a>
+                        ) : (
+                          <span className="font-mono text-muted-foreground shrink-0 w-14">{tc}</span>
+                        )}
+                        <span>{s.text}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </details>
+            )}
+            {m.raw_transcript && (!Array.isArray(m.transcript_segments) || m.transcript_segments.length === 0) && (
               <details className="text-xs">
                 <summary className="cursor-pointer text-muted-foreground">Полный транскрипт</summary>
                 <div className="mt-2 whitespace-pre-wrap text-muted-foreground max-h-64 overflow-auto">{m.raw_transcript}</div>

@@ -177,6 +177,42 @@ export type Database = {
           },
         ]
       }
+      integration_settings: {
+        Row: {
+          created_at: string
+          drive_folder_id: string | null
+          id: string
+          last_sync_at: string | null
+          last_sync_count: number
+          updated_at: string
+          user_id: string
+          webhook_secret: string
+          youtube_playlist_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          drive_folder_id?: string | null
+          id?: string
+          last_sync_at?: string | null
+          last_sync_count?: number
+          updated_at?: string
+          user_id: string
+          webhook_secret?: string
+          youtube_playlist_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          drive_folder_id?: string | null
+          id?: string
+          last_sync_at?: string | null
+          last_sync_count?: number
+          updated_at?: string
+          user_id?: string
+          webhook_secret?: string
+          youtube_playlist_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -206,8 +242,12 @@ export type Database = {
           added_by: string | null
           category: string | null
           channel_id: string | null
+          channel_title: string | null
           comments_count: number | null
           created_at: string
+          drive_file_id: string | null
+          drive_file_url: string | null
+          duration_seconds: number | null
           engagement_score: number | null
           external_id: string | null
           id: string
@@ -216,9 +256,12 @@ export type Database = {
           published_at: string | null
           raw_transcript: string | null
           reactions: number | null
+          source_type: string
           status: string
           summary: string | null
+          thumbnail_url: string | null
           title: string
+          transcript_segments: Json
           url: string | null
           views: number | null
         }
@@ -226,8 +269,12 @@ export type Database = {
           added_by?: string | null
           category?: string | null
           channel_id?: string | null
+          channel_title?: string | null
           comments_count?: number | null
           created_at?: string
+          drive_file_id?: string | null
+          drive_file_url?: string | null
+          duration_seconds?: number | null
           engagement_score?: number | null
           external_id?: string | null
           id?: string
@@ -236,9 +283,12 @@ export type Database = {
           published_at?: string | null
           raw_transcript?: string | null
           reactions?: number | null
+          source_type?: string
           status?: string
           summary?: string | null
+          thumbnail_url?: string | null
           title: string
+          transcript_segments?: Json
           url?: string | null
           views?: number | null
         }
@@ -246,8 +296,12 @@ export type Database = {
           added_by?: string | null
           category?: string | null
           channel_id?: string | null
+          channel_title?: string | null
           comments_count?: number | null
           created_at?: string
+          drive_file_id?: string | null
+          drive_file_url?: string | null
+          duration_seconds?: number | null
           engagement_score?: number | null
           external_id?: string | null
           id?: string
@@ -256,9 +310,12 @@ export type Database = {
           published_at?: string | null
           raw_transcript?: string | null
           reactions?: number | null
+          source_type?: string
           status?: string
           summary?: string | null
+          thumbnail_url?: string | null
           title?: string
+          transcript_segments?: Json
           url?: string | null
           views?: number | null
         }

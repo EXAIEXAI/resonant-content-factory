@@ -104,12 +104,6 @@ function DigestsPage() {
             <DialogHeader><DialogTitle className="font-serif">Новый дайджест</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div><Label>Название (опционально)</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></div>
-              <div><Label>Рубрика</Label>
-                <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
               <div><Label>Отправка (опционально)</Label><Input type="datetime-local" value={form.scheduled_at} onChange={e => setForm({ ...form, scheduled_at: e.target.value })} /></div>
             </div>
             <DialogFooter><Button onClick={() => build.mutate()} disabled={build.isPending}>Собрать</Button></DialogFooter>

@@ -73,12 +73,25 @@ function IntegrationsPage() {
       <div>
         <h1 className="font-serif text-4xl">Интеграции</h1>
         <p className="text-muted-foreground mt-1">
-          Автосбор YouTube-роликов из плейлиста «Контент-Завод» через ваш Google-аккаунт (Google Apps Script). Бесплатно, без API-ключей у нас.
+          Автоматический сбор роликов из плейлиста YouTube через ваш Google-аккаунт (Google Apps Script).
+          Скрипт запускается по расписанию, читает плейлист через YouTube Data API v3, сохраняет метаданные
+          в папку Google Диска и отправляет их в приложение. API-ключи с нашей стороны не требуются.
         </p>
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="font-serif">1. Настройки</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="font-serif">1. Что понадобится</CardTitle></CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          <ul className="list-disc ml-5 space-y-1">
+            <li>Google-аккаунт с доступом к нужному плейлисту и папке на Диске.</li>
+            <li>ID плейлиста YouTube (часть URL после <code>list=</code>).</li>
+            <li>ID папки Google Диска (часть URL после <code>/folders/</code>), куда GAS будет складывать JSON-файлы роликов.</li>
+          </ul>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="font-serif">2. Настройки</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div>
             <Label>Плейлист YouTube (ID или ссылка)</Label>
@@ -86,31 +99,30 @@ function IntegrationsPage() {
           </div>
           <div>
             <Label>Папка на Google Диске (ID)</Label>
-            <Input value={folder} onChange={e => setFolder(e.target.value)} placeholder="1AbCdEf...  — из URL папки" />
-            <p className="text-xs text-muted-foreground mt-1">Откройте нужную папку и скопируйте часть URL после /folders/.</p>
+            <Input value={folder} onChange={e => setFolder(e.target.value)} placeholder="1AbCdEf... — из URL папки" />
           </div>
           <Button onClick={() => saveM.mutate()} disabled={saveM.isPending}>Сохранить</Button>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="font-serif">2. Вебхук приложения</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="font-serif">3. Вебхук приложения</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           <div>
-            <Label>URL</Label>
+            <Label>URL (метод POST)</Label>
             <div className="flex gap-2 mt-1">
               <Input value={webhookUrl} readOnly className="font-mono text-xs" />
               <Button variant="outline" size="icon" onClick={() => copy(webhookUrl)}><Copy className="w-4 h-4" /></Button>
             </div>
           </div>
           <div>
-            <Label>Секрет (заголовок x-webhook-secret)</Label>
+            <Label>Секрет (заголовок <code>x-webhook-secret</code>)</Label>
             <div className="flex gap-2 mt-1">
               <Input value={secret} readOnly className="font-mono text-xs" />
               <Button variant="outline" size="icon" onClick={() => copy(secret)}><Copy className="w-4 h-4" /></Button>
               <Button variant="outline" size="icon" onClick={() => rotateM.mutate()} disabled={rotateM.isPending} title="Сгенерировать новый"><RefreshCcw className="w-4 h-4" /></Button>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Никому не показывайте — по нему приложение доверяет вашему скрипту.</p>
+            <p className="text-xs text-muted-foreground mt-1">Секрет проверяется на сервере при каждом POST. При ротации обновите константу в GAS-скрипте.</p>
           </div>
           <div className="text-xs text-muted-foreground">
             Последняя синхронизация: {settings?.last_sync_at ? new Date(settings.last_sync_at).toLocaleString("ru-RU") : "ещё не было"}
@@ -121,27 +133,29 @@ function IntegrationsPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="font-serif">3. Скрипт для Google Apps Script</CardTitle>
+            <CardTitle className="font-serif">4. Скрипт Google Apps Script</CardTitle>
             <Button variant="outline" size="sm" onClick={() => copy(gasCode, "Код скопирован")}><Copy className="w-4 h-4 mr-2" />Копировать</Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
           <ol className="text-sm space-y-1 list-decimal ml-5">
             <li>Откройте <a className="underline" href="https://script.google.com/home/my" target="_blank" rel="noreferrer">script.google.com</a> → «Новый проект».</li>
-            <li>Вставьте код ниже и сохраните.</li>
+            <li>Вставьте код ниже, сохраните проект.</li>
             <li>Слева «Службы» (Services) → добавьте <b>YouTube Data API v3</b>.</li>
-            <li>Запустите функцию <code>sync()</code> вручную один раз — разрешите доступ.</li>
-            <li>Слева «Триггеры» → добавьте: <code>sync</code>, «По времени», «Каждые 15 минут».</li>
+            <li>Запустите функцию <code>sync()</code> вручную один раз и подтвердите доступ к YouTube и Google Диску.</li>
+            <li>Слева «Триггеры» → «По времени» → <code>sync</code>, каждые 15 минут.</li>
           </ol>
-          <Textarea readOnly value={gasCode} rows={22} className="font-mono text-xs" />
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Play className="w-3 h-3" /> После первого прогона ролики из плейлиста появятся в «Отраслевом радаре».
-          </div>
+          <Textarea readOnly value={gasCode} rows={20} className="font-mono text-xs" />
+          <p className="text-xs text-muted-foreground">
+            Скрипт передаёт метаданные ролика (название, канал, длительность, дата, обложка) и ссылку на файл в Google Диске.
+            Субтитры отправляются только если они публично доступны у ролика; иначе материал появится без транскрипта — это нормально.
+          </p>
         </CardContent>
       </Card>
     </div>
   );
 }
+
 
 function buildGasScript(o: { playlistId: string; folderId: string; webhookUrl: string; secret: string }): string {
   return `// Content-Factory · автосбор YouTube-плейлиста

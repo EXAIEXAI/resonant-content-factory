@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,8 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState, useMemo } from "react";
-import { Plus, Sparkles, ExternalLink } from "lucide-react";
+import { Plus, Sparkles, ExternalLink, Crown, FileText } from "lucide-react";
 import { computeScore, pickTopParetoPerChannel } from "@/lib/scoring";
+import { ingestUrl } from "@/lib/youtube.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/radar")({

@@ -16,9 +16,11 @@ import { Route as AuthenticatedRolesRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedRadarRouteImport } from './routes/_authenticated/radar'
 import { Route as AuthenticatedKnowledgeRouteImport } from './routes/_authenticated/knowledge'
 import { Route as AuthenticatedKanbanRouteImport } from './routes/_authenticated/kanban'
+import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
 import { Route as AuthenticatedDigestsRouteImport } from './routes/_authenticated/digests'
 import { Route as AuthenticatedChannelsRouteImport } from './routes/_authenticated/channels'
 import { Route as AuthenticatedMaterialsIdRouteImport } from './routes/_authenticated/materials.$id'
+import { Route as ApiPublicHooksYoutubePlaylistRouteImport } from './routes/api/public/hooks/youtube-playlist'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -54,6 +56,12 @@ const AuthenticatedKanbanRoute = AuthenticatedKanbanRouteImport.update({
   path: '/kanban',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedIntegrationsRoute =
+  AuthenticatedIntegrationsRouteImport.update({
+    id: '/integrations',
+    path: '/integrations',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDigestsRoute = AuthenticatedDigestsRouteImport.update({
   id: '/digests',
   path: '/digests',
@@ -70,28 +78,38 @@ const AuthenticatedMaterialsIdRoute =
     path: '/materials/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicHooksYoutubePlaylistRoute =
+  ApiPublicHooksYoutubePlaylistRouteImport.update({
+    id: '/api/public/hooks/youtube-playlist',
+    path: '/api/public/hooks/youtube-playlist',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/channels': typeof AuthenticatedChannelsRoute
   '/digests': typeof AuthenticatedDigestsRoute
+  '/integrations': typeof AuthenticatedIntegrationsRoute
   '/kanban': typeof AuthenticatedKanbanRoute
   '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/radar': typeof AuthenticatedRadarRoute
   '/roles': typeof AuthenticatedRolesRoute
   '/materials/$id': typeof AuthenticatedMaterialsIdRoute
+  '/api/public/hooks/youtube-playlist': typeof ApiPublicHooksYoutubePlaylistRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/channels': typeof AuthenticatedChannelsRoute
   '/digests': typeof AuthenticatedDigestsRoute
+  '/integrations': typeof AuthenticatedIntegrationsRoute
   '/kanban': typeof AuthenticatedKanbanRoute
   '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/radar': typeof AuthenticatedRadarRoute
   '/roles': typeof AuthenticatedRolesRoute
   '/': typeof AuthenticatedIndexRoute
   '/materials/$id': typeof AuthenticatedMaterialsIdRoute
+  '/api/public/hooks/youtube-playlist': typeof ApiPublicHooksYoutubePlaylistRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -99,12 +117,14 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/channels': typeof AuthenticatedChannelsRoute
   '/_authenticated/digests': typeof AuthenticatedDigestsRoute
+  '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
   '/_authenticated/kanban': typeof AuthenticatedKanbanRoute
   '/_authenticated/knowledge': typeof AuthenticatedKnowledgeRoute
   '/_authenticated/radar': typeof AuthenticatedRadarRoute
   '/_authenticated/roles': typeof AuthenticatedRolesRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/materials/$id': typeof AuthenticatedMaterialsIdRoute
+  '/api/public/hooks/youtube-playlist': typeof ApiPublicHooksYoutubePlaylistRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -113,39 +133,46 @@ export interface FileRouteTypes {
     | '/auth'
     | '/channels'
     | '/digests'
+    | '/integrations'
     | '/kanban'
     | '/knowledge'
     | '/radar'
     | '/roles'
     | '/materials/$id'
+    | '/api/public/hooks/youtube-playlist'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
     | '/channels'
     | '/digests'
+    | '/integrations'
     | '/kanban'
     | '/knowledge'
     | '/radar'
     | '/roles'
     | '/'
     | '/materials/$id'
+    | '/api/public/hooks/youtube-playlist'
   id:
     | '__root__'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/channels'
     | '/_authenticated/digests'
+    | '/_authenticated/integrations'
     | '/_authenticated/kanban'
     | '/_authenticated/knowledge'
     | '/_authenticated/radar'
     | '/_authenticated/roles'
     | '/_authenticated/'
     | '/_authenticated/materials/$id'
+    | '/api/public/hooks/youtube-playlist'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicHooksYoutubePlaylistRoute: typeof ApiPublicHooksYoutubePlaylistRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -199,6 +226,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedKanbanRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/integrations': {
+      id: '/_authenticated/integrations'
+      path: '/integrations'
+      fullPath: '/integrations'
+      preLoaderRoute: typeof AuthenticatedIntegrationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/digests': {
       id: '/_authenticated/digests'
       path: '/digests'
@@ -220,12 +254,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMaterialsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/hooks/youtube-playlist': {
+      id: '/api/public/hooks/youtube-playlist'
+      path: '/api/public/hooks/youtube-playlist'
+      fullPath: '/api/public/hooks/youtube-playlist'
+      preLoaderRoute: typeof ApiPublicHooksYoutubePlaylistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedChannelsRoute: typeof AuthenticatedChannelsRoute
   AuthenticatedDigestsRoute: typeof AuthenticatedDigestsRoute
+  AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
   AuthenticatedKanbanRoute: typeof AuthenticatedKanbanRoute
   AuthenticatedKnowledgeRoute: typeof AuthenticatedKnowledgeRoute
   AuthenticatedRadarRoute: typeof AuthenticatedRadarRoute
@@ -237,6 +279,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChannelsRoute: AuthenticatedChannelsRoute,
   AuthenticatedDigestsRoute: AuthenticatedDigestsRoute,
+  AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
   AuthenticatedKanbanRoute: AuthenticatedKanbanRoute,
   AuthenticatedKnowledgeRoute: AuthenticatedKnowledgeRoute,
   AuthenticatedRadarRoute: AuthenticatedRadarRoute,
@@ -251,6 +294,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicHooksYoutubePlaylistRoute: ApiPublicHooksYoutubePlaylistRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

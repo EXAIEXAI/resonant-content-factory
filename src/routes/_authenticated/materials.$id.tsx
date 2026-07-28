@@ -88,7 +88,6 @@ function MaterialPage() {
       </Link>
       <div>
         <div className="flex gap-2 mb-2">
-          <Badge variant="secondary">{m.category}</Badge>
           <Badge variant="outline">Score {(m.engagement_score ?? 0).toFixed(2)}</Badge>
           <Badge>{m.status}</Badge>
         </div>

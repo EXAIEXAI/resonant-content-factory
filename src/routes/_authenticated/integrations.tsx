@@ -154,21 +154,23 @@ function IntegrationsPage() {
         <CardContent className="space-y-3">
           <ol className="text-sm space-y-1 list-decimal ml-5">
             <li>Откройте <a className="underline" href="https://script.google.com/home/my" target="_blank" rel="noreferrer">script.google.com</a> → «Новый проект».</li>
-            <li>Вставьте код ниже, сохраните проект.</li>
+            <li>Вставьте код ниже и сохраните проект.</li>
             <li>Слева «Службы» (Services) → добавьте <b>YouTube Data API v3</b>.</li>
-            <li>Запустите функцию <code>sync()</code> вручную один раз и подтвердите доступ к YouTube и Google Диску.</li>
-            <li>Слева «Триггеры» → «По времени» → <code>sync</code>, каждые 15 минут.</li>
+            <li>Запустите функцию <code>syncAll()</code> вручную один раз и подтвердите доступ к YouTube и Google Диску.</li>
+            <li>Слева «Триггеры» → «По времени» → <code>syncAll</code>, каждые 15 минут.</li>
           </ol>
-          <Textarea readOnly value={gasCode} rows={20} className="font-mono text-xs" />
+          <Textarea readOnly value={gasCode} rows={22} className="font-mono text-xs" />
           <p className="text-xs text-muted-foreground">
-            Скрипт передаёт метаданные ролика (название, канал, длительность, дата, обложка) и ссылку на файл в Google Диске.
-            Субтитры отправляются только если они публично доступны у ролика; иначе материал появится без транскрипта — это нормально.
+            Каналы читаются из приложения (endpoint <code className="text-[10px]">{channelsUrl || "/api/public/hooks/youtube-channels"}</code>).
+            При первом прогоне канала берутся ролики за последние 30 дней, дальше — только новые.
+            Субтитры отправляются, если доступны публично; иначе материал сохраняется без транскрипта.
           </p>
         </CardContent>
       </Card>
     </div>
   );
 }
+
 
 
 function buildGasScript(o: { playlistId: string; folderId: string; webhookUrl: string; channelsUrl: string; secret: string }): string {

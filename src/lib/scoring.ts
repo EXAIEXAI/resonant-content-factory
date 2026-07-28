@@ -76,7 +76,8 @@ export function computeScore(m: {
     contribution: Number((weights[k] * normalized[k]).toFixed(3)),
   }));
 
-  const score = Number(factors.reduce((s, f) => s + f.contribution, 0).toFixed(3));
+  // 0..100 balls
+  const score = Math.round(factors.reduce((s, f) => s + f.contribution, 0) * 100);
 
   return {
     score,

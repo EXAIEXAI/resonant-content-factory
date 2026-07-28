@@ -149,7 +149,7 @@ function DigestsPage() {
             </CardHeader>
           </Card>
         ))}
-        {digests?.length === 0 && <Card><CardContent className="py-12 text-center text-muted-foreground">Соберите первый дайджест по одной из рубрик.</CardContent></Card>}
+        {digests?.length === 0 && <Card><CardContent className="py-12 text-center text-muted-foreground">Соберите первый дайджест из накопленных материалов.</CardContent></Card>}
       </div>
 
       <Dialog open={!!editing} onOpenChange={o => !o && setEditing(null)}>

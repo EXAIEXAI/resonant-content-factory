@@ -150,8 +150,19 @@ function MaterialCard({ m }: { m: any }) {
   const topFactor = factors.slice().sort((a, b) => b.contribution - a.contribution)[0];
   return (
     <Card>
-      <CardHeader className="flex flex-row items-start justify-between space-y-0">
-        <div className="flex-1">
+      <CardHeader className="flex flex-row items-start gap-4 space-y-0">
+        {m.thumbnail_url && (
+          <a
+            href={m.url || "#"}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => { if (m.url) { e.preventDefault(); window.open(m.url, "_blank", "noopener,noreferrer"); } }}
+            className="shrink-0 block w-40 aspect-video rounded-md overflow-hidden bg-muted"
+          >
+            <img src={m.thumbnail_url} alt="" className="w-full h-full object-cover" loading="lazy" />
+          </a>
+        )}
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <Badge variant="secondary">#{m.rank}</Badge>
             {fromPlaylist && <Badge className="bg-primary text-primary-foreground"><Crown className="w-3 h-3 mr-1" />Из плейлиста</Badge>}
@@ -166,7 +177,7 @@ function MaterialCard({ m }: { m: any }) {
             <p className="text-sm text-muted-foreground mt-2 leading-relaxed line-clamp-3">{m.summary}</p>
           )}
         </div>
-        <div className="text-right">
+        <div className="text-right shrink-0">
           <div className="font-serif text-2xl text-primary">{Math.round(m.computedScore ?? m.engagement_score ?? 0)}<span className="text-sm text-muted-foreground">/100</span></div>
           <div className="text-xs text-muted-foreground">Рейтинг</div>
         </div>

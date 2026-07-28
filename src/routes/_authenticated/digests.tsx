@@ -20,7 +20,13 @@ export const Route = createFileRoute("/_authenticated/digests")({
 });
 
 const CATEGORIES = ["Кадры", "Аудит", "РОП", "Продажи", "Общее"];
-const STATUSES = ["draft", "scheduled", "sent", "archived"];
+const STATUSES = ["draft", "scheduled", "sent", "archived"] as const;
+const STATUS_LABELS: Record<string, string> = {
+  draft: "Черновик",
+  scheduled: "Запланирован",
+  sent: "Отправлен",
+  archived: "Архив",
+};
 
 type Digest = {
   id: string;
@@ -121,7 +127,7 @@ function DigestsPage() {
                 <CardTitle className="font-serif">{d.title}</CardTitle>
                 <div className="flex gap-2 mt-2 flex-wrap">
                   <Badge variant="secondary">{d.category}</Badge>
-                  <Badge variant={d.status === "sent" ? "default" : "outline"}>{d.status}</Badge>
+                  <Badge variant={d.status === "sent" ? "default" : "outline"}>{STATUS_LABELS[d.status] ?? d.status}</Badge>
                   <Badge variant="outline">{(d.material_ids?.length ?? 0)} мат.</Badge>
                   {d.scheduled_at && (
                     <span className="text-sm text-muted-foreground flex items-center gap-1">
@@ -169,7 +175,7 @@ function DigestsPage() {
               <div><Label>Статус</Label>
                 <Select value={editing.status} onValueChange={v => setEditing({ ...editing, status: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                  <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div><Label>Отправка</Label>

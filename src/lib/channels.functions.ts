@@ -115,6 +115,22 @@ async function ingestChannel(
     if (error) continue;
     if (!existing) added += 1;
 
+    // Refresh real stats (views/likes/comments) from the watch page — best-effort.
+    (async () => {
+      try {
+        const { fetchVideoStats } = await import("./youtube-stats.server");
+        const stats = await fetchVideoStats(v.videoId);
+        if (stats) {
+          await supabase
+            .from("raw_materials")
+            .update({ views: stats.views, reactions: stats.likes, comments_count: stats.comments })
+            .eq("id", row.id);
+        }
+      } catch (e) {
+        console.error("stats fetch failed", v.videoId, e);
+      }
+    })();
+
     // Try to pull captions + trigger AI analysis in the background (best-effort).
     if (!existing) {
       (async () => {

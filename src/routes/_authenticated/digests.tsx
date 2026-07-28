@@ -10,8 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useState } from "react";
-import { Calendar, Pencil, Trash2, RefreshCw } from "lucide-react";
+import { Calendar, Pencil, Trash2, RefreshCw, ExternalLink, Eye, ThumbsUp, MessageSquare } from "lucide-react";
 import { buildWeeklyDigest } from "@/lib/digests.functions";
 import { toast } from "sonner";
 
@@ -44,6 +45,20 @@ function DigestsPage() {
     queryKey: ["digests"],
     queryFn: async () =>
       ((await supabase.from("digests").select("*").order("scheduled_at", { ascending: false, nullsFirst: false })).data ?? []) as Digest[],
+  });
+
+  const allIds = Array.from(new Set((digests ?? []).flatMap(d => d.material_ids ?? [])));
+  const { data: materialsMap } = useQuery({
+    queryKey: ["digest-materials", allIds.sort().join(",")],
+    enabled: allIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("raw_materials")
+        .select("id,title,url,summary,views,reactions,comments_count,engagement_score,channel_title,thumbnail_url")
+        .in("id", allIds);
+      const map: Record<string, any> = {};
+      (data ?? []).forEach((m: any) => { map[m.id] = m; });
+      return map;
+    },
   });
 
   const [editing, setEditing] = useState<Digest | null>(null);
@@ -130,6 +145,51 @@ function DigestsPage() {
                 </AlertDialog>
               </div>
             </CardHeader>
+            {(d.material_ids?.length ?? 0) > 0 && (
+              <CardContent>
+                <Accordion type="single" collapsible>
+                  <AccordionItem value="materials" className="border-0">
+                    <AccordionTrigger className="text-sm py-2">Показать материалы ({d.material_ids?.length})</AccordionTrigger>
+                    <AccordionContent>
+                      <ol className="space-y-3 mt-2">
+                        {(d.material_ids ?? []).map((mid, idx) => {
+                          const m = materialsMap?.[mid];
+                          if (!m) return (
+                            <li key={mid} className="text-sm text-muted-foreground">#{idx + 1} — материал недоступен</li>
+                          );
+                          return (
+                            <li key={mid} className="border rounded-md p-3 flex gap-3">
+                              <div className="text-xs text-muted-foreground font-mono pt-1 w-6 shrink-0">#{idx + 1}</div>
+                              {m.thumbnail_url && (
+                                <img src={m.thumbnail_url} alt="" className="w-24 h-14 object-cover rounded shrink-0" />
+                              )}
+                              <div className="flex-1 min-w-0 space-y-1">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="font-medium text-sm">{m.title}</div>
+                                  <Badge variant="outline" className="shrink-0">{Math.round((m.engagement_score ?? 0))}</Badge>
+                                </div>
+                                {m.channel_title && <div className="text-xs text-muted-foreground">{m.channel_title}</div>}
+                                {m.summary && <p className="text-xs text-muted-foreground line-clamp-2">{m.summary}</p>}
+                                <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1">
+                                  <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{(m.views ?? 0).toLocaleString("ru")}</span>
+                                  <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3" />{(m.reactions ?? 0).toLocaleString("ru")}</span>
+                                  <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3" />{(m.comments_count ?? 0).toLocaleString("ru")}</span>
+                                  {m.url && (
+                                    <a href={m.url} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex items-center gap-1 text-primary hover:underline">
+                                      <ExternalLink className="w-3 h-3" />Открыть оригинал
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ol>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </CardContent>
+            )}
           </Card>
         ))}
         {digests?.length === 0 && <Card><CardContent className="py-12 text-center text-muted-foreground">Соберите первый дайджест из накопленных материалов.</CardContent></Card>}

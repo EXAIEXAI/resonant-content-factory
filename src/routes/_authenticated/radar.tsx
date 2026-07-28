@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState, useMemo } from "react";
-import { Plus, Sparkles, ExternalLink, Crown, FileText, ChevronDown } from "lucide-react";
+import { Plus, Sparkles, ExternalLink, Crown, FileText, ChevronDown, Eye, ThumbsUp, MessageSquare } from "lucide-react";
 import { computeScore, type ScoreFactor } from "@/lib/scoring";
 import { ingestUrl } from "@/lib/youtube.functions";
 import { toast } from "sonner";

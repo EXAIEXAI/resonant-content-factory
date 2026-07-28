@@ -45,7 +45,6 @@ function KanbanPage() {
       <div className="flex gap-3 overflow-x-auto pb-4">
         {columns.map(([status, label]) => {
           const items = (materials ?? []).filter(m => m.status === status);
-          const nextStatus = columns[columns.findIndex(c => c[0] === status) + 1]?.[0];
           return (
             <div key={status} className="min-w-[260px] w-[260px] shrink-0">
               <div className="flex items-center justify-between mb-2 px-1">
@@ -57,15 +56,7 @@ function KanbanPage() {
                   <Card key={m.id} className="p-3">
                     <Link to="/materials/$id" params={{ id: m.id }} className="text-sm font-medium line-clamp-2 hover:text-primary block">{m.title}</Link>
                     <div className="flex items-center justify-between mt-2">
-                      <div className="flex gap-1">
-                        
-                        <Badge variant="outline" className="text-xs">{(m.engagement_score ?? 0).toFixed(1)}</Badge>
-                      </div>
-                      {nextStatus && (
-                        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => move.mutate({ id: m.id, status: nextStatus })}>
-                          <ArrowRight className="w-3 h-3" />
-                        </Button>
-                      )}
+                      <Badge variant="outline" className="text-xs">{(m.engagement_score ?? 0).toFixed(1)}</Badge>
                     </div>
                   </Card>
                 ))}

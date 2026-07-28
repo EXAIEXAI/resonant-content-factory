@@ -120,13 +120,27 @@ function EmptyRadar() {
   return <Card><CardContent className="py-12 text-center text-muted-foreground">Пока пусто. Добавьте материал вручную или подключите источники.</CardContent></Card>;
 }
 
+function formatRaw(key: ScoreFactor["key"], raw: number): string {
+  switch (key) {
+    case "views": return raw.toLocaleString("ru-RU");
+    case "reach": return `${(raw * 100).toFixed(1)}% подписчиков`;
+    case "engagement": return `${(raw * 100).toFixed(2)}% от просмотров`;
+    case "velocity": return `${raw.toFixed(1)} просм/час`;
+    case "recency": return `${raw.toFixed(1)} дн. назад`;
+  }
+}
+
 function MaterialCard({ m }: { m: any }) {
   const fromPlaylist = m.source_type === "youtube_playlist";
+  const [open, setOpen] = useState(false);
+  const factors: ScoreFactor[] = m.factors ?? [];
+  const topFactor = factors.slice().sort((a, b) => b.contribution - a.contribution)[0];
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between space-y-0">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <Badge variant="secondary">#{m.rank}</Badge>
             {fromPlaylist && <Badge className="bg-primary text-primary-foreground"><Crown className="w-3 h-3 mr-1" />Из плейлиста</Badge>}
             {m.is_manual && !fromPlaylist && <Badge variant="outline" className="border-accent text-accent-foreground bg-accent/20"><Sparkles className="w-3 h-3 mr-1" />Ручной</Badge>}
             {m.channel_title && <span className="text-xs text-muted-foreground">· {m.channel_title}</span>}
@@ -141,17 +155,56 @@ function MaterialCard({ m }: { m: any }) {
           <div className="text-xs text-muted-foreground">Score</div>
         </div>
       </CardHeader>
-      <CardContent className="flex items-center justify-between text-xs text-muted-foreground gap-3 flex-wrap">
-        <div className="flex gap-3 flex-wrap">
-          <span>Охват: {m.breakdown?.reach ?? "—"}</span>
-          <span>Глубина: {m.breakdown?.depth ?? "—"}</span>
-          <span>Темп: {m.breakdown?.velocity ?? "—"}</span>
-          <span>Свежесть: {m.breakdown?.age ?? "—"}</span>
+      <CardContent className="space-y-3">
+        <div className="flex items-center justify-between text-xs text-muted-foreground gap-3 flex-wrap">
+          <div className="flex gap-3 flex-wrap">
+            {factors.map(f => (
+              <span key={f.key} title={f.description}>{f.label}: {f.normalized.toFixed(2)}</span>
+            ))}
+          </div>
+          <div className="flex items-center gap-3">
+            {m.drive_file_url && <a href={m.drive_file_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-primary"><FileText className="w-3 h-3" />Google Диск</a>}
+            {m.url && <a href={m.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-primary"><ExternalLink className="w-3 h-3" />Оригинал</a>}
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          {m.drive_file_url && <a href={m.drive_file_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-primary"><FileText className="w-3 h-3" />Google Диск</a>}
-          {m.url && <a href={m.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-primary"><ExternalLink className="w-3 h-3" />Оригинал</a>}
-        </div>
+
+        <Collapsible open={open} onOpenChange={setOpen}>
+          <CollapsibleTrigger asChild>
+            <button className="flex items-center gap-1 text-xs text-primary hover:underline">
+              <ChevronDown className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`} />
+              {open ? "Скрыть объяснение рейтинга" : "Почему такая позиция?"}
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-3">
+            <div className="rounded-md border bg-muted/30 p-3 space-y-3">
+              <div className="text-xs text-muted-foreground">
+                Позиция <span className="font-medium text-foreground">#{m.rank}</span> из {m.total}.
+                {topFactor && <> Наибольший вклад — <span className="font-medium text-foreground">{topFactor.label.toLowerCase()}</span> (+{topFactor.contribution.toFixed(3)}).</>}
+              </div>
+              <div className="space-y-2">
+                {factors.map(f => (
+                  <div key={f.key} className="space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <div>
+                        <span className="font-medium">{f.label}</span>
+                        <span className="text-muted-foreground"> · вес {(f.weight * 100).toFixed(0)}% · {formatRaw(f.key, f.raw)}</span>
+                      </div>
+                      <span className="font-mono">+{f.contribution.toFixed(3)}</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-border overflow-hidden">
+                      <div className="h-full bg-primary" style={{ width: `${Math.round(f.normalized * 100)}%` }} />
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">{f.description}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center justify-between border-t pt-2 text-sm">
+                <span className="text-muted-foreground">Итоговый Score</span>
+                <span className="font-serif text-lg text-primary">{(m.computedScore ?? 0).toFixed(3)}</span>
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </CardContent>
     </Card>
   );

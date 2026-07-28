@@ -35,13 +35,14 @@ function RadarPage() {
 
   const ranked = useMemo(() => {
     const chMap = new Map((channels ?? []).map(c => [c.id, c]));
-    return (materials ?? [])
+    const list = (materials ?? [])
       .map(m => {
         const ch = m.channel_id ? chMap.get(m.channel_id) : null;
-        const { score, breakdown } = computeScore({ ...m, subscribers: ch?.subscribers ?? 1000 });
-        return { ...m, computedScore: score, breakdown, channel: ch };
+        const { score, factors, breakdown } = computeScore({ ...m, subscribers: ch?.subscribers ?? 1000 });
+        return { ...m, computedScore: score, factors, breakdown, channel: ch, subscribers: ch?.subscribers ?? 1000 };
       })
       .sort((a, b) => b.computedScore - a.computedScore);
+    return list.map((m, i) => ({ ...m, rank: i + 1, total: list.length }));
   }, [channels, materials]);
 
   const [open, setOpen] = useState(false);

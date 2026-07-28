@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState } from "react";
-import { Sparkles, ArrowLeft, MessageSquare, ThumbsUp, ThumbsDown, HelpCircle, Quote, ExternalLink } from "lucide-react";
+import { ArrowLeft, MessageSquare, ThumbsUp, ThumbsDown, HelpCircle, Quote, ExternalLink, Trash2 } from "lucide-react";
 import { analyzeMaterial, generateContent } from "@/lib/ai.functions";
 import { formatTimecode as formatTC } from "@/lib/youtube";
 import { toast } from "sonner";

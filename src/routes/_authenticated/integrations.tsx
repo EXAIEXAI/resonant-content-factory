@@ -106,16 +106,18 @@ function IntegrationsPage() {
         <CardHeader><CardTitle className="font-serif">2. Настройки</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label>Плейлист YouTube (ID или ссылка)</Label>
-            <Input value={playlist} onChange={e => setPlaylist(e.target.value)} placeholder="https://www.youtube.com/playlist?list=PLxxxx" />
+            <Label>Папка на Google Диске (ID) <span className="text-destructive">*</span></Label>
+            <Input value={folder} onChange={e => setFolder(e.target.value)} placeholder="1AbCdEf... — из URL папки" />
           </div>
           <div>
-            <Label>Папка на Google Диске (ID)</Label>
-            <Input value={folder} onChange={e => setFolder(e.target.value)} placeholder="1AbCdEf... — из URL папки" />
+            <Label>Плейлист YouTube (опционально)</Label>
+            <Input value={playlist} onChange={e => setPlaylist(e.target.value)} placeholder="https://www.youtube.com/playlist?list=PLxxxx" />
+            <p className="text-xs text-muted-foreground mt-1">Если пусто — GAS обрабатывает только каналы из «Источников».</p>
           </div>
           <Button onClick={() => saveM.mutate()} disabled={saveM.isPending}>Сохранить</Button>
         </CardContent>
       </Card>
+
 
       <Card>
         <CardHeader><CardTitle className="font-serif">3. Вебхук приложения</CardTitle></CardHeader>

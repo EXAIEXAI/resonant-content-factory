@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useState } from "react";
-import { Plus, Trash2, Youtube, Send, Link as LinkIcon } from "lucide-react";
+import { Plus, Trash2, Youtube, Send, Link as LinkIcon, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { syncChannel, syncAllChannels } from "@/lib/channels.functions";
 
 export const Route = createFileRoute("/_authenticated/channels")({
   head: () => ({ meta: [{ title: "Источники · Контент-завод" }] }),
@@ -34,6 +36,9 @@ function deriveTitle(url: string): string {
 
 function ChannelsPage() {
   const qc = useQueryClient();
+  const syncFn = useServerFn(syncChannel);
+  const syncAllFn = useServerFn(syncAllChannels);
+
   const { data: channels } = useQuery({
     queryKey: ["channels"],
     queryFn: async () => (await supabase.from("channels").select("*").order("created_at", { ascending: false })).data ?? [],
@@ -41,21 +46,35 @@ function ChannelsPage() {
 
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState("");
+  const [syncingId, setSyncingId] = useState<string | null>(null);
 
   const create = useMutation({
     mutationFn: async () => {
       const trimmed = url.trim();
       if (!trimmed) throw new Error("Укажите ссылку");
-      const { error } = await supabase.from("channels").insert({
-        platform: detectPlatform(trimmed),
+      const platform = detectPlatform(trimmed);
+      const { data: inserted, error } = await supabase.from("channels").insert({
+        platform,
         url: trimmed,
         title: deriveTitle(trimmed),
-      });
+      }).select().single();
       if (error) throw error;
+      if (platform === "youtube") {
+        try {
+          const r = await syncFn({ data: { channelId: inserted.id } });
+          return { added: r.added, message: r.message };
+        } catch (e) {
+          console.error(e);
+          return { added: 0, message: "Канал добавлен, но не удалось подтянуть ролики" };
+        }
+      }
+      return { added: 0, message: null };
     },
-    onSuccess: () => {
-      toast.success("Источник добавлен");
+    onSuccess: (r) => {
+      if (r?.message) toast.warning(r.message);
+      else toast.success(`Источник добавлен${r?.added ? `, подтянуто роликов: ${r.added}` : ""}`);
       qc.invalidateQueries({ queryKey: ["channels"] });
+      qc.invalidateQueries({ queryKey: ["materials"] });
       setOpen(false);
       setUrl("");
     },
@@ -70,6 +89,33 @@ function ChannelsPage() {
     onSuccess: () => { toast.success("Удалено"); qc.invalidateQueries({ queryKey: ["channels"] }); },
   });
 
+  async function handleSync(id: string) {
+    setSyncingId(id);
+    try {
+      const r = await syncFn({ data: { channelId: id } });
+      if (r.message) toast.warning(r.message);
+      else toast.success(`Обновлено. Новых роликов: ${r.added} из ${r.total}`);
+      qc.invalidateQueries({ queryKey: ["channels"] });
+      qc.invalidateQueries({ queryKey: ["materials"] });
+    } catch (e: any) {
+      toast.error(e.message ?? "Ошибка синхронизации");
+    } finally {
+      setSyncingId(null);
+    }
+  }
+
+  async function handleSyncAll() {
+    toast.info("Синхронизирую все каналы…");
+    try {
+      const r = await syncAllFn({});
+      toast.success(`Готово. Каналов: ${r.channels}, новых роликов: ${r.added}`);
+      qc.invalidateQueries({ queryKey: ["channels"] });
+      qc.invalidateQueries({ queryKey: ["materials"] });
+    } catch (e: any) {
+      toast.error(e.message ?? "Ошибка");
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -77,19 +123,23 @@ function ChannelsPage() {
           <h1 className="font-serif text-4xl">Источники</h1>
           <p className="text-muted-foreground mt-1">YouTube-каналы и Telegram-каналы для мониторинга</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" /> Добавить источник</Button></DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle className="font-serif">Новый источник</DialogTitle></DialogHeader>
-            <div className="space-y-3">
-              <div>
-                <Label>Ссылка</Label>
-                <Input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://youtube.com/@channel или https://t.me/channel" autoFocus />
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleSyncAll}><RefreshCw className="w-4 h-4 mr-2" /> Обновить все</Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" /> Добавить источник</Button></DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle className="font-serif">Новый источник</DialogTitle></DialogHeader>
+              <div className="space-y-3">
+                <div>
+                  <Label>Ссылка</Label>
+                  <Input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://youtube.com/@channel или https://t.me/channel" autoFocus />
+                  <p className="text-xs text-muted-foreground mt-2">Для YouTube автоматически подтянутся последние 15 роликов из RSS канала.</p>
+                </div>
               </div>
-            </div>
-            <DialogFooter><Button onClick={() => create.mutate()} disabled={create.isPending}>Сохранить</Button></DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <DialogFooter><Button onClick={() => create.mutate()} disabled={create.isPending}>{create.isPending ? "Загружаю…" : "Сохранить"}</Button></DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
@@ -102,9 +152,21 @@ function ChannelsPage() {
                 </div>
                 <div className="min-w-0">
                   <CardTitle className="text-base truncate">{c.title}</CardTitle>
+                  {(c as any).last_polled_at && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Обновлено: {new Date((c as any).last_polled_at).toLocaleString("ru-RU")}
+                    </p>
+                  )}
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => remove.mutate(c.id)}><Trash2 className="w-4 h-4" /></Button>
+              <div className="flex gap-1">
+                {c.platform === "youtube" && (
+                  <Button variant="ghost" size="icon" onClick={() => handleSync(c.id)} disabled={syncingId === c.id} title="Обновить">
+                    <RefreshCw className={`w-4 h-4 ${syncingId === c.id ? "animate-spin" : ""}`} />
+                  </Button>
+                )}
+                <Button variant="ghost" size="icon" onClick={() => remove.mutate(c.id)}><Trash2 className="w-4 h-4" /></Button>
+              </div>
             </CardHeader>
             <CardContent>
               <a href={c.url} target="_blank" rel="noreferrer" className="text-xs text-muted-foreground hover:text-primary line-clamp-1">{c.url}</a>

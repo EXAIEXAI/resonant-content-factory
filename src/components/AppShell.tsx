@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Radio, Rss, FileStack, Kanban, BookOpen, Users, LogOut, Factory } from "lucide-react";
+import { LayoutDashboard, Radio, Rss, FileStack, Kanban, BookOpen, Users, LogOut, Factory, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import type { ReactNode } from "react";
@@ -10,7 +10,7 @@ const nav = [
   { to: "/radar", label: "Отраслевой радар", icon: Rss },
   { to: "/digests", label: "Дайджесты", icon: FileStack },
   { to: "/kanban", label: "Канбан публикаций", icon: Kanban },
-  { to: "/knowledge", label: "База знаний", icon: BookOpen },
+  { to: "/knowledge", label: "База знаний", icon: BookOpen, locked: true },
   { to: "/roles", label: "Роли", icon: Users },
 ];
 
@@ -41,6 +41,20 @@ export function AppShell({ children }: { children: ReactNode }) {
           {nav.map(item => {
             const active = pathname === item.to || (item.to !== "/" && pathname.startsWith(item.to));
             const Icon = item.icon;
+            if (item.locked) {
+              return (
+                <div
+                  key={item.to}
+                  aria-disabled="true"
+                  title="Раздел временно закрыт"
+                  className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-sidebar-foreground/40 cursor-not-allowed select-none"
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="flex-1">{item.label}</span>
+                  <Lock className="w-3.5 h-3.5" />
+                </div>
+              );
+            }
             return (
               <Link
                 key={item.to}

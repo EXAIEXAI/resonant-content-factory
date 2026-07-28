@@ -117,6 +117,20 @@ function IntegrationsPage() {
             <Input value={playlist} onChange={e => setPlaylist(e.target.value)} placeholder="https://www.youtube.com/playlist?list=PLxxxx" />
             <p className="text-xs text-muted-foreground mt-1">Если пусто — GAS обрабатывает только каналы из «Источников».</p>
           </div>
+          <div>
+            <Label>YouTube Data API v3 — ключ <span className="text-destructive">*</span></Label>
+            <Input
+              value={apiKey}
+              onChange={e => setApiKey(e.target.value)}
+              placeholder="AIza..."
+              type="password"
+              autoComplete="off"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Нужен для получения реальных просмотров, лайков и комментариев при добавлении и пересчёте роликов.
+              Получить: <a className="underline" href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer">console.cloud.google.com</a> → создать проект → «Enable APIs» → включить <b>YouTube Data API v3</b> → «Credentials» → «Create credentials» → «API key». Ключ хранится только у вас.
+            </p>
+          </div>
           <Button onClick={() => saveM.mutate()} disabled={saveM.isPending}>Сохранить</Button>
         </CardContent>
       </Card>

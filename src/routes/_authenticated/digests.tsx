@@ -46,22 +46,21 @@ function DigestsPage() {
   });
 
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ title: "", category: "Кадры", scheduled_at: "" });
+  const [form, setForm] = useState({ title: "", scheduled_at: "" });
   const [editing, setEditing] = useState<Digest | null>(null);
 
   const build = useMutation({
     mutationFn: async () => {
-      const { data: mats } = await supabase.from("raw_materials").select("*").eq("category", form.category);
+      const { data: mats } = await supabase.from("raw_materials").select("*");
       const top = pickTopParetoPerChannel(mats ?? [], 3);
-      const { data: manual } = await supabase.from("raw_materials").select("*").eq("category", form.category).eq("is_manual", true);
-      const material_ids = [...top.map(t => t.id), ...(manual ?? []).map(m => m.id)];
+      const manual = (mats ?? []).filter(m => m.is_manual);
+      const material_ids = [...top.map(t => t.id), ...manual.map(m => m.id)];
       const { error } = await supabase.from("digests").insert({
-        title: form.title || `Дайджест «${form.category}» — ${new Date().toLocaleDateString("ru")}`,
-        category: form.category,
+        title: form.title || `Дайджест — ${new Date().toLocaleDateString("ru")}`,
         scheduled_at: form.scheduled_at || null,
         status: form.scheduled_at ? "scheduled" : "draft",
         material_ids,
-        content_json: { top: top.length, manual: (manual ?? []).length },
+        content_json: { top: top.length, manual: manual.length },
       });
       if (error) throw error;
       await supabase.from("raw_materials").update({ status: "in_digest" }).in("id", top.map(t => t.id));

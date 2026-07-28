@@ -47,6 +47,20 @@ function DigestsPage() {
       ((await supabase.from("digests").select("*").order("scheduled_at", { ascending: false, nullsFirst: false })).data ?? []) as Digest[],
   });
 
+  const allIds = Array.from(new Set((digests ?? []).flatMap(d => d.material_ids ?? [])));
+  const { data: materialsMap } = useQuery({
+    queryKey: ["digest-materials", allIds.sort().join(",")],
+    enabled: allIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("raw_materials")
+        .select("id,title,url,summary,views,reactions,comments_count,engagement_score,channel_title,thumbnail_url")
+        .in("id", allIds);
+      const map: Record<string, any> = {};
+      (data ?? []).forEach((m: any) => { map[m.id] = m; });
+      return map;
+    },
+  });
+
   const [editing, setEditing] = useState<Digest | null>(null);
   const buildWeekly = useServerFn(buildWeeklyDigest);
 

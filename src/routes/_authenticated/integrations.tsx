@@ -30,16 +30,19 @@ function IntegrationsPage() {
 
   const [playlist, setPlaylist] = useState("");
   const [folder, setFolder] = useState("");
+  const [apiKey, setApiKey] = useState("");
 
   useEffect(() => {
     if (settings) {
       setPlaylist(settings.youtube_playlist_id ?? "");
       setFolder(settings.drive_folder_id ?? "");
+      setApiKey((settings as { youtube_api_key?: string | null }).youtube_api_key ?? "");
     }
   }, [settings]);
 
   const saveM = useMutation({
-    mutationFn: () => save({ data: { playlist_id: playlist, drive_folder_id: folder } }),
+    mutationFn: () =>
+      save({ data: { playlist_id: playlist, drive_folder_id: folder, youtube_api_key: apiKey } }),
     onSuccess: () => {
       toast.success("Настройки сохранены");
       qc.invalidateQueries({ queryKey: ["integration_settings"] });

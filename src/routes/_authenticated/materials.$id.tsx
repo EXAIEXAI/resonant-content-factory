@@ -241,7 +241,7 @@ function MaterialPage() {
               ["speech_theses", "Тезисы выступления"],
             ].map(([f, label]) => (
               <Button key={f} variant="outline" size="sm" onClick={() => runGenerate.mutate(f)} disabled={runGenerate.isPending}>
-                <Sparkles className="w-3 h-3 mr-1" />{label}
+                {label}
               </Button>
             ))}
           </div>

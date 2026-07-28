@@ -206,16 +206,16 @@ export const saveIntegrationSettings = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const playlist = data.playlist_id ? extractPlaylistId(data.playlist_id) ?? data.playlist_id.trim() : null;
-    const update: Record<string, unknown> = {
+    const update = {
       youtube_playlist_id: playlist,
       drive_folder_id: data.drive_folder_id?.trim() || null,
+      ...(data.youtube_api_key !== undefined
+        ? { youtube_api_key: data.youtube_api_key?.trim() || null }
+        : {}),
     };
-    if (data.youtube_api_key !== undefined) {
-      update.youtube_api_key = data.youtube_api_key?.trim() || null;
-    }
     const { error } = await supabase
       .from("integration_settings")
-      .update(update)
+      .update(update as never)
       .eq("user_id", userId);
     if (error) throw new Error(error.message);
     return { ok: true };

@@ -114,7 +114,7 @@ function MaterialPage() {
           <CardContent className="space-y-4">
             {!m.summary && (
               <Button size="sm" onClick={() => runAnalyze.mutate()} disabled={runAnalyze.isPending}>
-                <Sparkles className="w-4 h-4 mr-2" />{runAnalyze.isPending ? "Анализирую..." : "Проанализировать (Gemini)"}
+                {runAnalyze.isPending ? "Анализирую..." : "Проанализировать (Gemini)"}
               </Button>
             )}
             {m.summary && (

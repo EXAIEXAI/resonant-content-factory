@@ -30,16 +30,19 @@ function IntegrationsPage() {
 
   const [playlist, setPlaylist] = useState("");
   const [folder, setFolder] = useState("");
+  const [apiKey, setApiKey] = useState("");
 
   useEffect(() => {
     if (settings) {
       setPlaylist(settings.youtube_playlist_id ?? "");
       setFolder(settings.drive_folder_id ?? "");
+      setApiKey((settings as { youtube_api_key?: string | null }).youtube_api_key ?? "");
     }
   }, [settings]);
 
   const saveM = useMutation({
-    mutationFn: () => save({ data: { playlist_id: playlist, drive_folder_id: folder } }),
+    mutationFn: () =>
+      save({ data: { playlist_id: playlist, drive_folder_id: folder, youtube_api_key: apiKey } }),
     onSuccess: () => {
       toast.success("Настройки сохранены");
       qc.invalidateQueries({ queryKey: ["integration_settings"] });
@@ -113,6 +116,20 @@ function IntegrationsPage() {
             <Label>Плейлист YouTube (опционально)</Label>
             <Input value={playlist} onChange={e => setPlaylist(e.target.value)} placeholder="https://www.youtube.com/playlist?list=PLxxxx" />
             <p className="text-xs text-muted-foreground mt-1">Если пусто — GAS обрабатывает только каналы из «Источников».</p>
+          </div>
+          <div>
+            <Label>YouTube Data API v3 — ключ <span className="text-destructive">*</span></Label>
+            <Input
+              value={apiKey}
+              onChange={e => setApiKey(e.target.value)}
+              placeholder="AIza..."
+              type="password"
+              autoComplete="off"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Нужен для получения реальных просмотров, лайков и комментариев при добавлении и пересчёте роликов.
+              Получить: <a className="underline" href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer">console.cloud.google.com</a> → создать проект → «Enable APIs» → включить <b>YouTube Data API v3</b> → «Credentials» → «Create credentials» → «API key». Ключ хранится только у вас.
+            </p>
           </div>
           <Button onClick={() => saveM.mutate()} disabled={saveM.isPending}>Сохранить</Button>
         </CardContent>

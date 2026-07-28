@@ -1,4 +1,5 @@
-// Best-effort scraping of public YouTube stats without an API key.
+// Fetches YouTube video stats. Prefers the official Data API v3 when an API key
+// is provided (reliable), otherwise falls back to best-effort scraping.
 
 export type VideoStats = {
   views: number;
@@ -18,6 +19,50 @@ function parseCompact(s: string): number {
 
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
+
+async function fetchViaApi(videoId: string, apiKey: string): Promise<VideoStats | null> {
+  try {
+    const r = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoId}&key=${apiKey}`,
+    );
+    if (!r.ok) return null;
+    const j: any = await r.json();
+    const s = j.items?.[0]?.statistics;
+    if (!s) return null;
+    return {
+      views: parseInt(s.viewCount ?? "0", 10) || 0,
+      likes: parseInt(s.likeCount ?? "0", 10) || 0,
+      comments: parseInt(s.commentCount ?? "0", 10) || 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchViaApiBatch(ids: string[], apiKey: string): Promise<Map<string, VideoStats>> {
+  const out = new Map<string, VideoStats>();
+  for (let i = 0; i < ids.length; i += 50) {
+    const chunk = ids.slice(i, i + 50);
+    try {
+      const r = await fetch(
+        `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${chunk.join(",")}&key=${apiKey}`,
+      );
+      if (!r.ok) continue;
+      const j: any = await r.json();
+      for (const it of j.items ?? []) {
+        const s = it.statistics ?? {};
+        out.set(it.id, {
+          views: parseInt(s.viewCount ?? "0", 10) || 0,
+          likes: parseInt(s.likeCount ?? "0", 10) || 0,
+          comments: parseInt(s.commentCount ?? "0", 10) || 0,
+        });
+      }
+    } catch {
+      // continue
+    }
+  }
+  return out;
+}
 
 async function fetchWatchStats(videoId: string): Promise<{ views: number; likes: number } | null> {
   try {
@@ -56,8 +101,27 @@ async function fetchCommentCount(videoId: string): Promise<number> {
   }
 }
 
-export async function fetchVideoStats(videoId: string): Promise<VideoStats | null> {
+export async function fetchVideoStats(videoId: string, apiKey?: string | null): Promise<VideoStats | null> {
+  if (apiKey) {
+    const api = await fetchViaApi(videoId, apiKey);
+    if (api) return api;
+  }
   const [watch, comments] = await Promise.all([fetchWatchStats(videoId), fetchCommentCount(videoId)]);
   if (!watch) return null;
   return { views: watch.views, likes: watch.likes, comments };
+}
+
+export async function fetchVideoStatsBatch(
+  ids: string[],
+  apiKey?: string | null,
+): Promise<Map<string, VideoStats>> {
+  if (apiKey) return fetchViaApiBatch(ids, apiKey);
+  const out = new Map<string, VideoStats>();
+  await Promise.all(
+    ids.map(async id => {
+      const s = await fetchVideoStats(id, null);
+      if (s) out.set(id, s);
+    }),
+  );
+  return out;
 }

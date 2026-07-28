@@ -1,11 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import { ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/kanban")({
   head: () => ({ meta: [{ title: "Канбан · Контент-завод" }] }),
@@ -23,18 +20,9 @@ const columns: [string, string][] = [
 ];
 
 function KanbanPage() {
-  const qc = useQueryClient();
   const { data: materials } = useQuery({
     queryKey: ["materials-kanban"],
     queryFn: async () => (await supabase.from("raw_materials").select("id, title, status, category, engagement_score")).data ?? [],
-  });
-
-  const move = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase.from("raw_materials").update({ status }).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => { toast.success("Перемещено"); qc.invalidateQueries({ queryKey: ["materials-kanban"] }); },
   });
 
   return (
@@ -47,7 +35,6 @@ function KanbanPage() {
       <div className="flex gap-3 overflow-x-auto pb-4">
         {columns.map(([status, label]) => {
           const items = (materials ?? []).filter(m => m.status === status);
-          const nextStatus = columns[columns.findIndex(c => c[0] === status) + 1]?.[0];
           return (
             <div key={status} className="min-w-[260px] w-[260px] shrink-0">
               <div className="flex items-center justify-between mb-2 px-1">
@@ -59,15 +46,7 @@ function KanbanPage() {
                   <Card key={m.id} className="p-3">
                     <Link to="/materials/$id" params={{ id: m.id }} className="text-sm font-medium line-clamp-2 hover:text-primary block">{m.title}</Link>
                     <div className="flex items-center justify-between mt-2">
-                      <div className="flex gap-1">
-                        
-                        <Badge variant="outline" className="text-xs">{(m.engagement_score ?? 0).toFixed(1)}</Badge>
-                      </div>
-                      {nextStatus && (
-                        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => move.mutate({ id: m.id, status: nextStatus })}>
-                          <ArrowRight className="w-3 h-3" />
-                        </Button>
-                      )}
+                      <Badge variant="outline" className="text-xs">{(m.engagement_score ?? 0).toFixed(1)}</Badge>
                     </div>
                   </Card>
                 ))}

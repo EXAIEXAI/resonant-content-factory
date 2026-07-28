@@ -118,8 +118,8 @@ export const ingestUrl = createServerFn({ method: "POST" })
       .select()
       .single();
     if (error) throw new Error(error.message);
-    // Fire-and-forget AI analysis so every source is auto-processed.
-    if (transcriptText) {
+    // Fire-and-forget AI analysis so every source is auto-processed (даже без транскрипта).
+    {
       const { analyzeMaterialById } = await import("./analyze.server");
       analyzeMaterialById(supabase, row.id).catch(e => console.error("auto-analyze failed", e));
     }

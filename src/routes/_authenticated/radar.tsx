@@ -100,26 +100,7 @@ function RadarPage() {
             <DialogContent className="max-w-lg">
               <DialogHeader><DialogTitle className="font-serif">Приоритетная очередь</DialogTitle></DialogHeader>
               <div className="space-y-3">
-                <div><Label>Заголовок</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></div>
-                <div><Label>Ссылка</Label><Input value={form.url} onChange={e => setForm({ ...form, url: e.target.value })} /></div>
-                <div><Label>Рубрика</Label>
-                  <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{["Кадры","Аудит","РОП","Продажи","Общее"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div><Label>Канал (опционально)</Label>
-                  <Select value={form.channel_id} onValueChange={v => setForm({ ...form, channel_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                    <SelectContent>{(channels ?? []).map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div><Label>Транскрипт / Текст</Label><Textarea rows={5} value={form.raw_transcript} onChange={e => setForm({ ...form, raw_transcript: e.target.value })} /></div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div><Label>Просмотры</Label><Input type="number" value={form.views} onChange={e => setForm({ ...form, views: +e.target.value })} /></div>
-                  <div><Label>Реакции</Label><Input type="number" value={form.reactions} onChange={e => setForm({ ...form, reactions: +e.target.value })} /></div>
-                  <div><Label>Комментарии</Label><Input type="number" value={form.comments_count} onChange={e => setForm({ ...form, comments_count: +e.target.value })} /></div>
-                </div>
+                <div><Label>Ссылка</Label><Input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://..." autoFocus /></div>
               </div>
               <DialogFooter><Button onClick={() => addManual.mutate()} disabled={addManual.isPending}>Добавить</Button></DialogFooter>
             </DialogContent>

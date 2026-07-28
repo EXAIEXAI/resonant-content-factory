@@ -164,12 +164,24 @@ function MaterialCard({ m }: { m: any }) {
           </div>
           <div className="flex items-center gap-2">
             {m.drive_file_url && (
-              <a href={m.drive_file_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border hover:bg-accent hover:text-accent-foreground">
+              <a
+                href={m.drive_file_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(m.drive_file_url, "_blank", "noopener,noreferrer"); }}
+                className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border hover:bg-accent hover:text-accent-foreground"
+              >
                 <FileText className="w-3 h-3" />Google Диск
               </a>
             )}
             {m.url && (
-              <a href={m.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
+              <a
+                href={m.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(m.url, "_blank", "noopener,noreferrer"); }}
+                className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
+              >
                 <ExternalLink className="w-3 h-3" />Открыть оригинал
               </a>
             )}

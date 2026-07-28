@@ -118,7 +118,7 @@ function DigestsPage() {
               <div>
                 <CardTitle className="font-serif">{d.title}</CardTitle>
                 <div className="flex gap-2 mt-2 flex-wrap">
-                  <Badge variant="secondary">{d.category}</Badge>
+                  
                   <Badge variant={d.status === "sent" ? "default" : "outline"}>{STATUS_LABELS[d.status] ?? d.status}</Badge>
                   <Badge variant="outline">{(d.material_ids?.length ?? 0)} мат.</Badge>
                   {d.scheduled_at && (

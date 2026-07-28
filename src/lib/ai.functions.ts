@@ -49,7 +49,7 @@ export const analyzeMaterial = createServerFn({ method: "POST" })
       "Ты — аналитик экспертного контента. Отвечай ТОЛЬКО валидным JSON без markdown.",
       prompt,
     );
-    let parsed: { summary: string; key_points: unknown[] };
+    let parsed: { summary: string; key_points: Array<{ thesis: string; timecode: string | null; quote: string }> };
     try {
       parsed = JSON.parse(raw.replace(/^```json\n?|\n?```$/g, ""));
     } catch {

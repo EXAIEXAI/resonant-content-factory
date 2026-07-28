@@ -1,9 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/kanban")({
   head: () => ({ meta: [{ title: "Канбан · Контент-завод" }] }),
@@ -21,18 +20,9 @@ const columns: [string, string][] = [
 ];
 
 function KanbanPage() {
-  const qc = useQueryClient();
   const { data: materials } = useQuery({
     queryKey: ["materials-kanban"],
     queryFn: async () => (await supabase.from("raw_materials").select("id, title, status, category, engagement_score")).data ?? [],
-  });
-
-  const move = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase.from("raw_materials").update({ status }).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => { toast.success("Перемещено"); qc.invalidateQueries({ queryKey: ["materials-kanban"] }); },
   });
 
   return (

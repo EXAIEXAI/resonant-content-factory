@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Radio, Rss, FileStack, Kanban, BookOpen, Users, LogOut, Factory, Lock } from "lucide-react";
+import { LayoutDashboard, Radio, Rss, FileStack, Kanban, BookOpen, Users, LogOut, Factory, Lock, Plug } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import type { ReactNode } from "react";
@@ -8,6 +8,7 @@ const nav = [
   { to: "/", label: "Дашборд", icon: LayoutDashboard },
   { to: "/channels", label: "Источники", icon: Radio },
   { to: "/radar", label: "Отраслевой радар", icon: Rss },
+  { to: "/integrations", label: "Интеграции", icon: Plug },
   { to: "/digests", label: "Дайджесты", icon: FileStack, locked: true },
   { to: "/kanban", label: "Канбан публикаций", icon: Kanban },
   { to: "/knowledge", label: "База знаний", icon: BookOpen, locked: true },

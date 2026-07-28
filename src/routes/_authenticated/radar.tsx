@@ -162,6 +162,9 @@ function MaterialCard({ m }: { m: any }) {
           <CardTitle className="text-base leading-snug">
             <Link to="/materials/$id" params={{ id: m.id }} className="hover:text-primary">{m.title}</Link>
           </CardTitle>
+          {m.summary && (
+            <p className="text-sm text-muted-foreground mt-2 leading-relaxed line-clamp-3">{m.summary}</p>
+          )}
         </div>
         <div className="text-right">
           <div className="font-serif text-2xl text-primary">{Math.round(m.computedScore ?? m.engagement_score ?? 0)}<span className="text-sm text-muted-foreground">/100</span></div>

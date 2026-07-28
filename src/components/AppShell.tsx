@@ -9,7 +9,7 @@ const nav = [
   { to: "/channels", label: "Источники", icon: Radio },
   { to: "/radar", label: "Отраслевой радар", icon: Rss },
   { to: "/integrations", label: "Интеграции", icon: Plug },
-  { to: "/digests", label: "Дайджесты", icon: FileStack, locked: true },
+  { to: "/digests", label: "Дайджесты", icon: FileStack },
   { to: "/kanban", label: "Канбан публикаций", icon: Kanban },
   { to: "/knowledge", label: "База знаний", icon: BookOpen, locked: true },
   { to: "/roles", label: "Роли", icon: Users },

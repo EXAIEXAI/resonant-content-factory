@@ -19,7 +19,9 @@ export type Database = {
           active: boolean
           category: string
           created_at: string
+          external_id: string | null
           id: string
+          last_polled_at: string | null
           platform: string
           subscribers: number | null
           title: string
@@ -30,7 +32,9 @@ export type Database = {
           active?: boolean
           category?: string
           created_at?: string
+          external_id?: string | null
           id?: string
+          last_polled_at?: string | null
           platform: string
           subscribers?: number | null
           title: string
@@ -41,7 +45,9 @@ export type Database = {
           active?: boolean
           category?: string
           created_at?: string
+          external_id?: string | null
           id?: string
+          last_polled_at?: string | null
           platform?: string
           subscribers?: number | null
           title?: string

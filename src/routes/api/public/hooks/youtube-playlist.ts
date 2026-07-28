@@ -96,10 +96,17 @@ export const Route = createFileRoute("/api/public/hooks/youtube-playlist")({
           added_by: settings.user_id,
         };
 
-        const { error: upErr } = await supabaseAdmin
+        const { data: upserted, error: upErr } = await supabaseAdmin
           .from("raw_materials")
-          .upsert(upsertRow, { onConflict: "external_id" });
+          .upsert(upsertRow, { onConflict: "external_id" })
+          .select("id")
+          .single();
         if (upErr) return Response.json({ error: upErr.message }, { status: 500 });
+
+        if (transcriptText) {
+          const { analyzeMaterialById } = await import("@/lib/analyze.server");
+          analyzeMaterialById(supabaseAdmin, upserted.id).catch(e => console.error("auto-analyze failed", e));
+        }
 
         await supabaseAdmin
           .from("integration_settings")

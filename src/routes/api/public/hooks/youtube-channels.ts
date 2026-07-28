@@ -74,7 +74,12 @@ export const Route = createFileRoute("/api/public/hooks/youtube-channels")({
           return Response.json({ error: "invalid body", details: parsed.error.issues }, { status: 400, headers: cors });
         }
         const b = parsed.data;
-        const patch: Record<string, unknown> = {};
+        const patch: {
+          external_id?: string | null;
+          title?: string;
+          subscribers?: number;
+          last_polled_at?: string;
+        } = {};
         if (b.external_id !== undefined) patch.external_id = b.external_id;
         if (b.title) patch.title = b.title;
         if (b.subscribers !== undefined && b.subscribers !== null) patch.subscribers = b.subscribers;
@@ -86,6 +91,7 @@ export const Route = createFileRoute("/api/public/hooks/youtube-channels")({
           .eq("id", b.id);
         if (error) return Response.json({ error: error.message }, { status: 500, headers: cors });
         return Response.json({ ok: true }, { headers: cors });
+
       },
     },
   },

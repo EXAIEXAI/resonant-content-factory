@@ -21,6 +21,7 @@ import { Route as AuthenticatedDigestsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedChannelsRouteImport } from './routes/_authenticated/channels'
 import { Route as AuthenticatedMaterialsIdRouteImport } from './routes/_authenticated/materials.$id'
 import { Route as ApiPublicHooksYoutubePlaylistRouteImport } from './routes/api/public/hooks/youtube-playlist'
+import { Route as ApiPublicHooksYoutubeChannelsRouteImport } from './routes/api/public/hooks/youtube-channels'
 import { Route as ApiPublicHooksWeeklyDigestRouteImport } from './routes/api/public/hooks/weekly-digest'
 
 const AuthRoute = AuthRouteImport.update({
@@ -85,6 +86,12 @@ const ApiPublicHooksYoutubePlaylistRoute =
     path: '/api/public/hooks/youtube-playlist',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksYoutubeChannelsRoute =
+  ApiPublicHooksYoutubeChannelsRouteImport.update({
+    id: '/api/public/hooks/youtube-channels',
+    path: '/api/public/hooks/youtube-channels',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksWeeklyDigestRoute =
   ApiPublicHooksWeeklyDigestRouteImport.update({
     id: '/api/public/hooks/weekly-digest',
@@ -104,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/roles': typeof AuthenticatedRolesRoute
   '/materials/$id': typeof AuthenticatedMaterialsIdRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
+  '/api/public/hooks/youtube-channels': typeof ApiPublicHooksYoutubeChannelsRoute
   '/api/public/hooks/youtube-playlist': typeof ApiPublicHooksYoutubePlaylistRoute
 }
 export interface FileRoutesByTo {
@@ -118,6 +126,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/materials/$id': typeof AuthenticatedMaterialsIdRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
+  '/api/public/hooks/youtube-channels': typeof ApiPublicHooksYoutubeChannelsRoute
   '/api/public/hooks/youtube-playlist': typeof ApiPublicHooksYoutubePlaylistRoute
 }
 export interface FileRoutesById {
@@ -134,6 +143,7 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/materials/$id': typeof AuthenticatedMaterialsIdRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
+  '/api/public/hooks/youtube-channels': typeof ApiPublicHooksYoutubeChannelsRoute
   '/api/public/hooks/youtube-playlist': typeof ApiPublicHooksYoutubePlaylistRoute
 }
 export interface FileRouteTypes {
@@ -150,6 +160,7 @@ export interface FileRouteTypes {
     | '/roles'
     | '/materials/$id'
     | '/api/public/hooks/weekly-digest'
+    | '/api/public/hooks/youtube-channels'
     | '/api/public/hooks/youtube-playlist'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -164,6 +175,7 @@ export interface FileRouteTypes {
     | '/'
     | '/materials/$id'
     | '/api/public/hooks/weekly-digest'
+    | '/api/public/hooks/youtube-channels'
     | '/api/public/hooks/youtube-playlist'
   id:
     | '__root__'
@@ -179,6 +191,7 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/_authenticated/materials/$id'
     | '/api/public/hooks/weekly-digest'
+    | '/api/public/hooks/youtube-channels'
     | '/api/public/hooks/youtube-playlist'
   fileRoutesById: FileRoutesById
 }
@@ -186,6 +199,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiPublicHooksWeeklyDigestRoute: typeof ApiPublicHooksWeeklyDigestRoute
+  ApiPublicHooksYoutubeChannelsRoute: typeof ApiPublicHooksYoutubeChannelsRoute
   ApiPublicHooksYoutubePlaylistRoute: typeof ApiPublicHooksYoutubePlaylistRoute
 }
 
@@ -275,6 +289,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksYoutubePlaylistRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/youtube-channels': {
+      id: '/api/public/hooks/youtube-channels'
+      path: '/api/public/hooks/youtube-channels'
+      fullPath: '/api/public/hooks/youtube-channels'
+      preLoaderRoute: typeof ApiPublicHooksYoutubeChannelsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/weekly-digest': {
       id: '/api/public/hooks/weekly-digest'
       path: '/api/public/hooks/weekly-digest'
@@ -316,6 +337,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiPublicHooksWeeklyDigestRoute: ApiPublicHooksWeeklyDigestRoute,
+  ApiPublicHooksYoutubeChannelsRoute: ApiPublicHooksYoutubeChannelsRoute,
   ApiPublicHooksYoutubePlaylistRoute: ApiPublicHooksYoutubePlaylistRoute,
 }
 export const routeTree = rootRouteImport

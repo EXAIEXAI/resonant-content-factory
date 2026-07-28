@@ -5,17 +5,32 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useState } from "react";
-import { Plus, Trash2, Youtube, Send } from "lucide-react";
+import { Plus, Trash2, Youtube, Send, Link as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/channels")({
   head: () => ({ meta: [{ title: "Источники · Контент-завод" }] }),
   component: ChannelsPage,
 });
+
+function detectPlatform(url: string): string {
+  const u = url.toLowerCase();
+  if (u.includes("youtube.com") || u.includes("youtu.be")) return "youtube";
+  if (u.includes("t.me") || u.includes("telegram")) return "telegram";
+  return "other";
+}
+
+function deriveTitle(url: string): string {
+  try {
+    const u = new URL(url);
+    const path = u.pathname.replace(/^\/+|\/+$/g, "");
+    return path ? `${u.hostname}/${path}` : u.hostname;
+  } catch {
+    return url;
+  }
+}
 
 function ChannelsPage() {
   const qc = useQueryClient();
@@ -25,18 +40,24 @@ function ChannelsPage() {
   });
 
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ platform: "youtube", url: "", title: "", category: "Кадры", subscribers: 0 });
+  const [url, setUrl] = useState("");
 
   const create = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("channels").insert(form);
+      const trimmed = url.trim();
+      if (!trimmed) throw new Error("Укажите ссылку");
+      const { error } = await supabase.from("channels").insert({
+        platform: detectPlatform(trimmed),
+        url: trimmed,
+        title: deriveTitle(trimmed),
+      });
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Источник добавлен");
       qc.invalidateQueries({ queryKey: ["channels"] });
       setOpen(false);
-      setForm({ platform: "youtube", url: "", title: "", category: "Кадры", subscribers: 0 });
+      setUrl("");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -60,28 +81,11 @@ function ChannelsPage() {
           <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" /> Добавить источник</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle className="font-serif">Новый источник</DialogTitle></DialogHeader>
-            <div className="space-y-4">
-              <div><Label>Платформа</Label>
-                <Select value={form.platform} onValueChange={v => setForm({ ...form, platform: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="youtube">YouTube</SelectItem>
-                    <SelectItem value="telegram">Telegram</SelectItem>
-                    <SelectItem value="other">Другое</SelectItem>
-                  </SelectContent>
-                </Select>
+            <div className="space-y-3">
+              <div>
+                <Label>Ссылка</Label>
+                <Input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://youtube.com/@channel или https://t.me/channel" autoFocus />
               </div>
-              <div><Label>Название</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></div>
-              <div><Label>URL</Label><Input value={form.url} onChange={e => setForm({ ...form, url: e.target.value })} placeholder="https://..." /></div>
-              <div><Label>Рубрика</Label>
-                <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {["Кадры", "Аудит", "РОП", "Продажи", "Общее"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div><Label>Подписчики</Label><Input type="number" value={form.subscribers} onChange={e => setForm({ ...form, subscribers: +e.target.value })} /></div>
             </div>
             <DialogFooter><Button onClick={() => create.mutate()} disabled={create.isPending}>Сохранить</Button></DialogFooter>
           </DialogContent>
@@ -92,16 +96,12 @@ function ChannelsPage() {
         {(channels ?? []).map(c => (
           <Card key={c.id}>
             <CardHeader className="flex flex-row items-start justify-between space-y-0">
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded bg-muted flex items-center justify-center">
-                  {c.platform === "youtube" ? <Youtube className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="w-9 h-9 rounded bg-muted flex items-center justify-center shrink-0">
+                  {c.platform === "youtube" ? <Youtube className="w-4 h-4" /> : c.platform === "telegram" ? <Send className="w-4 h-4" /> : <LinkIcon className="w-4 h-4" />}
                 </div>
-                <div>
-                  <CardTitle className="text-base">{c.title}</CardTitle>
-                  <div className="flex gap-2 mt-1">
-                    <Badge variant="secondary">{c.category}</Badge>
-                    <Badge variant="outline">{(c.subscribers ?? 0).toLocaleString("ru")} подп.</Badge>
-                  </div>
+                <div className="min-w-0">
+                  <CardTitle className="text-base truncate">{c.title}</CardTitle>
                 </div>
               </div>
               <Button variant="ghost" size="icon" onClick={() => remove.mutate(c.id)}><Trash2 className="w-4 h-4" /></Button>
@@ -113,7 +113,7 @@ function ChannelsPage() {
         ))}
         {channels?.length === 0 && (
           <Card className="md:col-span-2"><CardContent className="py-12 text-center text-muted-foreground">
-            Добавьте первый YouTube или Telegram канал, чтобы начать мониторинг.
+            Добавьте первую ссылку на YouTube или Telegram-канал.
           </CardContent></Card>
         )}
       </div>

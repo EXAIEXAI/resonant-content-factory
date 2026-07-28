@@ -22,7 +22,6 @@ export const Route = createFileRoute("/_authenticated/radar")({
 
 function RadarPage() {
   const qc = useQueryClient();
-  const [category, setCategory] = useState<string>("all");
 
   const { data: channels } = useQuery({
     queryKey: ["channels"],
@@ -42,7 +41,7 @@ function RadarPage() {
     });
   }, [channels, materials]);
 
-  const filtered = category === "all" ? enriched : enriched.filter(m => m.category === category);
+  const filtered = enriched;
   const auto = filtered.filter(m => !m.is_manual);
   const manual = filtered.filter(m => m.is_manual);
   const top = pickTopParetoPerChannel(
@@ -129,13 +128,6 @@ function RadarPage() {
         </div>
       </div>
 
-      <div className="flex gap-2 flex-wrap">
-        {["all", "Кадры", "Аудит", "РОП", "Продажи", "Общее"].map(c => (
-          <Button key={c} size="sm" variant={category === c ? "default" : "outline"} onClick={() => setCategory(c)}>
-            {c === "all" ? "Все" : c}
-          </Button>
-        ))}
-      </div>
 
       <Tabs defaultValue="top">
         <TabsList>

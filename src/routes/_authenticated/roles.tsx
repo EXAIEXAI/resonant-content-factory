@@ -31,7 +31,7 @@ function RolesPage() {
     queryFn: async () => (await supabase.from("user_roles").select("*")).data ?? [],
   });
 
-  const [pick, setPick] = useState<{ userId?: string; role?: string }>({});
+  const [pick, setPick] = useState<{ userId: string; role: string }>({ userId: "", role: "" });
 
   const assign = useMutation({
     mutationFn: async () => {

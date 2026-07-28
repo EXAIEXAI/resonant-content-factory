@@ -87,12 +87,21 @@ function MaterialPage() {
       <Link to="/radar" className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1">
         <ArrowLeft className="w-4 h-4" /> К радару
       </Link>
-      <div>
-        <div className="flex gap-2 mb-2">
-          <Badge variant="outline">Score {(m.engagement_score ?? 0).toFixed(2)}</Badge>
-          <Badge>{m.status}</Badge>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div>
+          <div className="flex gap-2 mb-2">
+            <Badge variant="outline">Score {(m.engagement_score ?? 0).toFixed(2)}</Badge>
+            <Badge>{m.status}</Badge>
+          </div>
+          <h1 className="font-serif text-3xl">{m.title}</h1>
         </div>
-        <h1 className="font-serif text-3xl">{m.title}</h1>
+        {m.url && (
+          <Button asChild variant="outline" size="sm" className="shrink-0">
+            <a href={m.url} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="w-4 h-4 mr-2" />Открыть оригинал
+            </a>
+          </Button>
+        )}
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">

@@ -8,12 +8,12 @@ const nav = [
   { to: "/", label: "Дашборд", icon: LayoutDashboard },
   { to: "/channels", label: "Источники", icon: Radio },
   { to: "/radar", label: "Отраслевой радар", icon: Rss },
-  { to: "/integrations", label: "Интеграции", icon: Plug },
   { to: "/digests", label: "Дайджесты", icon: FileStack },
   { to: "/kanban", label: "Канбан публикаций", icon: Kanban },
   { to: "/knowledge", label: "База знаний", icon: BookOpen, locked: true },
   { to: "/roles", label: "Роли", icon: Users },
 ];
+
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: s => s.location.pathname });
@@ -72,11 +72,22 @@ export function AppShell({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
-        <div className="p-3 border-t border-sidebar-border">
+        <div className="p-3 border-t border-sidebar-border space-y-1">
+          <Link
+            to="/integrations"
+            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+              pathname.startsWith("/integrations")
+                ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium"
+                : "hover:bg-sidebar-accent text-sidebar-foreground/80"
+            }`}
+          >
+            <Plug className="w-4 h-4" /> Интеграции
+          </Link>
           <Button variant="ghost" size="sm" className="w-full justify-start text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground" onClick={signOut}>
             <LogOut className="w-4 h-4 mr-2" /> Выйти
           </Button>
         </div>
+
       </aside>
       <main className="flex-1 overflow-x-hidden">
         <div className="max-w-7xl mx-auto p-8">{children}</div>

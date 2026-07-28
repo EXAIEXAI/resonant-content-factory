@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -21,22 +20,12 @@ export const Route = createFileRoute("/_authenticated/digests")({
   component: DigestsPage,
 });
 
-
-const STATUSES = ["draft", "scheduled", "sent", "archived"] as const;
-const STATUS_LABELS: Record<string, string> = {
-  draft: "Черновик",
-  scheduled: "Запланирован",
-  sent: "Отправлен",
-  archived: "Архив",
-};
-
 type Digest = {
   id: string;
   title: string;
   category: string;
-  status: string;
-  scheduled_at: string | null;
   material_ids: string[] | null;
+  created_at: string;
 };
 
 function DigestsPage() {
@@ -44,7 +33,7 @@ function DigestsPage() {
   const { data: digests } = useQuery({
     queryKey: ["digests"],
     queryFn: async () =>
-      ((await supabase.from("digests").select("*").order("scheduled_at", { ascending: false, nullsFirst: false })).data ?? []) as Digest[],
+      ((await supabase.from("digests").select("*").order("created_at", { ascending: false })).data ?? []) as Digest[],
   });
 
   const allIds = Array.from(new Set((digests ?? []).flatMap(d => d.material_ids ?? [])));
@@ -78,8 +67,6 @@ function DigestsPage() {
     mutationFn: async (d: Digest) => {
       const { error } = await supabase.from("digests").update({
         title: d.title,
-        status: d.status,
-        scheduled_at: d.scheduled_at || null,
       }).eq("id", d.id);
       if (error) throw error;
     },
@@ -115,15 +102,11 @@ function DigestsPage() {
             <CardHeader className="flex flex-row items-start justify-between space-y-0">
               <div>
                 <CardTitle className="font-serif">{d.title}</CardTitle>
-                <div className="flex gap-2 mt-2 flex-wrap">
-                  
-                  <Badge variant={d.status === "sent" ? "default" : "outline"}>{STATUS_LABELS[d.status] ?? d.status}</Badge>
+                <div className="flex gap-2 mt-2 flex-wrap items-center">
                   <Badge variant="outline">{(d.material_ids?.length ?? 0)} мат.</Badge>
-                  {d.scheduled_at && (
-                    <span className="text-sm text-muted-foreground flex items-center gap-1">
-                      <Calendar className="w-4 h-4" />{new Date(d.scheduled_at).toLocaleString("ru")}
-                    </span>
-                  )}
+                  <span className="text-sm text-muted-foreground flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />Создан {new Date(d.created_at).toLocaleString("ru")}
+                  </span>
                 </div>
               </div>
               <div className="flex gap-1">
@@ -201,17 +184,6 @@ function DigestsPage() {
           {editing && (
             <div className="space-y-3">
               <div><Label>Название</Label><Input value={editing.title} onChange={e => setEditing({ ...editing, title: e.target.value })} /></div>
-              <div><Label>Статус</Label>
-                <Select value={editing.status} onValueChange={v => setEditing({ ...editing, status: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div><Label>Отправка</Label>
-                <Input type="datetime-local"
-                  value={editing.scheduled_at ? new Date(editing.scheduled_at).toISOString().slice(0, 16) : ""}
-                  onChange={e => setEditing({ ...editing, scheduled_at: e.target.value ? new Date(e.target.value).toISOString() : null })} />
-              </div>
             </div>
           )}
           <DialogFooter>

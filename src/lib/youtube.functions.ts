@@ -194,20 +194,28 @@ export const getIntegrationSettings = createServerFn({ method: "GET" })
 
 export const saveIntegrationSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { playlist_id?: string | null; drive_folder_id?: string | null }) =>
+  .inputValidator((data: { playlist_id?: string | null; drive_folder_id?: string | null; youtube_api_key?: string | null }) =>
     z
       .object({
         playlist_id: z.string().max(200).nullish(),
         drive_folder_id: z.string().max(200).nullish(),
+        youtube_api_key: z.string().max(200).nullish(),
       })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const playlist = data.playlist_id ? extractPlaylistId(data.playlist_id) ?? data.playlist_id.trim() : null;
+    const update: Record<string, unknown> = {
+      youtube_playlist_id: playlist,
+      drive_folder_id: data.drive_folder_id?.trim() || null,
+    };
+    if (data.youtube_api_key !== undefined) {
+      update.youtube_api_key = data.youtube_api_key?.trim() || null;
+    }
     const { error } = await supabase
       .from("integration_settings")
-      .update({ youtube_playlist_id: playlist, drive_folder_id: data.drive_folder_id?.trim() || null })
+      .update(update)
       .eq("user_id", userId);
     if (error) throw new Error(error.message);
     return { ok: true };

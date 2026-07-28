@@ -132,6 +132,43 @@ export const transcribeVoice = createServerFn({ method: "POST" })
     z.object({ text: z.string().min(1) }).parse(d),
   )
   .handler(async ({ data }) => {
-    // Placeholder: реальная транскрибация подключается через /v1/audio/transcriptions
     return { transcript: data.text };
+  });
+
+export const processKnowledgeFile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      filename: z.string().min(1).max(200),
+      text: z.string().min(10).max(200000),
+      kind: z.enum(["postulate", "aphorism", "golden_sample", "template"]),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const prompt = `Из содержимого файла «${data.filename}» извлеки записи для базы знаний типа «${data.kind}».
+Верни строго JSON: {"entries":[{"name":"краткое имя (до 80 симв.)","body":"полный текст записи"}]}
+Правила:
+- Для postulate/aphorism — раздели на отдельные короткие записи (1 запись = 1 постулат/афоризм).
+- Для golden_sample/template — сохрани цельный текст как одну запись, name = осмысленный заголовок.
+- Убери мусор (шапки, номера страниц, служебные пометки).
+
+Содержимое:
+${data.text.slice(0, 60000)}`;
+    const raw = await callLLM(
+      "Ты — редактор базы знаний. Отвечай ТОЛЬКО валидным JSON без markdown.",
+      prompt,
+    );
+    let parsed: { entries: Array<{ name: string; body: string }> };
+    try {
+      parsed = JSON.parse(raw.replace(/^```json\n?|\n?```$/g, ""));
+    } catch {
+      parsed = { entries: [{ name: data.filename, body: data.text.slice(0, 4000) }] };
+    }
+    const rows = (parsed.entries ?? [])
+      .filter(e => e.body?.trim())
+      .map(e => ({ name: (e.name || data.filename).slice(0, 200), kind: data.kind, prompt_body: e.body }));
+    if (rows.length === 0) throw new Error("Не удалось извлечь записи из файла");
+    const { error } = await context.supabase.from("style_templates").insert(rows);
+    if (error) throw new Error(error.message);
+    return { inserted: rows.length };
   });

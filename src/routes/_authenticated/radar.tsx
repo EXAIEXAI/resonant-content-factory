@@ -8,10 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState, useMemo } from "react";
 import { Plus, Sparkles, ExternalLink, Crown, FileText } from "lucide-react";
-import { computeScore, pickTopParetoPerChannel } from "@/lib/scoring";
+import { computeScore } from "@/lib/scoring";
 import { ingestUrl } from "@/lib/youtube.functions";
 import { toast } from "sonner";
 
@@ -33,22 +32,16 @@ function RadarPage() {
     queryFn: async () => (await supabase.from("raw_materials").select("*").order("engagement_score", { ascending: false })).data ?? [],
   });
 
-  const enriched = useMemo(() => {
+  const ranked = useMemo(() => {
     const chMap = new Map((channels ?? []).map(c => [c.id, c]));
-    return (materials ?? []).map(m => {
-      const ch = m.channel_id ? chMap.get(m.channel_id) : null;
-      const { score, breakdown } = computeScore({ ...m, subscribers: ch?.subscribers ?? 1000 });
-      return { ...m, computedScore: score, breakdown, channel: ch };
-    });
+    return (materials ?? [])
+      .map(m => {
+        const ch = m.channel_id ? chMap.get(m.channel_id) : null;
+        const { score, breakdown } = computeScore({ ...m, subscribers: ch?.subscribers ?? 1000 });
+        return { ...m, computedScore: score, breakdown, channel: ch };
+      })
+      .sort((a, b) => b.computedScore - a.computedScore);
   }, [channels, materials]);
-
-  const filtered = enriched;
-  const auto = filtered.filter(m => !m.is_manual);
-  const manual = filtered.filter(m => m.is_manual);
-  const top = pickTopParetoPerChannel(
-    auto.map(m => ({ ...m, engagement_score: m.computedScore })),
-    3,
-  );
 
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState("");
@@ -92,7 +85,7 @@ function RadarPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-serif text-4xl">Отраслевой радар</h1>
-          <p className="text-muted-foreground mt-1">Топ-20% материалов по формуле резонанса, минимум 3 на канал</p>
+          <p className="text-muted-foreground mt-1">Все материалы с ваших каналов, ранжированные по формуле резонанса</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => recompute.mutate()}>Пересчитать</Button>
@@ -113,26 +106,10 @@ function RadarPage() {
         </div>
       </div>
 
-
-      <Tabs defaultValue="top">
-        <TabsList>
-          <TabsTrigger value="top">Топ (20% по Парето) · {top.length}</TabsTrigger>
-          <TabsTrigger value="manual">Ручные (вне конкурса) · {manual.length}</TabsTrigger>
-          <TabsTrigger value="all">Все · {filtered.length}</TabsTrigger>
-        </TabsList>
-        <TabsContent value="top" className="space-y-3 mt-4">
-          {top.map(m => <MaterialCard key={m.id} m={m} />)}
-          {top.length === 0 && <EmptyRadar />}
-        </TabsContent>
-        <TabsContent value="manual" className="space-y-3 mt-4">
-          {manual.map(m => <MaterialCard key={m.id} m={m} />)}
-          {manual.length === 0 && <EmptyRadar />}
-        </TabsContent>
-        <TabsContent value="all" className="space-y-3 mt-4">
-          {filtered.map(m => <MaterialCard key={m.id} m={m} />)}
-          {filtered.length === 0 && <EmptyRadar />}
-        </TabsContent>
-      </Tabs>
+      <div className="space-y-3">
+        {ranked.map(m => <MaterialCard key={m.id} m={m} />)}
+        {ranked.length === 0 && <EmptyRadar />}
+      </div>
     </div>
   );
 }

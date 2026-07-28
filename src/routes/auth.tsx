@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Factory } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Вход · Контент-завод" },

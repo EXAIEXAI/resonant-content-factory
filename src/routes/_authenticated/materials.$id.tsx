@@ -97,7 +97,12 @@ function MaterialPage() {
         </div>
         {m.url && (
           <Button asChild variant="outline" size="sm" className="shrink-0">
-            <a href={m.url} target="_blank" rel="noopener noreferrer">
+            <a
+              href={m.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => { e.preventDefault(); if (m.url) window.open(m.url, "_blank", "noopener,noreferrer"); }}
+            >
               <ExternalLink className="w-4 h-4 mr-2" />Открыть оригинал
             </a>
           </Button>

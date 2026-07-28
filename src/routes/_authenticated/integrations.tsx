@@ -135,7 +135,7 @@ function IntegrationsPage() {
           </ol>
           <Textarea readOnly value={gasCode} rows={22} className="font-mono text-xs" />
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Play className="w-3 h-3" /> После первого прогона ролики из плейлиста появятся в «Отраслевом радаре» с бейджем «Выбор Шефа».
+            <Play className="w-3 h-3" /> После первого прогона ролики из плейлиста появятся в «Отраслевом радаре».
           </div>
         </CardContent>
       </Card>

@@ -12,7 +12,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useState, useMemo } from "react";
 import { Plus, Sparkles, ExternalLink, Crown, FileText, ChevronDown, Eye, ThumbsUp, MessageSquare } from "lucide-react";
 import { computeScore, type ScoreFactor } from "@/lib/scoring";
-import { ingestUrl } from "@/lib/youtube.functions";
+import { ingestUrl, refreshAllMaterials } from "@/lib/youtube.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/radar")({

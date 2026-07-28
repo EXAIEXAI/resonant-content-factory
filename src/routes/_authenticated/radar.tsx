@@ -23,6 +23,7 @@ export const Route = createFileRoute("/_authenticated/radar")({
 function RadarPage() {
   const qc = useQueryClient();
   const ingest = useServerFn(ingestUrl);
+  const refreshAll = useServerFn(refreshAllMaterials);
 
   const { data: channels } = useQuery({
     queryKey: ["channels"],

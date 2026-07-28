@@ -1,5 +1,6 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,16 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useState } from "react";
-import { Plus, Calendar, Pencil, Trash2 } from "lucide-react";
-import { pickTopParetoPerChannel } from "@/lib/scoring";
+import { Calendar, Pencil, Trash2, RefreshCw } from "lucide-react";
+import { buildWeeklyDigest } from "@/lib/digests.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/digests")({
   head: () => ({ meta: [{ title: "Дайджесты · Контент-завод" }] }),
-  beforeLoad: () => { throw redirect({ to: "/" }); },
   component: DigestsPage,
 });
 

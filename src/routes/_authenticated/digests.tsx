@@ -73,7 +73,6 @@ function DigestsPage() {
     mutationFn: async (d: Digest) => {
       const { error } = await supabase.from("digests").update({
         title: d.title,
-        category: d.category,
         status: d.status,
         scheduled_at: d.scheduled_at || null,
       }).eq("id", d.id);

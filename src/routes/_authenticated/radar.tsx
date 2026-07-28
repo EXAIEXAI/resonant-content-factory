@@ -142,7 +142,7 @@ function MaterialCard({ m }: { m: any }) {
       <CardHeader className="flex flex-row items-start justify-between space-y-0">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            {m.is_manual && <Badge variant="secondary">Материал</Badge>}
+            
             {m.is_manual && <Badge variant="outline" className="border-accent text-accent-foreground bg-accent/20"><Sparkles className="w-3 h-3 mr-1" />Ручной</Badge>}
             {m.channel?.title && <span className="text-xs text-muted-foreground">· {m.channel.title}</span>}
           </div>

@@ -82,10 +82,16 @@ export const ingestUrl = createServerFn({ method: "POST" })
 
     const canonicalUrl = `https://www.youtube.com/watch?v=${videoId}`;
     const { fetchVideoStats } = await import("./youtube-stats.server");
+    const { data: settings } = await supabase
+      .from("integration_settings")
+      .select("youtube_api_key")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    const apiKey = settings?.youtube_api_key || process.env.YOUTUBE_API_KEY || null;
     const [meta, segments, stats] = await Promise.all([
       fetchOembed(videoId),
       fetchTranscript(videoId),
-      fetchVideoStats(videoId),
+      fetchVideoStats(videoId, apiKey),
     ]);
     const transcriptText = segments.map(s => s.text).join(" ");
 
@@ -118,6 +124,59 @@ export const ingestUrl = createServerFn({ method: "POST" })
       analyzeMaterialById(supabase, row.id).catch(e => console.error("auto-analyze failed", e));
     }
     return { id: row.id, source_type: "youtube_manual" as const, hasTranscript: segments.length > 0 };
+  });
+
+/** Refresh stats for all YouTube materials and analyze any without a summary. */
+export const refreshAllMaterials = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data: settings } = await supabase
+      .from("integration_settings")
+      .select("youtube_api_key")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const apiKey = settings?.youtube_api_key || process.env.YOUTUBE_API_KEY || null;
+
+    const { data: materials } = await supabase
+      .from("raw_materials")
+      .select("id, external_id, raw_transcript, summary, source_type");
+    const list = materials ?? [];
+    const withVideoId = list.filter(m => !!m.external_id);
+
+    let statsUpdated = 0;
+    if (withVideoId.length) {
+      const { fetchVideoStatsBatch } = await import("./youtube-stats.server");
+      const map = await fetchVideoStatsBatch(
+        withVideoId.map(m => m.external_id as string),
+        apiKey,
+      );
+      for (const m of withVideoId) {
+        const s = map.get(m.external_id as string);
+        if (!s) continue;
+        await supabase
+          .from("raw_materials")
+          .update({ views: s.views, reactions: s.likes, comments_count: s.comments })
+          .eq("id", m.id);
+        statsUpdated++;
+      }
+    }
+
+    // Analyze anything that still lacks a summary but has a transcript.
+    const toAnalyze = list.filter(m => !m.summary && (m.raw_transcript ?? "").length > 40);
+    let analyzed = 0;
+    if (toAnalyze.length) {
+      const { analyzeMaterialById } = await import("./analyze.server");
+      for (const m of toAnalyze) {
+        try {
+          await analyzeMaterialById(supabase, m.id);
+          analyzed++;
+        } catch (e) {
+          console.error("analyze failed", m.id, e);
+        }
+      }
+    }
+    return { statsUpdated, analyzed, apiKeyUsed: !!apiKey };
   });
 
 export const getIntegrationSettings = createServerFn({ method: "GET" })

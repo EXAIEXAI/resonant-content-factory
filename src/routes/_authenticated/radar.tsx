@@ -142,14 +142,14 @@ function EmptyRadar() {
 }
 
 function MaterialCard({ m }: { m: any }) {
-  const isChef = m.source_type === "youtube_playlist";
+  const fromPlaylist = m.source_type === "youtube_playlist";
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between space-y-0">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            {isChef && <Badge className="bg-primary text-primary-foreground"><Crown className="w-3 h-3 mr-1" />Выбор Шефа</Badge>}
-            {m.is_manual && !isChef && <Badge variant="outline" className="border-accent text-accent-foreground bg-accent/20"><Sparkles className="w-3 h-3 mr-1" />Ручной</Badge>}
+            {fromPlaylist && <Badge className="bg-primary text-primary-foreground"><Crown className="w-3 h-3 mr-1" />Из плейлиста</Badge>}
+            {m.is_manual && !fromPlaylist && <Badge variant="outline" className="border-accent text-accent-foreground bg-accent/20"><Sparkles className="w-3 h-3 mr-1" />Ручной</Badge>}
             {m.channel_title && <span className="text-xs text-muted-foreground">· {m.channel_title}</span>}
             {!m.channel_title && m.channel?.title && <span className="text-xs text-muted-foreground">· {m.channel.title}</span>}
           </div>

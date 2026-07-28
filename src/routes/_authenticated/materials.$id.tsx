@@ -101,7 +101,7 @@ function MaterialPage() {
               href={m.url}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={(e) => { e.preventDefault(); window.open(m.url, "_blank", "noopener,noreferrer"); }}
+              onClick={(e) => { e.preventDefault(); if (m.url) window.open(m.url, "_blank", "noopener,noreferrer"); }}
             >
               <ExternalLink className="w-4 h-4 mr-2" />Открыть оригинал
             </a>

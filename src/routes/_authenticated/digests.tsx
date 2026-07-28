@@ -46,27 +46,16 @@ function DigestsPage() {
       ((await supabase.from("digests").select("*").order("scheduled_at", { ascending: false, nullsFirst: false })).data ?? []) as Digest[],
   });
 
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ title: "", scheduled_at: "" });
   const [editing, setEditing] = useState<Digest | null>(null);
+  const buildWeekly = useServerFn(buildWeeklyDigest);
 
   const build = useMutation({
-    mutationFn: async () => {
-      const { data: mats } = await supabase.from("raw_materials").select("*");
-      const top = pickTopParetoPerChannel(mats ?? [], 3);
-      const manual = (mats ?? []).filter(m => m.is_manual);
-      const material_ids = [...top.map(t => t.id), ...manual.map(m => m.id)];
-      const { error } = await supabase.from("digests").insert({
-        title: form.title || `Дайджест — ${new Date().toLocaleDateString("ru")}`,
-        scheduled_at: form.scheduled_at || null,
-        status: form.scheduled_at ? "scheduled" : "draft",
-        material_ids,
-        content_json: { top: top.length, manual: manual.length },
-      });
-      if (error) throw error;
-      await supabase.from("raw_materials").update({ status: "in_digest" }).in("id", top.map(t => t.id));
+    mutationFn: async () => buildWeekly(),
+    onSuccess: (r: any) => {
+      if (r?.created) toast.success(`Дайджест собран: ${r.count} материалов`);
+      else toast.info("За последние 7 дней нет материалов");
+      qc.invalidateQueries({ queryKey: ["digests"] });
     },
-    onSuccess: () => { toast.success("Дайджест собран"); qc.invalidateQueries({ queryKey: ["digests"] }); setOpen(false); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -97,19 +86,12 @@ function DigestsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-serif text-4xl">Дайджесты</h1>
-          <p className="text-muted-foreground mt-1">Еженедельные подборки лучших материалов с гибким календарём</p>
+          <p className="text-muted-foreground mt-1">Топ 20% материалов за последние 7 дней (минимум 3). Автоматически обновляется еженедельно.</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" />Собрать дайджест</Button></DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle className="font-serif">Новый дайджест</DialogTitle></DialogHeader>
-            <div className="space-y-3">
-              <div><Label>Название (опционально)</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></div>
-              <div><Label>Отправка (опционально)</Label><Input type="datetime-local" value={form.scheduled_at} onChange={e => setForm({ ...form, scheduled_at: e.target.value })} /></div>
-            </div>
-            <DialogFooter><Button onClick={() => build.mutate()} disabled={build.isPending}>Собрать</Button></DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => build.mutate()} disabled={build.isPending}>
+          <RefreshCw className={`w-4 h-4 mr-2 ${build.isPending ? "animate-spin" : ""}`} />
+          Собрать за неделю
+        </Button>
       </div>
 
       <div className="grid gap-4">

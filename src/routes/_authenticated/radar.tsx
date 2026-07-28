@@ -72,15 +72,27 @@ function RadarPage() {
 
   const recompute = useMutation({
     mutationFn: async () => {
+      // 1) Refresh real YouTube stats + analyze anything without a summary.
+      const r = await refreshAll();
+      // 2) Recompute scores from the latest numbers.
+      const { data: fresh } = await supabase.from("raw_materials").select("*");
       const chMap = new Map((channels ?? []).map(c => [c.id, c]));
-      const updates = (materials ?? []).map(m => {
+      await Promise.all((fresh ?? []).map(m => {
         const ch = m.channel_id ? chMap.get(m.channel_id) : null;
         const { score } = computeScore({ ...m, subscribers: ch?.subscribers ?? 1000 });
         return supabase.from("raw_materials").update({ engagement_score: score }).eq("id", m.id);
-      });
-      await Promise.all(updates);
+      }));
+      return r;
     },
-    onSuccess: () => { toast.success("Рейтинги пересчитаны"); qc.invalidateQueries({ queryKey: ["materials"] }); },
+    onSuccess: (r) => {
+      const parts: string[] = [];
+      if (r.statsUpdated) parts.push(`статистика: ${r.statsUpdated}`);
+      if (r.analyzed) parts.push(`проанализировано: ${r.analyzed}`);
+      if (!r.apiKeyUsed) parts.push("без API-ключа YouTube — цифры приблизительные");
+      toast.success(parts.length ? `Готово · ${parts.join(" · ")}` : "Рейтинги пересчитаны");
+      qc.invalidateQueries({ queryKey: ["materials"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   return (

@@ -158,12 +158,6 @@ function DigestsPage() {
           {editing && (
             <div className="space-y-3">
               <div><Label>Название</Label><Input value={editing.title} onChange={e => setEditing({ ...editing, title: e.target.value })} /></div>
-              <div><Label>Рубрика</Label>
-                <Select value={editing.category} onValueChange={v => setEditing({ ...editing, category: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
               <div><Label>Статус</Label>
                 <Select value={editing.status} onValueChange={v => setEditing({ ...editing, status: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>

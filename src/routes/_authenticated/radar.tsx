@@ -187,7 +187,7 @@ function MaterialCard({ m }: { m: any }) {
             <div className="rounded-md border bg-muted/30 p-3 space-y-3">
               <div className="text-xs text-muted-foreground">
                 Позиция <span className="font-medium text-foreground">#{m.rank}</span> из {m.total}.
-                {topFactor && <> Наибольший вклад — <span className="font-medium text-foreground">{topFactor.label.toLowerCase()}</span> (+{topFactor.contribution.toFixed(3)}).</>}
+                {topFactor && <> Наибольший вклад — <span className="font-medium text-foreground">{topFactor.label.toLowerCase()}</span> (+{Math.round(topFactor.contribution * 100)} баллов).</>}
               </div>
               <div className="space-y-2">
                 {factors.map(f => (
@@ -197,7 +197,7 @@ function MaterialCard({ m }: { m: any }) {
                         <span className="font-medium">{f.label}</span>
                         <span className="text-muted-foreground"> · вес {(f.weight * 100).toFixed(0)}% · {formatRaw(f.key, f.raw)}</span>
                       </div>
-                      <span className="font-mono">+{f.contribution.toFixed(3)}</span>
+                      <span className="font-mono">+{Math.round(f.contribution * 100)}</span>
                     </div>
                     <div className="h-1.5 rounded-full bg-border overflow-hidden">
                       <div className="h-full bg-primary" style={{ width: `${Math.round(f.normalized * 100)}%` }} />
@@ -207,8 +207,8 @@ function MaterialCard({ m }: { m: any }) {
                 ))}
               </div>
               <div className="flex items-center justify-between border-t pt-2 text-sm">
-                <span className="text-muted-foreground">Итоговый Score</span>
-                <span className="font-serif text-lg text-primary">{(m.computedScore ?? 0).toFixed(3)}</span>
+                <span className="text-muted-foreground">Итоговый рейтинг</span>
+                <span className="font-serif text-lg text-primary">{Math.round(m.computedScore ?? 0)} / 100</span>
               </div>
             </div>
           </CollapsibleContent>

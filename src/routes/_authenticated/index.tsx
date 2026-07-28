@@ -82,8 +82,7 @@ function Dashboard() {
               <Link key={r.id} to="/materials/$id" params={{ id: r.id }} className="block p-3 rounded-md border hover:border-primary/40 transition-colors">
                 <div className="text-sm font-medium line-clamp-1">{r.title}</div>
                 <div className="text-xs text-muted-foreground mt-1 flex gap-3">
-                  <span>{r.category}</span>
-                  <span>· Score {(r.engagement_score ?? 0).toFixed(2)}</span>
+                  <span>Score {(r.engagement_score ?? 0).toFixed(2)}</span>
                   <span>· {r.status}</span>
                 </div>
               </Link>

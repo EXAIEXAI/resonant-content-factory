@@ -6,8 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState, useMemo } from "react";
@@ -50,18 +48,18 @@ function RadarPage() {
   );
 
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({
-    title: "", url: "", raw_transcript: "", category: "Кадры", channel_id: "", views: 0, reactions: 0, comments_count: 0,
-  });
+  const [url, setUrl] = useState("");
 
   const addManual = useMutation({
     mutationFn: async () => {
+      const trimmed = url.trim();
+      if (!trimmed) throw new Error("Укажите ссылку");
       const payload = {
-        ...form,
-        channel_id: form.channel_id || null,
+        title: trimmed,
+        url: trimmed,
         is_manual: true,
         status: "found" as const,
-        engagement_score: computeScore(form).score,
+        engagement_score: 0,
       };
       const { error } = await supabase.from("raw_materials").insert(payload);
       if (error) throw error;
@@ -70,6 +68,7 @@ function RadarPage() {
       toast.success("Материал добавлен в приоритетную очередь");
       qc.invalidateQueries({ queryKey: ["materials"] });
       setOpen(false);
+      setUrl("");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -101,26 +100,7 @@ function RadarPage() {
             <DialogContent className="max-w-lg">
               <DialogHeader><DialogTitle className="font-serif">Приоритетная очередь</DialogTitle></DialogHeader>
               <div className="space-y-3">
-                <div><Label>Заголовок</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></div>
-                <div><Label>Ссылка</Label><Input value={form.url} onChange={e => setForm({ ...form, url: e.target.value })} /></div>
-                <div><Label>Рубрика</Label>
-                  <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{["Кадры","Аудит","РОП","Продажи","Общее"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div><Label>Канал (опционально)</Label>
-                  <Select value={form.channel_id} onValueChange={v => setForm({ ...form, channel_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                    <SelectContent>{(channels ?? []).map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div><Label>Транскрипт / Текст</Label><Textarea rows={5} value={form.raw_transcript} onChange={e => setForm({ ...form, raw_transcript: e.target.value })} /></div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div><Label>Просмотры</Label><Input type="number" value={form.views} onChange={e => setForm({ ...form, views: +e.target.value })} /></div>
-                  <div><Label>Реакции</Label><Input type="number" value={form.reactions} onChange={e => setForm({ ...form, reactions: +e.target.value })} /></div>
-                  <div><Label>Комментарии</Label><Input type="number" value={form.comments_count} onChange={e => setForm({ ...form, comments_count: +e.target.value })} /></div>
-                </div>
+                <div><Label>Ссылка</Label><Input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://..." autoFocus /></div>
               </div>
               <DialogFooter><Button onClick={() => addManual.mutate()} disabled={addManual.isPending}>Добавить</Button></DialogFooter>
             </DialogContent>
@@ -162,7 +142,7 @@ function MaterialCard({ m }: { m: any }) {
       <CardHeader className="flex flex-row items-start justify-between space-y-0">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <Badge variant="secondary">{m.category}</Badge>
+            
             {m.is_manual && <Badge variant="outline" className="border-accent text-accent-foreground bg-accent/20"><Sparkles className="w-3 h-3 mr-1" />Ручной</Badge>}
             {m.channel?.title && <span className="text-xs text-muted-foreground">· {m.channel.title}</span>}
           </div>

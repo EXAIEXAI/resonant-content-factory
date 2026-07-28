@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/digests")({
   component: DigestsPage,
 });
 
-const CATEGORIES = ["Кадры", "Аудит", "РОП", "Продажи", "Общее"];
+
 const STATUSES = ["draft", "scheduled", "sent", "archived"] as const;
 const STATUS_LABELS: Record<string, string> = {
   draft: "Черновик",
@@ -46,22 +46,21 @@ function DigestsPage() {
   });
 
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ title: "", category: "Кадры", scheduled_at: "" });
+  const [form, setForm] = useState({ title: "", scheduled_at: "" });
   const [editing, setEditing] = useState<Digest | null>(null);
 
   const build = useMutation({
     mutationFn: async () => {
-      const { data: mats } = await supabase.from("raw_materials").select("*").eq("category", form.category);
+      const { data: mats } = await supabase.from("raw_materials").select("*");
       const top = pickTopParetoPerChannel(mats ?? [], 3);
-      const { data: manual } = await supabase.from("raw_materials").select("*").eq("category", form.category).eq("is_manual", true);
-      const material_ids = [...top.map(t => t.id), ...(manual ?? []).map(m => m.id)];
+      const manual = (mats ?? []).filter(m => m.is_manual);
+      const material_ids = [...top.map(t => t.id), ...manual.map(m => m.id)];
       const { error } = await supabase.from("digests").insert({
-        title: form.title || `Дайджест «${form.category}» — ${new Date().toLocaleDateString("ru")}`,
-        category: form.category,
+        title: form.title || `Дайджест — ${new Date().toLocaleDateString("ru")}`,
         scheduled_at: form.scheduled_at || null,
         status: form.scheduled_at ? "scheduled" : "draft",
         material_ids,
-        content_json: { top: top.length, manual: (manual ?? []).length },
+        content_json: { top: top.length, manual: manual.length },
       });
       if (error) throw error;
       await supabase.from("raw_materials").update({ status: "in_digest" }).in("id", top.map(t => t.id));
@@ -74,7 +73,6 @@ function DigestsPage() {
     mutationFn: async (d: Digest) => {
       const { error } = await supabase.from("digests").update({
         title: d.title,
-        category: d.category,
         status: d.status,
         scheduled_at: d.scheduled_at || null,
       }).eq("id", d.id);
@@ -106,12 +104,6 @@ function DigestsPage() {
             <DialogHeader><DialogTitle className="font-serif">Новый дайджест</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div><Label>Название (опционально)</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></div>
-              <div><Label>Рубрика</Label>
-                <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
               <div><Label>Отправка (опционально)</Label><Input type="datetime-local" value={form.scheduled_at} onChange={e => setForm({ ...form, scheduled_at: e.target.value })} /></div>
             </div>
             <DialogFooter><Button onClick={() => build.mutate()} disabled={build.isPending}>Собрать</Button></DialogFooter>
@@ -126,7 +118,7 @@ function DigestsPage() {
               <div>
                 <CardTitle className="font-serif">{d.title}</CardTitle>
                 <div className="flex gap-2 mt-2 flex-wrap">
-                  <Badge variant="secondary">{d.category}</Badge>
+                  
                   <Badge variant={d.status === "sent" ? "default" : "outline"}>{STATUS_LABELS[d.status] ?? d.status}</Badge>
                   <Badge variant="outline">{(d.material_ids?.length ?? 0)} мат.</Badge>
                   {d.scheduled_at && (
@@ -157,7 +149,7 @@ function DigestsPage() {
             </CardHeader>
           </Card>
         ))}
-        {digests?.length === 0 && <Card><CardContent className="py-12 text-center text-muted-foreground">Соберите первый дайджест по одной из рубрик.</CardContent></Card>}
+        {digests?.length === 0 && <Card><CardContent className="py-12 text-center text-muted-foreground">Соберите первый дайджест из накопленных материалов.</CardContent></Card>}
       </div>
 
       <Dialog open={!!editing} onOpenChange={o => !o && setEditing(null)}>
@@ -166,12 +158,6 @@ function DigestsPage() {
           {editing && (
             <div className="space-y-3">
               <div><Label>Название</Label><Input value={editing.title} onChange={e => setEditing({ ...editing, title: e.target.value })} /></div>
-              <div><Label>Рубрика</Label>
-                <Select value={editing.category} onValueChange={v => setEditing({ ...editing, category: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
               <div><Label>Статус</Label>
                 <Select value={editing.status} onValueChange={v => setEditing({ ...editing, status: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>

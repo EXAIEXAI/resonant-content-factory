@@ -22,6 +22,7 @@ export const Route = createFileRoute("/_authenticated/radar")({
 
 function RadarPage() {
   const qc = useQueryClient();
+  const ingest = useServerFn(ingestUrl);
 
   const { data: channels } = useQuery({
     queryKey: ["channels"],
@@ -56,18 +57,16 @@ function RadarPage() {
     mutationFn: async () => {
       const trimmed = url.trim();
       if (!trimmed) throw new Error("Укажите ссылку");
-      const payload = {
-        title: trimmed,
-        url: trimmed,
-        is_manual: true,
-        status: "found" as const,
-        engagement_score: 0,
-      };
-      const { error } = await supabase.from("raw_materials").insert(payload);
-      if (error) throw error;
+      return ingest({ data: { url: trimmed } });
     },
-    onSuccess: () => {
-      toast.success("Материал добавлен в приоритетную очередь");
+    onSuccess: (r) => {
+      toast.success(
+        r.source_type === "youtube_manual"
+          ? r.hasTranscript
+            ? "YouTube-ролик добавлен с транскриптом"
+            : "YouTube-ролик добавлен (субтитры недоступны)"
+          : "Материал добавлен",
+      );
       qc.invalidateQueries({ queryKey: ["materials"] });
       setOpen(false);
       setUrl("");
@@ -100,11 +99,15 @@ function RadarPage() {
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" /> Ручной материал</Button></DialogTrigger>
             <DialogContent className="max-w-lg">
-              <DialogHeader><DialogTitle className="font-serif">Приоритетная очередь</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle className="font-serif">Добавить материал</DialogTitle></DialogHeader>
               <div className="space-y-3">
-                <div><Label>Ссылка</Label><Input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://..." autoFocus /></div>
+                <div>
+                  <Label>Ссылка</Label>
+                  <Input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://youtu.be/... или любой URL" autoFocus />
+                  <p className="text-xs text-muted-foreground mt-1">Для YouTube автоматически подтянутся название, автор и субтитры.</p>
+                </div>
               </div>
-              <DialogFooter><Button onClick={() => addManual.mutate()} disabled={addManual.isPending}>Добавить</Button></DialogFooter>
+              <DialogFooter><Button onClick={() => addManual.mutate()} disabled={addManual.isPending}>{addManual.isPending ? "Загружаю..." : "Добавить"}</Button></DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
@@ -139,14 +142,16 @@ function EmptyRadar() {
 }
 
 function MaterialCard({ m }: { m: any }) {
+  const isChef = m.source_type === "youtube_playlist";
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between space-y-0">
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            
-            {m.is_manual && <Badge variant="outline" className="border-accent text-accent-foreground bg-accent/20"><Sparkles className="w-3 h-3 mr-1" />Ручной</Badge>}
-            {m.channel?.title && <span className="text-xs text-muted-foreground">· {m.channel.title}</span>}
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            {isChef && <Badge className="bg-primary text-primary-foreground"><Crown className="w-3 h-3 mr-1" />Выбор Шефа</Badge>}
+            {m.is_manual && !isChef && <Badge variant="outline" className="border-accent text-accent-foreground bg-accent/20"><Sparkles className="w-3 h-3 mr-1" />Ручной</Badge>}
+            {m.channel_title && <span className="text-xs text-muted-foreground">· {m.channel_title}</span>}
+            {!m.channel_title && m.channel?.title && <span className="text-xs text-muted-foreground">· {m.channel.title}</span>}
           </div>
           <CardTitle className="text-base leading-snug">
             <Link to="/materials/$id" params={{ id: m.id }} className="hover:text-primary">{m.title}</Link>
@@ -157,14 +162,17 @@ function MaterialCard({ m }: { m: any }) {
           <div className="text-xs text-muted-foreground">Score</div>
         </div>
       </CardHeader>
-      <CardContent className="flex items-center justify-between text-xs text-muted-foreground">
-        <div className="flex gap-3">
+      <CardContent className="flex items-center justify-between text-xs text-muted-foreground gap-3 flex-wrap">
+        <div className="flex gap-3 flex-wrap">
           <span>Охват: {m.breakdown?.reach ?? "—"}</span>
           <span>Глубина: {m.breakdown?.depth ?? "—"}</span>
           <span>Темп: {m.breakdown?.velocity ?? "—"}</span>
           <span>Свежесть: {m.breakdown?.age ?? "—"}</span>
         </div>
-        {m.url && <a href={m.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-primary"><ExternalLink className="w-3 h-3" />Оригинал</a>}
+        <div className="flex items-center gap-3">
+          {m.drive_file_url && <a href={m.drive_file_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-primary"><FileText className="w-3 h-3" />Google Диск</a>}
+          {m.url && <a href={m.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-primary"><ExternalLink className="w-3 h-3" />Оригинал</a>}
+        </div>
       </CardContent>
     </Card>
   );

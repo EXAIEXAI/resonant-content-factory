@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/digests")({
   component: DigestsPage,
 });
 
-const CATEGORIES = ["Кадры", "Аудит", "РОП", "Продажи", "Общее"];
+
 const STATUSES = ["draft", "scheduled", "sent", "archived"] as const;
 const STATUS_LABELS: Record<string, string> = {
   draft: "Черновик",

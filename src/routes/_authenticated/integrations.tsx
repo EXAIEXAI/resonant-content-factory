@@ -55,13 +55,22 @@ function IntegrationsPage() {
     },
   });
 
-  const webhookUrl = typeof window !== "undefined" ? `${window.location.origin}/api/public/hooks/youtube-playlist` : "";
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const webhookUrl = origin ? `${origin}/api/public/hooks/youtube-playlist` : "";
+  const channelsUrl = origin ? `${origin}/api/public/hooks/youtube-channels` : "";
   const secret = settings?.webhook_secret ?? "";
 
   const gasCode = useMemo(
-    () => buildGasScript({ playlistId: playlist || "PLAYLIST_ID", folderId: folder || "DRIVE_FOLDER_ID", webhookUrl, secret: secret || "WEBHOOK_SECRET" }),
-    [playlist, folder, webhookUrl, secret],
+    () => buildGasScript({
+      playlistId: playlist || "PLAYLIST_ID",
+      folderId: folder || "DRIVE_FOLDER_ID",
+      webhookUrl,
+      channelsUrl,
+      secret: secret || "WEBHOOK_SECRET",
+    }),
+    [playlist, folder, webhookUrl, channelsUrl, secret],
   );
+
 
   const copy = async (text: string, label = "Скопировано") => {
     await navigator.clipboard.writeText(text);

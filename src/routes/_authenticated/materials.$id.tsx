@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState } from "react";
 import { Sparkles, ArrowLeft, MessageSquare, ThumbsUp, ThumbsDown, HelpCircle, Quote } from "lucide-react";
 import { analyzeMaterial, generateContent } from "@/lib/ai.functions";
+import { formatTimecode as formatTC } from "@/lib/youtube";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/materials/$id")({

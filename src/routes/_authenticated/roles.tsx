@@ -31,77 +31,58 @@ function RolesPage() {
     queryFn: async () => (await supabase.from("user_roles").select("*")).data ?? [],
   });
 
-  const [pick, setPick] = useState<{ userId: string; role: string }>({ userId: "", role: "" });
-
-  const assign = useMutation({
-    mutationFn: async () => {
-      if (!pick.userId || !pick.role) return;
-      const { error } = await supabase.from("user_roles").insert({ user_id: pick.userId, role: pick.role as any });
+  const change = useMutation({
+    mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
+      const { error: delErr } = await supabase.from("user_roles").delete().eq("user_id", userId);
+      if (delErr) throw delErr;
+      const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: role as any });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Роль назначена"); qc.invalidateQueries({ queryKey: ["roles-all"] }); },
+    onSuccess: () => { toast.success("Роль обновлена"); qc.invalidateQueries({ queryKey: ["roles-all"] }); },
     onError: (e: Error) => toast.error(e.message + " (нужны права администратора)"),
   });
 
-  const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("user_roles").delete().eq("id", id);
+  const clear = useMutation({
+    mutationFn: async (userId: string) => {
+      const { error } = await supabase.from("user_roles").delete().eq("user_id", userId);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["roles-all"] }),
+    onSuccess: () => { toast.success("Роль снята"); qc.invalidateQueries({ queryKey: ["roles-all"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const byUser = new Map<string, any[]>();
-  (roles ?? []).forEach(r => {
-    if (!byUser.has(r.user_id)) byUser.set(r.user_id, []);
-    byUser.get(r.user_id)!.push(r);
-  });
+  const roleByUser = new Map<string, string>();
+  (roles ?? []).forEach(r => { roleByUser.set(r.user_id, r.role); });
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-serif text-4xl">Роли и права</h1>
-        <p className="text-muted-foreground mt-1">RBAC: Владелец продукта, Эксперт, Редактор, Администратор</p>
+        <p className="text-muted-foreground mt-1">У каждого пользователя может быть только одна роль</p>
       </div>
 
-      <Card>
-        <CardHeader><CardTitle className="font-serif">Назначить роль</CardTitle></CardHeader>
-        <CardContent className="flex gap-2 flex-wrap items-end">
-          <div className="flex-1 min-w-[200px]">
-            <Select value={pick.userId} onValueChange={v => setPick({ ...pick, userId: v })}>
-              <SelectTrigger><SelectValue placeholder="Пользователь" /></SelectTrigger>
-              <SelectContent>{(profiles ?? []).map(p => <SelectItem key={p.id} value={p.id}>{p.full_name || p.email}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div className="flex-1 min-w-[200px]">
-            <Select value={pick.role} onValueChange={v => setPick({ ...pick, role: v })}>
-              <SelectTrigger><SelectValue placeholder="Роль" /></SelectTrigger>
-              <SelectContent>{Object.entries(roleLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <Button onClick={() => assign.mutate()} disabled={!pick.userId || !pick.role}>Назначить</Button>
-        </CardContent>
-      </Card>
-
       <div className="grid gap-3">
-        {(profiles ?? []).map(p => (
-          <Card key={p.id}>
-            <CardContent className="py-4 flex items-center justify-between">
-              <div>
-                <div className="font-medium">{p.full_name || p.email}</div>
-                <div className="text-xs text-muted-foreground">{p.email}</div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {(byUser.get(p.id) ?? []).map(r => (
-                  <Badge key={r.id} variant="secondary" className="cursor-pointer" onClick={() => remove.mutate(r.id)}>
-                    {roleLabels[r.role]} ×
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        {(profiles ?? []).map(p => {
+          const current = roleByUser.get(p.id) ?? "";
+          return (
+            <Card key={p.id}>
+              <CardContent className="py-4 flex items-center justify-between gap-4 flex-wrap">
+                <div className="min-w-0">
+                  <div className="font-medium">{p.full_name || p.email}</div>
+                  <div className="text-xs text-muted-foreground">{p.email}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {current && <Badge variant="secondary">{roleLabels[current]}</Badge>}
+                  <Select value={current} onValueChange={v => change.mutate({ userId: p.id, role: v })}>
+                    <SelectTrigger className="w-[220px]"><SelectValue placeholder="Выбрать роль" /></SelectTrigger>
+                    <SelectContent>{Object.entries(roleLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+                  </Select>
+                  {current && <Button variant="ghost" size="sm" onClick={() => clear.mutate(p.id)}>Снять</Button>}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

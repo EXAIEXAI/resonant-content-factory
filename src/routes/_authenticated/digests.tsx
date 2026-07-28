@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/digests")({
   head: () => ({ meta: [{ title: "Дайджесты · Контент-завод" }] }),
+  beforeLoad: () => { throw redirect({ to: "/" }); },
   component: DigestsPage,
 });
 

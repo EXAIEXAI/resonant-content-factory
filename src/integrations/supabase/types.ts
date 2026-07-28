@@ -14,16 +14,324 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      channels: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          id: string
+          platform: string
+          subscribers: number | null
+          title: string
+          url: string
+          weight_factors: Json
+        }
+        Insert: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          id?: string
+          platform: string
+          subscribers?: number | null
+          title: string
+          url: string
+          weight_factors?: Json
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          id?: string
+          platform?: string
+          subscribers?: number | null
+          title?: string
+          url?: string
+          weight_factors?: Json
+        }
+        Relationships: []
+      }
+      content_outputs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          edited_text: string | null
+          format: string
+          generated_text: string | null
+          id: string
+          material_id: string | null
+          status: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          edited_text?: string | null
+          format: string
+          generated_text?: string | null
+          id?: string
+          material_id?: string | null
+          status?: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          edited_text?: string | null
+          format?: string
+          generated_text?: string | null
+          id?: string
+          material_id?: string | null
+          status?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_outputs_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "raw_materials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      digests: {
+        Row: {
+          category: string
+          content_json: Json | null
+          created_at: string
+          created_by: string | null
+          id: string
+          material_ids: string[] | null
+          scheduled_at: string | null
+          status: string
+          title: string
+        }
+        Insert: {
+          category?: string
+          content_json?: Json | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          material_ids?: string[] | null
+          scheduled_at?: string | null
+          status?: string
+          title: string
+        }
+        Update: {
+          category?: string
+          content_json?: Json | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          material_ids?: string[] | null
+          scheduled_at?: string | null
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      expert_positions: {
+        Row: {
+          audio_url: string | null
+          created_at: string
+          expert_id: string | null
+          id: string
+          linked_thesis: string | null
+          material_id: string
+          reaction_type: string | null
+          timecode: string | null
+          transcript: string | null
+        }
+        Insert: {
+          audio_url?: string | null
+          created_at?: string
+          expert_id?: string | null
+          id?: string
+          linked_thesis?: string | null
+          material_id: string
+          reaction_type?: string | null
+          timecode?: string | null
+          transcript?: string | null
+        }
+        Update: {
+          audio_url?: string | null
+          created_at?: string
+          expert_id?: string | null
+          id?: string
+          linked_thesis?: string | null
+          material_id?: string
+          reaction_type?: string | null
+          timecode?: string | null
+          transcript?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expert_positions_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "raw_materials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      raw_materials: {
+        Row: {
+          added_by: string | null
+          category: string | null
+          channel_id: string | null
+          comments_count: number | null
+          created_at: string
+          engagement_score: number | null
+          external_id: string | null
+          id: string
+          is_manual: boolean
+          key_points: Json | null
+          published_at: string | null
+          raw_transcript: string | null
+          reactions: number | null
+          status: string
+          summary: string | null
+          title: string
+          url: string | null
+          views: number | null
+        }
+        Insert: {
+          added_by?: string | null
+          category?: string | null
+          channel_id?: string | null
+          comments_count?: number | null
+          created_at?: string
+          engagement_score?: number | null
+          external_id?: string | null
+          id?: string
+          is_manual?: boolean
+          key_points?: Json | null
+          published_at?: string | null
+          raw_transcript?: string | null
+          reactions?: number | null
+          status?: string
+          summary?: string | null
+          title: string
+          url?: string | null
+          views?: number | null
+        }
+        Update: {
+          added_by?: string | null
+          category?: string | null
+          channel_id?: string | null
+          comments_count?: number | null
+          created_at?: string
+          engagement_score?: number | null
+          external_id?: string | null
+          id?: string
+          is_manual?: boolean
+          key_points?: Json | null
+          published_at?: string | null
+          raw_transcript?: string | null
+          reactions?: number | null
+          status?: string
+          summary?: string | null
+          title?: string
+          url?: string | null
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raw_materials_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      style_templates: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          name: string
+          prompt_body: string | null
+          rules_json: Json | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind?: string
+          name: string
+          prompt_body?: string | null
+          rules_json?: Json | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          name?: string
+          prompt_body?: string | null
+          rules_json?: Json | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "product_owner" | "expert" | "editor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +458,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "product_owner", "expert", "editor"],
+    },
   },
 } as const

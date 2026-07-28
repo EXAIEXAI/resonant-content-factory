@@ -275,6 +275,14 @@ function OutputEditor({ output }: { output: any }) {
     onSuccess: () => { toast.success("Сохранено"); qc.invalidateQueries({ queryKey: ["outputs", output.material_id] }); },
     onError: (e: Error) => toast.error(e.message),
   });
+  const remove = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("content_outputs").delete().eq("id", output.id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Удалено"); qc.invalidateQueries({ queryKey: ["outputs", output.material_id] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
   return (
     <div className="space-y-3 mt-3">
       <Textarea rows={16} value={text} onChange={e => setText(e.target.value)} className="font-mono text-sm" />
@@ -290,6 +298,15 @@ function OutputEditor({ output }: { output: any }) {
           </SelectContent>
         </Select>
         <Button onClick={() => save.mutate()} disabled={save.isPending}>Сохранить</Button>
+        <Button
+          variant="destructive"
+          size="icon"
+          onClick={() => { if (confirm("Удалить этот файл?")) remove.mutate(); }}
+          disabled={remove.isPending}
+          className="ml-auto"
+        >
+          <Trash2 className="w-4 h-4" />
+        </Button>
       </div>
     </div>
   );

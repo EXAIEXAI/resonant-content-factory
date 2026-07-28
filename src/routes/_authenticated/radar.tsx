@@ -184,7 +184,7 @@ function MaterialCard({ m }: { m: any }) {
                 href={m.drive_file_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(m.drive_file_url, "_blank", "noopener,noreferrer"); }}
+                onClick={(e) => e.stopPropagation()}
                 className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border hover:bg-accent hover:text-accent-foreground"
               >
                 <FileText className="w-3 h-3" />Google Диск
@@ -195,7 +195,7 @@ function MaterialCard({ m }: { m: any }) {
                 href={m.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(m.url, "_blank", "noopener,noreferrer"); }}
+                onClick={(e) => e.stopPropagation()}
                 className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
               >
                 <ExternalLink className="w-3 h-3" />Открыть оригинал

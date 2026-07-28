@@ -163,7 +163,7 @@ export const refreshAllMaterials = createServerFn({ method: "POST" })
     }
 
     // Analyze anything that still lacks a summary but has a transcript.
-    const toAnalyze = list.filter(m => !m.summary && (m.raw_transcript ?? "").length > 40);
+    const toAnalyze = list.filter(m => !m.summary);
     let analyzed = 0;
     if (toAnalyze.length) {
       const { analyzeMaterialById } = await import("./analyze.server");

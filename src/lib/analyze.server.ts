@@ -26,11 +26,17 @@ async function callLLM(system: string, user: string): Promise<string> {
 export async function analyzeMaterialById(supabase: SupabaseClient<any>, materialId: string): Promise<void> {
   const { data: m } = await supabase.from("raw_materials").select("*").eq("id", materialId).maybeSingle();
   if (!m) return;
-  const source = `Заголовок: ${m.title}\nКанал: ${m.channel_title ?? ""}\n\n${m.raw_transcript ?? ""}`.trim();
-  if (!source || source.length < 40) return;
-  const prompt = `Проанализируй материал и верни строго JSON вида:
+  const hasTranscript = (m.raw_transcript ?? "").trim().length >= 40;
+  const source = hasTranscript
+    ? `Заголовок: ${m.title}\nКанал: ${m.channel_title ?? ""}\n\nТранскрипт:\n${m.raw_transcript}`
+    : `Заголовок: ${m.title}\nКанал: ${m.channel_title ?? ""}\nURL: ${m.url ?? ""}`;
+  const prompt = hasTranscript
+    ? `Проанализируй материал и верни строго JSON вида:
 {"summary":"3-5 ключевых мыслей в 1 абзаце — о чём материал и что в нём содержится","key_points":[{"thesis":"тезис","timecode":"HH:MM:SS или null","quote":"короткая цитата"}]}
-Материал:\n${source.slice(0, 12000)}`;
+Материал:\n${source.slice(0, 12000)}`
+    : `Транскрипта нет. По заголовку и названию канала сформулируй короткое (1-2 предложения) предположение, о чём этот ролик и какая от него польза зрителю. Верни строго JSON:
+{"summary":"1-2 предложения","key_points":[]}
+Материал:\n${source}`;
   let parsed: { summary: string; key_points: unknown[] } = { summary: "", key_points: [] };
   try {
     const raw = await callLLM(

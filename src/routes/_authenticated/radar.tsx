@@ -48,18 +48,18 @@ function RadarPage() {
   );
 
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({
-    title: "", url: "", raw_transcript: "", category: "Кадры", channel_id: "", views: 0, reactions: 0, comments_count: 0,
-  });
+  const [url, setUrl] = useState("");
 
   const addManual = useMutation({
     mutationFn: async () => {
+      const trimmed = url.trim();
+      if (!trimmed) throw new Error("Укажите ссылку");
       const payload = {
-        ...form,
-        channel_id: form.channel_id || null,
+        title: trimmed,
+        url: trimmed,
         is_manual: true,
         status: "found" as const,
-        engagement_score: computeScore(form).score,
+        engagement_score: 0,
       };
       const { error } = await supabase.from("raw_materials").insert(payload);
       if (error) throw error;
@@ -68,6 +68,7 @@ function RadarPage() {
       toast.success("Материал добавлен в приоритетную очередь");
       qc.invalidateQueries({ queryKey: ["materials"] });
       setOpen(false);
+      setUrl("");
     },
     onError: (e: Error) => toast.error(e.message),
   });

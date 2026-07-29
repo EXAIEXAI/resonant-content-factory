@@ -148,13 +148,14 @@ function MaterialCard({ m }: { m: any }) {
   const [open, setOpen] = useState(false);
   const factors: ScoreFactor[] = m.factors ?? [];
   const topFactor = factors.slice().sort((a, b) => b.contribution - a.contribution)[0];
+  const originalUrl = getOriginalUrl(m);
   return (
     <Card>
       <CardHeader className="flex flex-row items-start gap-4 space-y-0">
-        {m.thumbnail_url && (
+        {m.thumbnail_url && originalUrl && (
           <a
-            href={m.url || "#"}
-            target="_blank"
+            href={originalUrl}
+            target="_top"
             rel="noopener noreferrer"
             className="shrink-0 block w-40 aspect-video rounded-md overflow-hidden bg-muted"
           >
@@ -200,10 +201,10 @@ function MaterialCard({ m }: { m: any }) {
                 <FileText className="w-3 h-3" />Google Диск
               </a>
             )}
-            {m.url && (
+            {originalUrl && (
               <a
-                href={m.url}
-                target="_blank"
+                href={originalUrl}
+                target="_top"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer"
@@ -254,4 +255,12 @@ function MaterialCard({ m }: { m: any }) {
       </CardContent>
     </Card>
   );
+}
+
+function getOriginalUrl(m: { external_id?: string | null; url?: string | null }): string | null {
+  if (m.external_id && /^[a-zA-Z0-9_-]{11}$/.test(m.external_id)) {
+    return `https://www.youtube.com/watch?v=${m.external_id}`;
+  }
+  if (m.url && /^https?:\/\//i.test(m.url)) return m.url;
+  return null;
 }

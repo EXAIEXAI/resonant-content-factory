@@ -118,7 +118,7 @@ function IntegrationsPage() {
             />
             <p className="text-xs text-muted-foreground mt-1">
               Нужен для получения реальных просмотров, лайков и комментариев при добавлении и пересчёте роликов.
-              Получить: <a className="underline" href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer">console.cloud.google.com</a> → создать проект → «Enable APIs» → включить <b>YouTube Data API v3</b> → «Credentials» → «Create credentials» → «API key». Ключ хранится только у вас.
+              Получить: <a className="underline" href="https://console.developers.google.com/apis/api/youtube.googleapis.com/credentials" target="_top" rel="noreferrer">Google API Console</a> → создать проект → включить <b>YouTube Data API v3</b> → «Credentials» → «Create credentials» → «API key». Ключ хранится только у вас.
             </p>
           </div>
           <Button onClick={() => saveM.mutate()} disabled={saveM.isPending}>Сохранить</Button>
@@ -136,7 +136,7 @@ function IntegrationsPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <ol className="text-sm space-y-1 list-decimal ml-5">
-            <li>Откройте <a className="underline" href="https://script.google.com/home/my" target="_blank" rel="noreferrer">script.google.com</a> → «Новый проект».</li>
+            <li>Откройте <a className="underline" href="https://script.google.com/home/my" target="_top" rel="noreferrer">script.google.com</a> → «Новый проект».</li>
             <li>Вставьте код ниже и сохраните проект.</li>
             <li>Слева «Службы» (Services) → добавьте <b>YouTube Data API v3</b>.</li>
             <li>Запустите функцию <code>syncAll()</code> вручную один раз и подтвердите доступ к YouTube и Google Диску.</li>

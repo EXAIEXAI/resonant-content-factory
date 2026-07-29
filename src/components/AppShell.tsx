@@ -1,8 +1,9 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Radio, Rss, FileStack, Kanban, BookOpen, Users, LogOut, Factory, Lock, Plug, Menu, X } from "lucide-react";
+import { LayoutDashboard, Radio, Rss, FileStack, Kanban, BookOpen, Users, LogOut, Lock, Plug, Menu, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState, type ReactNode } from "react";
+import logoAsset from "@/assets/logo.png.asset.json";
 
 const nav = [
   { to: "/", label: "Дашборд", icon: LayoutDashboard },

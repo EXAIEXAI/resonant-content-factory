@@ -96,16 +96,14 @@ function MaterialPage() {
           <h1 className="font-serif text-3xl">{m.title}</h1>
         </div>
         {m.url && (
-          <Button asChild variant="outline" size="sm" className="shrink-0">
-            <a
-              href={m.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => { e.preventDefault(); if (m.url) window.open(m.url, "_blank", "noopener,noreferrer"); }}
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />Открыть оригинал
-            </a>
-          </Button>
+          <a
+            href={m.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 h-9 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+          >
+            <ExternalLink className="w-4 h-4" />Открыть оригинал
+          </a>
         )}
       </div>
 

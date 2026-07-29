@@ -156,7 +156,6 @@ function MaterialCard({ m }: { m: any }) {
             href={m.url || "#"}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={(e) => { if (m.url) { e.preventDefault(); window.open(m.url, "_blank", "noopener,noreferrer"); } }}
             className="shrink-0 block w-40 aspect-video rounded-md overflow-hidden bg-muted"
           >
             <img src={m.thumbnail_url} alt="" className="w-full h-full object-cover" loading="lazy" />
@@ -206,7 +205,7 @@ function MaterialCard({ m }: { m: any }) {
                 href={m.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(m.url, "_blank", "noopener,noreferrer"); }}
+                onClick={(e) => e.stopPropagation()}
                 className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer"
               >
                 <ExternalLink className="w-3 h-3" />Открыть оригинал

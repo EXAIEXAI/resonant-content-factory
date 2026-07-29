@@ -31,8 +31,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     <>
       <div className="px-5 py-5 border-b border-sidebar-border flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-9 h-9 shrink-0 rounded-md bg-sidebar-primary text-sidebar-primary-foreground flex items-center justify-center">
-            <Factory className="w-5 h-5" />
+          <div className="w-9 h-9 shrink-0 rounded-md bg-white flex items-center justify-center overflow-hidden">
+            <img src={logoAsset.url} alt="Контент-завод" className="w-8 h-8 object-contain" />
           </div>
           <div className="min-w-0">
             <div className="font-serif text-lg leading-none truncate">Контент-завод</div>

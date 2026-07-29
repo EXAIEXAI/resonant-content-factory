@@ -136,30 +136,6 @@ function IntegrationsPage() {
       </Card>
 
 
-      <Card>
-        <CardHeader><CardTitle className="font-serif">3. Вебхук приложения</CardTitle></CardHeader>
-        <CardContent className="space-y-3">
-          <div>
-            <Label>URL (метод POST)</Label>
-            <div className="flex gap-2 mt-1">
-              <Input value={webhookUrl} readOnly className="font-mono text-xs" />
-              <Button variant="outline" size="icon" onClick={() => copy(webhookUrl)}><Copy className="w-4 h-4" /></Button>
-            </div>
-          </div>
-          <div>
-            <Label>Секрет (заголовок <code>x-webhook-secret</code>)</Label>
-            <div className="flex gap-2 mt-1">
-              <Input value={secret} readOnly className="font-mono text-xs" />
-              <Button variant="outline" size="icon" onClick={() => copy(secret)}><Copy className="w-4 h-4" /></Button>
-              <Button variant="outline" size="icon" onClick={() => rotateM.mutate()} disabled={rotateM.isPending} title="Сгенерировать новый"><RefreshCcw className="w-4 h-4" /></Button>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Секрет проверяется на сервере при каждом POST. При ротации обновите константу в GAS-скрипте.</p>
-          </div>
-          <div className="text-xs text-muted-foreground">
-            Последняя синхронизация: {settings?.last_sync_at ? new Date(settings.last_sync_at).toLocaleString("ru-RU") : "ещё не было"}
-          </div>
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader>

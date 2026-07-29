@@ -77,7 +77,7 @@ function IntegrationsPage() {
         <p className="text-muted-foreground mt-1">
           Автоматический сбор роликов из YouTube через ваш Google-аккаунт (Google Apps Script).
           Скрипт раз в 15 минут забирает новые ролики <b>из плейлиста</b> (если указан) и <b>из всех YouTube-каналов</b>,
-          добавленных в разделе «Источники». Ролики сохраняются в папку Google Диска и отправляются в приложение.
+          добавленных в разделе «Источники». Ролики сохраняются в папку Диска и отправляются в приложение.
           API-ключи с нашей стороны не требуются.
         </p>
       </div>
@@ -86,8 +86,8 @@ function IntegrationsPage() {
         <CardHeader><CardTitle className="font-serif">1. Что понадобится</CardTitle></CardHeader>
         <CardContent className="space-y-2 text-sm">
           <ul className="list-disc ml-5 space-y-1">
-            <li>Google-аккаунт с доступом к YouTube и Google Диску.</li>
-            <li>ID папки Google Диска (часть URL после <code>/folders/</code>) — туда GAS складывает JSON-файлы роликов.</li>
+            <li>Google-аккаунт с доступом к YouTube и Диску.</li>
+            <li>ID папки Диска (часть URL после <code>/folders/</code>) — туда GAS складывает JSON-файлы роликов.</li>
             <li><b>Опционально</b> — ID плейлиста YouTube (часть URL после <code>list=</code>), если хотите добавлять отдельные ролики через плейлист.</li>
             <li>Список каналов ведётся прямо в приложении: раздел <b>«Источники»</b> → «Добавить источник» → вставьте URL канала (<code>youtube.com/@handle</code> или <code>/channel/UC…</code>).</li>
           </ul>
@@ -99,7 +99,7 @@ function IntegrationsPage() {
         <CardHeader><CardTitle className="font-serif">2. Настройки</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label>Папка на Google Диске (ID) <span className="text-destructive">*</span></Label>
+            <Label>Папка на Диске (ID) <span className="text-destructive">*</span></Label>
             <Input value={folder} onChange={e => setFolder(e.target.value)} placeholder="1AbCdEf... — из URL папки" />
           </div>
           <div>
@@ -118,7 +118,7 @@ function IntegrationsPage() {
             />
             <p className="text-xs text-muted-foreground mt-1">
               Нужен для получения реальных просмотров, лайков и комментариев при добавлении и пересчёте роликов.
-              Создайте проект в Google Cloud, включите <b>YouTube Data API v3</b> и сгенерируйте «API key» в разделе Credentials. Ключ хранится только у вас.
+              Создайте проект в Google Cloud, включите <b>YouTube Data API v3</b> и сгенерируйте «API-ключ» в разделе «Учётные данные». Ключ хранится только у вас.
             </p>
           </div>
           <Button onClick={() => saveM.mutate()} disabled={saveM.isPending}>Сохранить</Button>

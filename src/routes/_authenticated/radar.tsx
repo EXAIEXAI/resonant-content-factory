@@ -156,7 +156,6 @@ function MaterialCard({ m }: { m: any }) {
             href={m.url || "#"}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={(e) => { if (m.url) { e.preventDefault(); window.open(m.url, "_blank", "noopener,noreferrer"); } }}
             className="shrink-0 block w-40 aspect-video rounded-md overflow-hidden bg-muted"
           >
             <img src={m.thumbnail_url} alt="" className="w-full h-full object-cover" loading="lazy" />

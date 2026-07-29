@@ -23,7 +23,6 @@ function IntegrationsPage() {
   const qc = useQueryClient();
   const load = useServerFn(getIntegrationSettings);
   const save = useServerFn(saveIntegrationSettings);
-  const rotate = useServerFn(rotateWebhookSecret);
 
   const { data: settings } = useQuery({ queryKey: ["integration_settings"], queryFn: () => load() });
 
@@ -47,14 +46,6 @@ function IntegrationsPage() {
       qc.invalidateQueries({ queryKey: ["integration_settings"] });
     },
     onError: (e: Error) => toast.error(e.message),
-  });
-
-  const rotateM = useMutation({
-    mutationFn: () => rotate(),
-    onSuccess: () => {
-      toast.success("Секрет обновлён");
-      qc.invalidateQueries({ queryKey: ["integration_settings"] });
-    },
   });
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";

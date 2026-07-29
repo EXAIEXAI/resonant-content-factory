@@ -81,6 +81,7 @@ function MaterialPage() {
   if (!m) return <div className="text-muted-foreground">Загрузка...</div>;
 
   const keyPoints = Array.isArray(m.key_points) ? m.key_points as any[] : [];
+  const originalUrl = getOriginalUrl(m);
 
   return (
     <div className="space-y-6">
@@ -95,10 +96,10 @@ function MaterialPage() {
           </div>
           <h1 className="font-serif text-3xl">{m.title}</h1>
         </div>
-        {m.url && (
+        {originalUrl && (
           <a
-            href={m.url}
-            target="_blank"
+            href={originalUrl}
+            target="_top"
             rel="noopener noreferrer"
             className="shrink-0 inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 h-9 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
           >
@@ -264,6 +265,14 @@ function MaterialPage() {
       </Card>
     </div>
   );
+}
+
+function getOriginalUrl(m: { external_id?: string | null; url?: string | null }): string | null {
+  if (m.external_id && /^[a-zA-Z0-9_-]{11}$/.test(m.external_id)) {
+    return `https://www.youtube.com/watch?v=${m.external_id}`;
+  }
+  if (m.url && /^https?:\/\//i.test(m.url)) return m.url;
+  return null;
 }
 
 function OutputEditor({ output }: { output: any }) {

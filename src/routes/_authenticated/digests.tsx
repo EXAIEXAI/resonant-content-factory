@@ -42,7 +42,7 @@ function DigestsPage() {
     enabled: allIds.length > 0,
     queryFn: async () => {
       const { data } = await supabase.from("raw_materials")
-        .select("id,title,url,summary,views,reactions,comments_count,engagement_score,channel_title,thumbnail_url")
+        .select("id,title,url,external_id,summary,views,reactions,comments_count,engagement_score,channel_title,thumbnail_url")
         .in("id", allIds);
       const map: Record<string, any> = {};
       (data ?? []).forEach((m: any) => { map[m.id] = m; });
@@ -140,6 +140,7 @@ function DigestsPage() {
                           if (!m) return (
                             <li key={mid} className="text-sm text-muted-foreground">#{idx + 1} — материал недоступен</li>
                           );
+                          const originalUrl = getOriginalUrl(m);
                           return (
                             <li key={mid} className="border rounded-md p-3 flex gap-3">
                               <div className="text-xs text-muted-foreground font-mono pt-1 w-6 shrink-0">#{idx + 1}</div>
@@ -157,8 +158,8 @@ function DigestsPage() {
                                   <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{(m.views ?? 0).toLocaleString("ru")}</span>
                                   <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3" />{(m.reactions ?? 0).toLocaleString("ru")}</span>
                                   <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3" />{(m.comments_count ?? 0).toLocaleString("ru")}</span>
-                                  {m.url && (
-                                    <a href={m.url} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex items-center gap-1 text-primary hover:underline">
+                                  {originalUrl && (
+                                    <a href={originalUrl} target="_top" rel="noopener noreferrer" className="ml-auto inline-flex items-center gap-1 text-primary hover:underline">
                                       <ExternalLink className="w-3 h-3" />Открыть оригинал
                                     </a>
                                   )}
@@ -194,4 +195,12 @@ function DigestsPage() {
       </Dialog>
     </div>
   );
+}
+
+function getOriginalUrl(m: { external_id?: string | null; url?: string | null }): string | null {
+  if (m.external_id && /^[a-zA-Z0-9_-]{11}$/.test(m.external_id)) {
+    return `https://www.youtube.com/watch?v=${m.external_id}`;
+  }
+  if (m.url && /^https?:\/\//i.test(m.url)) return m.url;
+  return null;
 }

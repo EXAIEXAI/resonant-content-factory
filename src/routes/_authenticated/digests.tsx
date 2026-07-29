@@ -87,7 +87,7 @@ function DigestsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-serif text-4xl">Дайджесты</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl">Дайджесты</h1>
           <p className="text-muted-foreground mt-1">Топ 20% материалов за последние 7 дней (минимум 3). Автоматически обновляется еженедельно.</p>
         </div>
         <Button onClick={() => build.mutate()} disabled={build.isPending}>

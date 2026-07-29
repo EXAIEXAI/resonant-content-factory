@@ -73,7 +73,7 @@ function IntegrationsPage() {
   return (
     <div className="space-y-6 max-w-4xl">
       <div>
-        <h1 className="font-serif text-4xl">Интеграции</h1>
+        <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl">Интеграции</h1>
         <p className="text-muted-foreground mt-1">
           Автоматический сбор роликов из YouTube через ваш Google-аккаунт (Google Apps Script).
           Скрипт раз в 15 минут забирает новые ролики <b>из плейлиста</b> (если указан) и <b>из всех YouTube-каналов</b>,

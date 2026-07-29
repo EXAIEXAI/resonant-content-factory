@@ -120,7 +120,7 @@ function ChannelsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-serif text-4xl">Источники</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl">Источники</h1>
           <p className="text-muted-foreground mt-1">YouTube-каналы и Telegram-каналы для мониторинга</p>
         </div>
         <div className="flex gap-2">

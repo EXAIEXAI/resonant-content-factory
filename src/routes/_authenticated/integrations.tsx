@@ -118,7 +118,7 @@ function IntegrationsPage() {
             />
             <p className="text-xs text-muted-foreground mt-1">
               Нужен для получения реальных просмотров, лайков и комментариев при добавлении и пересчёте роликов.
-              Получить: <a className="underline" href="https://console.developers.google.com/apis/api/youtube.googleapis.com/credentials" target="_top" rel="noreferrer">Google API Console</a> → создать проект → включить <b>YouTube Data API v3</b> → «Credentials» → «Create credentials» → «API key». Ключ хранится только у вас.
+              Создайте проект в Google Cloud, включите <b>YouTube Data API v3</b> и сгенерируйте «API key» в разделе Credentials. Ключ хранится только у вас.
             </p>
           </div>
           <Button onClick={() => saveM.mutate()} disabled={saveM.isPending}>Сохранить</Button>

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Factory } from "lucide-react";
+import logoAsset from "@/assets/logo.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -62,8 +62,8 @@ function AuthPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
       <div className="w-full max-w-md">
         <div className="flex items-center gap-3 mb-8 justify-center">
-          <div className="w-11 h-11 rounded-md bg-primary text-primary-foreground flex items-center justify-center">
-            <Factory className="w-6 h-6" />
+          <div className="w-11 h-11 rounded-md bg-white border border-border flex items-center justify-center overflow-hidden">
+            <img src={logoAsset.url} alt="Контент-завод" className="w-10 h-10 object-contain" />
           </div>
           <div>
             <div className="font-serif text-2xl">Контент-завод</div>

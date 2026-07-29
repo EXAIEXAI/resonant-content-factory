@@ -97,12 +97,12 @@ function RadarPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl">Отраслевой радар</h1>
-          <p className="text-muted-foreground mt-1">Все материалы с ваших каналов, ранжированные по формуле резонанса</p>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Все материалы с ваших каналов, ранжированные по формуле резонанса</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button variant="outline" onClick={() => recompute.mutate()}>Пересчитать</Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" /> Ручной материал</Button></DialogTrigger>

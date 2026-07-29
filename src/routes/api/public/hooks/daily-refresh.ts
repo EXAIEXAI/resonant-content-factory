@@ -16,11 +16,6 @@ export const Route = createFileRoute("/api/public/hooks/daily-refresh")({
           .eq("active", true)
           .eq("platform", "youtube");
 
-        // Lazy import to keep the module client-safe.
-        const channelMod = await import("@/lib/channels.functions");
-        // ingestChannel is not exported — re-implement via syncAllChannels logic by
-        // calling the underlying RSS+upsert flow through the admin client.
-        // We inline the loop here to avoid touching auth-scoped server fns.
         const { fetchVideoStatsBatch } = await import("@/lib/youtube-stats.server");
         const { analyzeMaterialById } = await import("@/lib/analyze.server");
 

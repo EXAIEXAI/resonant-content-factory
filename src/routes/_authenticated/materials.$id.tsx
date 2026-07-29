@@ -216,7 +216,7 @@ function MaterialPage() {
                 return (
                   <div key={p.id} className="p-3 border rounded-md">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                      <Icon className="w-3 h-3" /> {reactionLabels[p.reaction_type] ?? p.reaction_type}
+                      <Icon className="w-3 h-3" /> {reactionLabels[p.reaction_type ?? ""] ?? p.reaction_type ?? "—"}
                       {p.timecode && <span>· {p.timecode}</span>}
                     </div>
                     {p.linked_thesis && <div className="text-xs italic text-muted-foreground mb-1">к: {p.linked_thesis}</div>}

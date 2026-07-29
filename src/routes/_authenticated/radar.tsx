@@ -198,7 +198,7 @@ function MaterialCard({ m }: { m: any }) {
                 onClick={(e) => e.stopPropagation()}
                 className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border hover:bg-accent hover:text-accent-foreground"
               >
-                <FileText className="w-3 h-3" />Google Диск
+                <FileText className="w-3 h-3" />Диск
               </a>
             )}
             {originalUrl && (

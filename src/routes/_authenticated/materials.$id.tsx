@@ -93,7 +93,7 @@ function MaterialPage() {
         <div>
           <div className="flex gap-2 mb-2">
             <Badge variant="outline">Рейтинг {(m.engagement_score ?? 0).toFixed(0)}</Badge>
-            <Badge>{statusLabels[m.status] ?? m.status}</Badge>
+            <Badge>{statusLabels[m.status ?? ""] ?? m.status ?? "—"}</Badge>
           </div>
           <h1 className="font-serif text-3xl">{m.title}</h1>
         </div>
@@ -253,7 +253,7 @@ function MaterialPage() {
           <Tabs defaultValue={outputs?.[0]?.id}>
             <TabsList className="flex-wrap h-auto">
               {(outputs ?? []).map(o => (
-                <TabsTrigger key={o.id} value={o.id}>{formatLabels[o.format] ?? o.format} · в.{o.version}</TabsTrigger>
+                <TabsTrigger key={o.id} value={o.id}>{formatLabels[o.format ?? ""] ?? o.format ?? "—"} · в.{o.version}</TabsTrigger>
               ))}
             </TabsList>
             {(outputs ?? []).map(o => (

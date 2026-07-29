@@ -84,7 +84,7 @@ function Dashboard() {
                 <div className="text-sm font-medium line-clamp-1">{r.title}</div>
               <div className="text-xs text-muted-foreground mt-1 flex gap-3">
                 <span>Рейтинг {(r.engagement_score ?? 0).toFixed(0)}</span>
-                <span>· {statusLabels[r.status] ?? r.status}</span>
+                <span>· {statusLabels[r.status ?? ""] ?? r.status ?? "—"}</span>
               </div>
               </Link>
             ))}

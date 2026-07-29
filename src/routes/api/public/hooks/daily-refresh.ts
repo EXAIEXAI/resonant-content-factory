@@ -150,6 +150,3 @@ export const Route = createFileRoute("/api/public/hooks/daily-refresh")({
     },
   },
 });
-
-// Touch to keep tree-shaker happy for module import above.
-void (async () => { void (await import("@/lib/channels.functions")).syncAllChannels; });

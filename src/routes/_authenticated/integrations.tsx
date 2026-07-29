@@ -8,11 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Copy, RefreshCcw } from "lucide-react";
+import { Copy } from "lucide-react";
 import {
   getIntegrationSettings,
   saveIntegrationSettings,
-  rotateWebhookSecret,
 } from "@/lib/youtube.functions";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
@@ -24,7 +23,6 @@ function IntegrationsPage() {
   const qc = useQueryClient();
   const load = useServerFn(getIntegrationSettings);
   const save = useServerFn(saveIntegrationSettings);
-  const rotate = useServerFn(rotateWebhookSecret);
 
   const { data: settings } = useQuery({ queryKey: ["integration_settings"], queryFn: () => load() });
 
@@ -48,14 +46,6 @@ function IntegrationsPage() {
       qc.invalidateQueries({ queryKey: ["integration_settings"] });
     },
     onError: (e: Error) => toast.error(e.message),
-  });
-
-  const rotateM = useMutation({
-    mutationFn: () => rotate(),
-    onSuccess: () => {
-      toast.success("Секрет обновлён");
-      qc.invalidateQueries({ queryKey: ["integration_settings"] });
-    },
   });
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -136,35 +126,11 @@ function IntegrationsPage() {
       </Card>
 
 
-      <Card>
-        <CardHeader><CardTitle className="font-serif">3. Вебхук приложения</CardTitle></CardHeader>
-        <CardContent className="space-y-3">
-          <div>
-            <Label>URL (метод POST)</Label>
-            <div className="flex gap-2 mt-1">
-              <Input value={webhookUrl} readOnly className="font-mono text-xs" />
-              <Button variant="outline" size="icon" onClick={() => copy(webhookUrl)}><Copy className="w-4 h-4" /></Button>
-            </div>
-          </div>
-          <div>
-            <Label>Секрет (заголовок <code>x-webhook-secret</code>)</Label>
-            <div className="flex gap-2 mt-1">
-              <Input value={secret} readOnly className="font-mono text-xs" />
-              <Button variant="outline" size="icon" onClick={() => copy(secret)}><Copy className="w-4 h-4" /></Button>
-              <Button variant="outline" size="icon" onClick={() => rotateM.mutate()} disabled={rotateM.isPending} title="Сгенерировать новый"><RefreshCcw className="w-4 h-4" /></Button>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Секрет проверяется на сервере при каждом POST. При ротации обновите константу в GAS-скрипте.</p>
-          </div>
-          <div className="text-xs text-muted-foreground">
-            Последняя синхронизация: {settings?.last_sync_at ? new Date(settings.last_sync_at).toLocaleString("ru-RU") : "ещё не было"}
-          </div>
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="font-serif">4. Скрипт Google Apps Script</CardTitle>
+            <CardTitle className="font-serif">3. Скрипт Google Apps Script</CardTitle>
             <Button variant="outline" size="sm" onClick={() => copy(gasCode, "Код скопирован")}><Copy className="w-4 h-4 mr-2" />Копировать</Button>
           </div>
         </CardHeader>

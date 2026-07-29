@@ -13,6 +13,7 @@ import { useState } from "react";
 import { ArrowLeft, MessageSquare, ThumbsUp, ThumbsDown, HelpCircle, Quote, ExternalLink, Trash2 } from "lucide-react";
 import { analyzeMaterial, generateContent } from "@/lib/ai.functions";
 import { formatTimecode as formatTC } from "@/lib/youtube";
+import { statusLabels, reactionLabels, formatLabels } from "@/lib/ui-labels";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/materials/$id")({
@@ -91,8 +92,8 @@ function MaterialPage() {
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
           <div className="flex gap-2 mb-2">
-            <Badge variant="outline">Score {(m.engagement_score ?? 0).toFixed(2)}</Badge>
-            <Badge>{m.status}</Badge>
+            <Badge variant="outline">Рейтинг {(m.engagement_score ?? 0).toFixed(0)}</Badge>
+            <Badge>{statusLabels[m.status ?? ""] ?? m.status ?? "—"}</Badge>
           </div>
           <h1 className="font-serif text-3xl">{m.title}</h1>
         </div>
@@ -118,7 +119,7 @@ function MaterialPage() {
           <CardContent className="space-y-4">
             {!m.summary && (
               <Button size="sm" onClick={() => runAnalyze.mutate()} disabled={runAnalyze.isPending}>
-                {runAnalyze.isPending ? "Анализирую..." : "Проанализировать (Gemini)"}
+                {runAnalyze.isPending ? "Анализирую..." : "Проанализировать"}
               </Button>
             )}
             {m.summary && (
@@ -215,7 +216,7 @@ function MaterialPage() {
                 return (
                   <div key={p.id} className="p-3 border rounded-md">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                      <Icon className="w-3 h-3" /> {p.reaction_type}
+                      <Icon className="w-3 h-3" /> {reactionLabels[p.reaction_type ?? ""] ?? p.reaction_type ?? "—"}
                       {p.timecode && <span>· {p.timecode}</span>}
                     </div>
                     {p.linked_thesis && <div className="text-xs italic text-muted-foreground mb-1">к: {p.linked_thesis}</div>}
@@ -252,7 +253,7 @@ function MaterialPage() {
           <Tabs defaultValue={outputs?.[0]?.id}>
             <TabsList className="flex-wrap h-auto">
               {(outputs ?? []).map(o => (
-                <TabsTrigger key={o.id} value={o.id}>{o.format} · v{o.version}</TabsTrigger>
+                <TabsTrigger key={o.id} value={o.id}>{formatLabels[o.format ?? ""] ?? o.format ?? "—"} · в.{o.version}</TabsTrigger>
               ))}
             </TabsList>
             {(outputs ?? []).map(o => (

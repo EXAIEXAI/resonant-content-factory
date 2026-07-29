@@ -133,8 +133,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Menu className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-7 h-7 shrink-0 rounded-md bg-primary text-primary-foreground flex items-center justify-center">
-              <Factory className="w-4 h-4" />
+            <div className="w-7 h-7 shrink-0 rounded-md bg-white border border-border flex items-center justify-center overflow-hidden">
+              <img src={logoAsset.url} alt="Контент-завод" className="w-6 h-6 object-contain" />
             </div>
             <div className="font-serif text-base truncate">Контент-завод</div>
           </div>

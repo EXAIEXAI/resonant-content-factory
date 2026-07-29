@@ -130,7 +130,7 @@ function IntegrationsPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="font-serif">4. Скрипт Google Apps Script</CardTitle>
+            <CardTitle className="font-serif">3. Скрипт Google Apps Script</CardTitle>
             <Button variant="outline" size="sm" onClick={() => copy(gasCode, "Код скопирован")}><Copy className="w-4 h-4 mr-2" />Копировать</Button>
           </div>
         </CardHeader>

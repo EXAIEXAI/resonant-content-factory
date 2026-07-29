@@ -95,7 +95,7 @@ function KnowledgePage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="font-serif text-4xl">База знаний</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl">База знаний</h1>
           <p className="text-muted-foreground mt-1">Постулаты, афоризмы и образцы стиля — фундамент RAG</p>
         </div>
         <div className="flex items-center gap-2">

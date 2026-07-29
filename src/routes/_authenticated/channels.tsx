@@ -118,12 +118,12 @@ function ChannelsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-serif text-4xl">Источники</h1>
-          <p className="text-muted-foreground mt-1">YouTube-каналы и Telegram-каналы для мониторинга</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl">Источники</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">YouTube-каналы и Telegram-каналы для мониторинга</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button variant="outline" onClick={handleSyncAll}><RefreshCw className="w-4 h-4 mr-2" /> Обновить все</Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" /> Добавить источник</Button></DialogTrigger>

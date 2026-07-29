@@ -97,12 +97,12 @@ function RadarPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-serif text-4xl">Отраслевой радар</h1>
-          <p className="text-muted-foreground mt-1">Все материалы с ваших каналов, ранжированные по формуле резонанса</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl">Отраслевой радар</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Все материалы с ваших каналов, ранжированные по формуле резонанса</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button variant="outline" onClick={() => recompute.mutate()}>Пересчитать</Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" /> Ручной материал</Button></DialogTrigger>
@@ -151,34 +151,34 @@ function MaterialCard({ m }: { m: any }) {
   const originalUrl = getOriginalUrl(m);
   return (
     <Card>
-      <CardHeader className="flex flex-row items-start gap-4 space-y-0">
-        {m.thumbnail_url && originalUrl && (
+      <CardHeader className="grid grid-cols-[auto_minmax(0,1fr)_auto] sm:grid-cols-[auto_minmax(0,1fr)_auto] gap-3 sm:gap-4 space-y-0">
+        {m.thumbnail_url && originalUrl ? (
           <a
             href={originalUrl}
             target="_top"
             rel="noopener noreferrer"
-            className="shrink-0 block w-40 aspect-video rounded-md overflow-hidden bg-muted"
+            className="shrink-0 block w-24 sm:w-40 aspect-video rounded-md overflow-hidden bg-muted"
           >
             <img src={m.thumbnail_url} alt="" className="w-full h-full object-cover" loading="lazy" />
           </a>
-        )}
-        <div className="flex-1 min-w-0">
+        ) : <span />}
+        <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <Badge variant="secondary">#{m.rank}</Badge>
             {fromPlaylist && <Badge className="bg-primary text-primary-foreground"><Crown className="w-3 h-3 mr-1" />Из плейлиста</Badge>}
             {m.is_manual && !fromPlaylist && <Badge variant="outline" className="border-accent text-accent-foreground bg-accent/20"><Sparkles className="w-3 h-3 mr-1" />Ручной</Badge>}
-            {m.channel_title && <span className="text-xs text-muted-foreground">· {m.channel_title}</span>}
-            {!m.channel_title && m.channel?.title && <span className="text-xs text-muted-foreground">· {m.channel.title}</span>}
+            {m.channel_title && <span className="text-xs text-muted-foreground truncate max-w-[160px]">· {m.channel_title}</span>}
+            {!m.channel_title && m.channel?.title && <span className="text-xs text-muted-foreground truncate max-w-[160px]">· {m.channel.title}</span>}
           </div>
-          <CardTitle className="text-base leading-snug">
+          <CardTitle className="text-sm sm:text-base leading-snug break-words">
             <Link to="/materials/$id" params={{ id: m.id }} className="hover:text-primary">{m.title}</Link>
           </CardTitle>
           {m.summary && (
-            <p className="text-sm text-muted-foreground mt-2 leading-relaxed line-clamp-3">{m.summary}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-2 leading-relaxed line-clamp-3">{m.summary}</p>
           )}
         </div>
         <div className="text-right shrink-0">
-          <div className="font-serif text-2xl text-primary">{Math.round(m.computedScore ?? m.engagement_score ?? 0)}<span className="text-sm text-muted-foreground">/100</span></div>
+          <div className="font-serif text-xl sm:text-2xl text-primary whitespace-nowrap">{Math.round(m.computedScore ?? m.engagement_score ?? 0)}<span className="text-xs sm:text-sm text-muted-foreground">/100</span></div>
           <div className="text-xs text-muted-foreground">Рейтинг</div>
         </div>
       </CardHeader>

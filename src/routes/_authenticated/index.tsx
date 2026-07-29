@@ -55,7 +55,7 @@ function Dashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-serif text-4xl">Дашборд</h1>
+        <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl">Дашборд</h1>
         <p className="text-muted-foreground mt-1">Общая картина по вашему контент-заводу</p>
       </div>
 

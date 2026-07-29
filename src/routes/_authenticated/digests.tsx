@@ -85,12 +85,12 @@ function DigestsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-serif text-4xl">Дайджесты</h1>
-          <p className="text-muted-foreground mt-1">Топ 20% материалов за последние 7 дней (минимум 3). Автоматически обновляется еженедельно.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl">Дайджесты</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Топ 20% материалов за последние 7 дней (минимум 3). Автоматически обновляется еженедельно.</p>
         </div>
-        <Button onClick={() => build.mutate()} disabled={build.isPending}>
+        <Button onClick={() => build.mutate()} disabled={build.isPending} className="w-full sm:w-auto">
           <RefreshCw className={`w-4 h-4 mr-2 ${build.isPending ? "animate-spin" : ""}`} />
           Собрать за неделю
         </Button>

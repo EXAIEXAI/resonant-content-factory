@@ -28,7 +28,7 @@ function KanbanPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-serif text-4xl">Канбан публикаций</h1>
+        <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl">Канбан публикаций</h1>
         <p className="text-muted-foreground mt-1">Жизненный цикл материала — от радара до публикации</p>
       </div>
 

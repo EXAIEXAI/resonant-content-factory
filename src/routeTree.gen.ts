@@ -23,6 +23,7 @@ import { Route as AuthenticatedMaterialsIdRouteImport } from './routes/_authenti
 import { Route as ApiPublicHooksYoutubePlaylistRouteImport } from './routes/api/public/hooks/youtube-playlist'
 import { Route as ApiPublicHooksYoutubeChannelsRouteImport } from './routes/api/public/hooks/youtube-channels'
 import { Route as ApiPublicHooksWeeklyDigestRouteImport } from './routes/api/public/hooks/weekly-digest'
+import { Route as ApiPublicHooksDailyRefreshRouteImport } from './routes/api/public/hooks/daily-refresh'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -98,6 +99,12 @@ const ApiPublicHooksWeeklyDigestRoute =
     path: '/api/public/hooks/weekly-digest',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksDailyRefreshRoute =
+  ApiPublicHooksDailyRefreshRouteImport.update({
+    id: '/api/public/hooks/daily-refresh',
+    path: '/api/public/hooks/daily-refresh',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/radar': typeof AuthenticatedRadarRoute
   '/roles': typeof AuthenticatedRolesRoute
   '/materials/$id': typeof AuthenticatedMaterialsIdRoute
+  '/api/public/hooks/daily-refresh': typeof ApiPublicHooksDailyRefreshRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/hooks/youtube-channels': typeof ApiPublicHooksYoutubeChannelsRoute
   '/api/public/hooks/youtube-playlist': typeof ApiPublicHooksYoutubePlaylistRoute
@@ -125,6 +133,7 @@ export interface FileRoutesByTo {
   '/roles': typeof AuthenticatedRolesRoute
   '/': typeof AuthenticatedIndexRoute
   '/materials/$id': typeof AuthenticatedMaterialsIdRoute
+  '/api/public/hooks/daily-refresh': typeof ApiPublicHooksDailyRefreshRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/hooks/youtube-channels': typeof ApiPublicHooksYoutubeChannelsRoute
   '/api/public/hooks/youtube-playlist': typeof ApiPublicHooksYoutubePlaylistRoute
@@ -142,6 +151,7 @@ export interface FileRoutesById {
   '/_authenticated/roles': typeof AuthenticatedRolesRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/materials/$id': typeof AuthenticatedMaterialsIdRoute
+  '/api/public/hooks/daily-refresh': typeof ApiPublicHooksDailyRefreshRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/hooks/youtube-channels': typeof ApiPublicHooksYoutubeChannelsRoute
   '/api/public/hooks/youtube-playlist': typeof ApiPublicHooksYoutubePlaylistRoute
@@ -159,6 +169,7 @@ export interface FileRouteTypes {
     | '/radar'
     | '/roles'
     | '/materials/$id'
+    | '/api/public/hooks/daily-refresh'
     | '/api/public/hooks/weekly-digest'
     | '/api/public/hooks/youtube-channels'
     | '/api/public/hooks/youtube-playlist'
@@ -174,6 +185,7 @@ export interface FileRouteTypes {
     | '/roles'
     | '/'
     | '/materials/$id'
+    | '/api/public/hooks/daily-refresh'
     | '/api/public/hooks/weekly-digest'
     | '/api/public/hooks/youtube-channels'
     | '/api/public/hooks/youtube-playlist'
@@ -190,6 +202,7 @@ export interface FileRouteTypes {
     | '/_authenticated/roles'
     | '/_authenticated/'
     | '/_authenticated/materials/$id'
+    | '/api/public/hooks/daily-refresh'
     | '/api/public/hooks/weekly-digest'
     | '/api/public/hooks/youtube-channels'
     | '/api/public/hooks/youtube-playlist'
@@ -198,6 +211,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicHooksDailyRefreshRoute: typeof ApiPublicHooksDailyRefreshRoute
   ApiPublicHooksWeeklyDigestRoute: typeof ApiPublicHooksWeeklyDigestRoute
   ApiPublicHooksYoutubeChannelsRoute: typeof ApiPublicHooksYoutubeChannelsRoute
   ApiPublicHooksYoutubePlaylistRoute: typeof ApiPublicHooksYoutubePlaylistRoute
@@ -303,6 +317,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksWeeklyDigestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/daily-refresh': {
+      id: '/api/public/hooks/daily-refresh'
+      path: '/api/public/hooks/daily-refresh'
+      fullPath: '/api/public/hooks/daily-refresh'
+      preLoaderRoute: typeof ApiPublicHooksDailyRefreshRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -336,6 +357,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicHooksDailyRefreshRoute: ApiPublicHooksDailyRefreshRoute,
   ApiPublicHooksWeeklyDigestRoute: ApiPublicHooksWeeklyDigestRoute,
   ApiPublicHooksYoutubeChannelsRoute: ApiPublicHooksYoutubeChannelsRoute,
   ApiPublicHooksYoutubePlaylistRoute: ApiPublicHooksYoutubePlaylistRoute,
@@ -343,13 +365,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -143,7 +143,8 @@ export async function driveUploadText(
 ): Promise<{ id: string; webViewLink: string | null; name: string }> {
   const token = await getAccessToken();
   const boundary = "lovable-boundary-" + crypto.randomUUID();
-  const metadata = { name, parents: [driveFolderId()] };
+  const { id: folderId } = await ensureDriveFolder();
+  const metadata = { name, parents: [folderId] };
   const body =
     `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n` +
     `${JSON.stringify(metadata)}\r\n` +
@@ -171,7 +172,8 @@ export async function driveListFolder(): Promise<
   Array<{ id: string; name: string; mimeType: string; webViewLink: string | null; modifiedTime: string | null }>
 > {
   const token = await getAccessToken();
-  const q = encodeURIComponent(`'${driveFolderId()}' in parents and trashed = false`);
+  const { id: folderId } = await ensureDriveFolder();
+  const q = encodeURIComponent(`'${folderId}' in parents and trashed = false`);
   const res = await fetch(
     `https://www.googleapis.com/drive/v3/files?q=${q}&pageSize=100&orderBy=modifiedTime desc&supportsAllDrives=true&includeItemsFromAllDrives=true&fields=files(id,name,mimeType,webViewLink,modifiedTime)`,
     { headers: { Authorization: `Bearer ${token}` } },

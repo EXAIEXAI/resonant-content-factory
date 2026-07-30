@@ -9,13 +9,16 @@ export type ChannelSyncResult = {
   apiReturned: number;
   /** Отсеяно по дате публикации (старее границы выборки). */
   skippedByDate: number;
-  /** Отсеяно как дубли по external_id. */
+  /** Отсеяно как дубли: строка есть и у неё уже заполнен drive_file_id. */
   skippedDuplicates: number;
-  /** Прошло фильтры (кандидаты на добавление). */
+  /** Строка была, но без файла на Диске — дозаполнена. */
+  backfilled: number;
+  /** Прошло фильтры (кандидаты на добавление/дозаполнение). */
   found: number;
   added: number;
   errors: string[];
 };
+
 
 function apiKey(): string {
   const key = process.env.YOUTUBE_API_KEY;

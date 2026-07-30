@@ -233,3 +233,51 @@ export const rotateWebhookSecret = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { secret };
   });
+
+/** Последние ролики канала через YouTube Data API v3 (ключ из секрета YOUTUBE_API_KEY). */
+export const listChannelUploads = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { channelId: string; maxResults?: number }) =>
+    z.object({ channelId: z.string().min(2).max(200), maxResults: z.number().int().min(1).max(50).default(10) }).parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { fetchUploads } = await import("./yt-uploads.server");
+    return { items: await fetchUploads(data.channelId.trim(), data.maxResults ?? 10) };
+  });
+
+/** Сверяет последние ролики канала с yt_videos и сохраняет новые. */
+export const checkNewUploads = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { channelId: string; maxResults?: number }) =>
+    z.object({ channelId: z.string().min(2).max(200), maxResults: z.number().int().min(1).max(50).default(10) }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const channelId = data.channelId.trim();
+    const { fetchUploads } = await import("./yt-uploads.server");
+    const items = await fetchUploads(channelId, data.maxResults ?? 10);
+    if (!items.length) return { checked: 0, newItems: [] as typeof items };
+
+    const { data: existing, error } = await supabase
+      .from("yt_videos")
+      .select("video_id")
+      .in("video_id", items.map(i => i.videoId));
+    if (error) throw new Error(error.message);
+    const known = new Set((existing ?? []).map(r => r.video_id));
+    const fresh = items.filter(i => !known.has(i.videoId));
+
+    if (fresh.length) {
+      const ins = await supabase.from("yt_videos").insert(
+        fresh.map(i => ({
+          channel_id: channelId,
+          video_id: i.videoId,
+          title: i.title,
+          published_at: i.publishedAt,
+          url: i.url,
+          thumbnail: i.thumbnail,
+        })),
+      );
+      if (ins.error) throw new Error(ins.error.message);
+    }
+    return { checked: items.length, newItems: fresh };
+  });

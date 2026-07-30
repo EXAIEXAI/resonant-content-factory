@@ -68,9 +68,10 @@ function IntegrationsPage() {
       addLog(`Синхронизация завершена: добавлено ${r.totalAdded} роликов из ${r.results.length} каналов`);
       r.results.forEach(x =>
         addLog(
-          `• ${x.channel}: API вернул ${x.apiReturned}, по дате отсеяно ${x.skippedByDate}, дублей ${x.skippedDuplicates}, добавлено ${x.added}${x.errors.length ? `, ошибок ${x.errors.length}` : ""}`,
+          `• ${x.channel}: API вернул ${x.apiReturned}, по дате отсеяно ${x.skippedByDate}, уже полных дублей ${x.skippedDuplicates}, дозаполнено ${x.backfilled}, добавлено новых ${x.added}${x.errors.length ? `, ошибок ${x.errors.length}` : ""}`,
         ),
       );
+
       toast.success(`Добавлено роликов: ${r.totalAdded}`);
       qc.invalidateQueries({ queryKey: ["recent_materials"] });
     },

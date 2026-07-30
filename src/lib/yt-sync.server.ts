@@ -217,6 +217,8 @@ export async function syncAllSourcesWith(
         return !row || !row.drive_file_id;
       });
       res.skippedDuplicates = entries.length - targets.length;
+      res.found = targets.length;
+
       if (!targets.length) {
         if (sinceDays && sinceDays > 0) {
           await supabase.from("channels").update({ last_polled_at: new Date().toISOString() }).eq("id", ch.id);

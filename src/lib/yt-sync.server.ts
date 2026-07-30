@@ -266,6 +266,38 @@ export async function syncAllSourcesWith(
             res.errors.push(`Drive ${videoId}: ${e instanceof Error ? e.message : String(e)}`);
           }
 
+          const existing = knownMap.get(videoId);
+          const apiViews = Number(st.viewCount ?? 0) || 0;
+          const apiLikes = Number(st.likeCount ?? 0) || 0;
+          const apiComments = Number(st.commentCount ?? 0) || 0;
+          const apiDuration = iso8601ToSeconds(v?.contentDetails?.duration);
+          const apiThumb = (th.high ?? th.medium ?? th.default)?.url ?? null;
+
+          if (existing) {
+            // Строка уже была, но без файла на Диске — дозаполняем.
+            const patch: Record<string, unknown> = {};
+            if (driveFileId) {
+              patch.drive_file_id = driveFileId;
+              patch.drive_file_url = driveFileUrl;
+            }
+            if (!existing.views && apiViews) patch.views = apiViews;
+            if (!existing.reactions && apiLikes) patch.reactions = apiLikes;
+            if (!existing.comments_count && apiComments) patch.comments_count = apiComments;
+            if (!existing.duration_seconds && apiDuration) patch.duration_seconds = apiDuration;
+            if (!existing.thumbnail_url && apiThumb) patch.thumbnail_url = apiThumb;
+
+            if (Object.keys(patch).length) {
+              const { error: updErr } = await supabase
+                .from("raw_materials")
+                .update(patch)
+                .eq("id", existing.id);
+              if (updErr) throw new Error(updErr.message);
+            }
+            res.backfilled++;
+            if (publishedAt && (!newest || new Date(publishedAt) > new Date(newest))) newest = publishedAt;
+            continue;
+          }
+
           const row = {
             external_id: videoId,
             channel_id: ch.id,
@@ -273,14 +305,16 @@ export async function syncAllSourcesWith(
             title: sn.title ?? url,
             url,
             published_at: publishedAt,
-            duration_seconds: iso8601ToSeconds(v?.contentDetails?.duration),
-            thumbnail_url: (th.high ?? th.medium ?? th.default)?.url ?? null,
+            duration_seconds: apiDuration,
+            thumbnail_url: apiThumb,
+            drive_file_id: driveFileId,
+            drive_file_url: driveFileUrl,
             source_type: "youtube_channel",
             is_manual: false,
             status: "found",
-            views: Number(st.viewCount ?? 0) || 0,
-            reactions: Number(st.likeCount ?? 0) || 0,
-            comments_count: Number(st.commentCount ?? 0) || 0,
+            views: apiViews,
+            reactions: apiLikes,
+            comments_count: apiComments,
             engagement_score: 0,
             raw_transcript: null,
             transcript_segments: [],
@@ -295,6 +329,7 @@ export async function syncAllSourcesWith(
           res.added++;
           totalAdded++;
           if (publishedAt && (!newest || new Date(publishedAt) > new Date(newest))) newest = publishedAt;
+
         } catch (e) {
           res.errors.push(e instanceof Error ? e.message : String(e));
         }

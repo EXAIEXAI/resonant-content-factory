@@ -179,8 +179,9 @@ function IntegrationsPage() {
                     <th className="p-2">Канал</th>
                     <th className="p-2">Вернул API</th>
                     <th className="p-2">Отсеяно по дате</th>
-                    <th className="p-2">Дубли</th>
-                    <th className="p-2">Добавлено</th>
+                    <th className="p-2">Уже полные дубли</th>
+                    <th className="p-2">Дозаполнено</th>
+                    <th className="p-2">Добавлено новых</th>
                     <th className="p-2">Ошибки</th>
                   </tr>
                 </thead>
@@ -191,11 +192,13 @@ function IntegrationsPage() {
                       <td className="p-2">{r.apiReturned}</td>
                       <td className="p-2">{r.skippedByDate}</td>
                       <td className="p-2">{r.skippedDuplicates}</td>
+                      <td className="p-2">{r.backfilled}</td>
                       <td className="p-2">{r.added}</td>
                       <td className="p-2 text-destructive text-xs">{r.errors.join("; ") || "—"}</td>
                     </tr>
                   ))}
                 </tbody>
+
               </table>
             </div>
           )}

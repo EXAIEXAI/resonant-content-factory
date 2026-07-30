@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { listChannelUploads, checkNewUploads } from "@/lib/youtube.functions";
-import { uploadTextFile, syncPendingVideosToDrive } from "@/lib/gdrive.functions";
+import { uploadTextFile, syncPendingVideosToDrive, ensureFolder } from "@/lib/gdrive.functions";
 
 export const Route = createFileRoute("/_authenticated/integrations-test")({
   head: () => ({
@@ -29,11 +29,13 @@ function IntegrationsTestPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [log, setLog] = useState<string[]>([]);
   const [videos, setVideos] = useState<Upload[]>([]);
+  const [folderId, setFolderId] = useState<string | null>(null);
 
   const uploads = useServerFn(listChannelUploads);
   const checkNew = useServerFn(checkNewUploads);
   const driveUpload = useServerFn(uploadTextFile);
   const driveSync = useServerFn(syncPendingVideosToDrive);
+  const driveEnsureFolder = useServerFn(ensureFolder);
 
   const push = (line: string) =>
     setLog(prev => [`${new Date().toLocaleTimeString("ru-RU")} — ${line}`, ...prev].slice(0, 100));
@@ -103,6 +105,19 @@ function IntegrationsTestPage() {
               variant="outline"
               disabled={!!busy}
               onClick={() =>
+                run("Папка Диска", async () => {
+                  const res = await driveEnsureFolder({ data: {} as never });
+                  setFolderId(res.id);
+                  push(`✓ Папка «${res.name}» ${res.created ? "создана" : "найдена"}: ${res.id}`);
+                })
+              }
+            >
+              Папка Диска
+            </Button>
+            <Button
+              variant="outline"
+              disabled={!!busy}
+              onClick={() =>
                 run("Тест Диска", async () => {
                   const name = `test-${Date.now()}.txt`;
                   const res = await driveUpload({
@@ -130,6 +145,14 @@ function IntegrationsTestPage() {
               Синк в Диск
             </Button>
           </div>
+          {folderId && (
+            <div className="rounded-md border p-3 text-sm space-y-1">
+              <p className="text-muted-foreground">
+                Id рабочей папки Диска — сохраните его в секрет GDRIVE_FOLDER_ID:
+              </p>
+              <code className="font-mono break-all">{folderId}</code>
+            </div>
+          )}
         </CardContent>
       </Card>
 

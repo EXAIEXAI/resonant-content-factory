@@ -1,20 +1,36 @@
-// Server-only Google Drive helpers (service-account JWT auth).
+// Server-only Google Drive helpers. Авторизация ТОЛЬКО через OAuth refresh token.
 
-type ServiceAccount = { client_email: string; private_key: string };
+export const DRIVE_AUTH_MODE = "oauth refresh token";
 
-function readServiceAccount(): ServiceAccount {
-  const raw = process.env.GDRIVE_SERVICE_ACCOUNT_JSON;
-  if (!raw) throw new Error("Не задан секрет GDRIVE_SERVICE_ACCOUNT_JSON");
-  let json: any;
-  try {
-    json = JSON.parse(raw);
-  } catch {
-    throw new Error("GDRIVE_SERVICE_ACCOUNT_JSON не является корректным JSON");
-  }
-  if (!json.client_email || !json.private_key) {
-    throw new Error("В GDRIVE_SERVICE_ACCOUNT_JSON нет client_email или private_key");
-  }
-  return { client_email: json.client_email, private_key: String(json.private_key).replace(/\\n/g, "\n") };
+/** Обменивает refresh token на access token (единственный способ авторизации). */
+export async function getAccessToken(): Promise<string> {
+  const client_id = process.env.GDRIVE_OAUTH_CLIENT_ID;
+  const client_secret = process.env.GDRIVE_OAUTH_CLIENT_SECRET;
+  const refresh_token = process.env.GDRIVE_OAUTH_REFRESH_TOKEN;
+
+  const missing = [
+    !client_id && "GDRIVE_OAUTH_CLIENT_ID",
+    !client_secret && "GDRIVE_OAUTH_CLIENT_SECRET",
+    !refresh_token && "GDRIVE_OAUTH_REFRESH_TOKEN",
+  ].filter(Boolean);
+  if (missing.length) throw new Error(`OAuth secrets missing: ${missing.join(", ")}`);
+
+  console.log("[gdrive] auth: oauth refresh token");
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: client_id!,
+      client_secret: client_secret!,
+      refresh_token: refresh_token!,
+      grant_type: "refresh_token",
+    }),
+  });
+  const body = await res.text();
+  if (!res.ok) throw new Error(`Google OAuth [${res.status}]: ${body}`);
+  const token = JSON.parse(body).access_token;
+  if (!token) throw new Error("Google OAuth не вернул access_token");
+  return token;
 }
 
 export function driveFolderId(): string {

@@ -154,9 +154,18 @@ function IntegrationsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={() => syncM.mutate()} disabled={syncM.isPending} className="gap-2">
+            <Button onClick={() => syncM.mutate(undefined)} disabled={syncM.isPending} className="gap-2">
               <RefreshCw className={`h-4 w-4 ${syncM.isPending ? "animate-spin" : ""}`} />
               Синхронизировать сейчас
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => syncM.mutate(30)}
+              disabled={syncM.isPending}
+              className="gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${syncM.isPending ? "animate-spin" : ""}`} />
+              Синхронизировать за 30 дней
             </Button>
             <span className="text-sm text-muted-foreground">Последний запуск: {fmt(lastRun)}</span>
           </div>
@@ -167,7 +176,9 @@ function IntegrationsPage() {
                 <thead className="bg-muted/50 text-left">
                   <tr>
                     <th className="p-2">Канал</th>
-                    <th className="p-2">Найдено</th>
+                    <th className="p-2">Вернул API</th>
+                    <th className="p-2">Отсеяно по дате</th>
+                    <th className="p-2">Дубли</th>
                     <th className="p-2">Добавлено</th>
                     <th className="p-2">Ошибки</th>
                   </tr>
@@ -176,7 +187,9 @@ function IntegrationsPage() {
                   {summary.map(r => (
                     <tr key={r.channel} className="border-t align-top">
                       <td className="p-2">{r.channel}</td>
-                      <td className="p-2">{r.found}</td>
+                      <td className="p-2">{r.apiReturned}</td>
+                      <td className="p-2">{r.skippedByDate}</td>
+                      <td className="p-2">{r.skippedDuplicates}</td>
                       <td className="p-2">{r.added}</td>
                       <td className="p-2 text-destructive text-xs">{r.errors.join("; ") || "—"}</td>
                     </tr>
@@ -185,6 +198,7 @@ function IntegrationsPage() {
               </table>
             </div>
           )}
+
         </CardContent>
       </Card>
 

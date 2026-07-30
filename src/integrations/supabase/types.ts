@@ -383,42 +383,6 @@ export type Database = {
         }
         Relationships: []
       }
-      yt_videos: {
-        Row: {
-          channel_id: string | null
-          created_at: string
-          drive_file_id: string | null
-          id: string
-          published_at: string | null
-          thumbnail: string | null
-          title: string | null
-          url: string | null
-          video_id: string
-        }
-        Insert: {
-          channel_id?: string | null
-          created_at?: string
-          drive_file_id?: string | null
-          id?: string
-          published_at?: string | null
-          thumbnail?: string | null
-          title?: string | null
-          url?: string | null
-          video_id: string
-        }
-        Update: {
-          channel_id?: string | null
-          created_at?: string
-          drive_file_id?: string | null
-          id?: string
-          published_at?: string | null
-          thumbnail?: string | null
-          title?: string | null
-          url?: string | null
-          video_id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never

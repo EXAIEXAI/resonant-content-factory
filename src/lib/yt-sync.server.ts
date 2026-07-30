@@ -193,14 +193,31 @@ export async function syncAllSourcesWith(
         continue;
       }
 
+      type KnownRow = {
+        id: string;
+        external_id: string | null;
+        drive_file_id: string | null;
+        views: number | null;
+        reactions: number | null;
+        comments_count: number | null;
+        duration_seconds: number | null;
+        thumbnail_url: string | null;
+      };
       const { data: known } = await supabase
         .from("raw_materials")
-        .select("external_id")
+        .select("id, external_id, drive_file_id, views, reactions, comments_count, duration_seconds, thumbnail_url")
         .in("external_id", entries.map(e => e.videoId));
-      const knownIds = new Set((known ?? []).map((r: { external_id: string | null }) => r.external_id));
-      const fresh = entries.filter(e => !knownIds.has(e.videoId));
-      res.skippedDuplicates = entries.length - fresh.length;
-      if (!fresh.length) {
+      const knownMap = new Map<string, KnownRow>();
+      for (const r of (known ?? []) as KnownRow[]) {
+        if (r.external_id) knownMap.set(r.external_id, r);
+      }
+      // Дубль = строка существует И у неё есть файл на Диске. Иначе — дозаполняем.
+      const targets = entries.filter(e => {
+        const row = knownMap.get(e.videoId);
+        return !row || !row.drive_file_id;
+      });
+      res.skippedDuplicates = entries.length - targets.length;
+      if (!targets.length) {
         if (sinceDays && sinceDays > 0) {
           await supabase.from("channels").update({ last_polled_at: new Date().toISOString() }).eq("id", ch.id);
         }
@@ -208,8 +225,9 @@ export async function syncAllSourcesWith(
         continue;
       }
 
-      const videos = await fetchVideos(fresh.map(e => e.videoId));
+      const videos = await fetchVideos(targets.map(e => e.videoId));
       let newest: string | null = ch.last_polled_at ?? null;
+
 
       for (const v of videos) {
         try {

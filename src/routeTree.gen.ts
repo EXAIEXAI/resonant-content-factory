@@ -16,6 +16,7 @@ import { Route as AuthenticatedRolesRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedRadarRouteImport } from './routes/_authenticated/radar'
 import { Route as AuthenticatedKnowledgeRouteImport } from './routes/_authenticated/knowledge'
 import { Route as AuthenticatedKanbanRouteImport } from './routes/_authenticated/kanban'
+import { Route as AuthenticatedIntegrationsTestRouteImport } from './routes/_authenticated/integrations-test'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
 import { Route as AuthenticatedDigestsRouteImport } from './routes/_authenticated/digests'
 import { Route as AuthenticatedChannelsRouteImport } from './routes/_authenticated/channels'
@@ -59,6 +60,12 @@ const AuthenticatedKanbanRoute = AuthenticatedKanbanRouteImport.update({
   path: '/kanban',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedIntegrationsTestRoute =
+  AuthenticatedIntegrationsTestRouteImport.update({
+    id: '/integrations-test',
+    path: '/integrations-test',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedIntegrationsRoute =
   AuthenticatedIntegrationsRouteImport.update({
     id: '/integrations',
@@ -112,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/channels': typeof AuthenticatedChannelsRoute
   '/digests': typeof AuthenticatedDigestsRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
+  '/integrations-test': typeof AuthenticatedIntegrationsTestRoute
   '/kanban': typeof AuthenticatedKanbanRoute
   '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/radar': typeof AuthenticatedRadarRoute
@@ -127,6 +135,7 @@ export interface FileRoutesByTo {
   '/channels': typeof AuthenticatedChannelsRoute
   '/digests': typeof AuthenticatedDigestsRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
+  '/integrations-test': typeof AuthenticatedIntegrationsTestRoute
   '/kanban': typeof AuthenticatedKanbanRoute
   '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/radar': typeof AuthenticatedRadarRoute
@@ -145,6 +154,7 @@ export interface FileRoutesById {
   '/_authenticated/channels': typeof AuthenticatedChannelsRoute
   '/_authenticated/digests': typeof AuthenticatedDigestsRoute
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
+  '/_authenticated/integrations-test': typeof AuthenticatedIntegrationsTestRoute
   '/_authenticated/kanban': typeof AuthenticatedKanbanRoute
   '/_authenticated/knowledge': typeof AuthenticatedKnowledgeRoute
   '/_authenticated/radar': typeof AuthenticatedRadarRoute
@@ -164,6 +174,7 @@ export interface FileRouteTypes {
     | '/channels'
     | '/digests'
     | '/integrations'
+    | '/integrations-test'
     | '/kanban'
     | '/knowledge'
     | '/radar'
@@ -179,6 +190,7 @@ export interface FileRouteTypes {
     | '/channels'
     | '/digests'
     | '/integrations'
+    | '/integrations-test'
     | '/kanban'
     | '/knowledge'
     | '/radar'
@@ -196,6 +208,7 @@ export interface FileRouteTypes {
     | '/_authenticated/channels'
     | '/_authenticated/digests'
     | '/_authenticated/integrations'
+    | '/_authenticated/integrations-test'
     | '/_authenticated/kanban'
     | '/_authenticated/knowledge'
     | '/_authenticated/radar'
@@ -268,6 +281,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedKanbanRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/integrations-test': {
+      id: '/_authenticated/integrations-test'
+      path: '/integrations-test'
+      fullPath: '/integrations-test'
+      preLoaderRoute: typeof AuthenticatedIntegrationsTestRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/integrations': {
       id: '/_authenticated/integrations'
       path: '/integrations'
@@ -331,6 +351,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedChannelsRoute: typeof AuthenticatedChannelsRoute
   AuthenticatedDigestsRoute: typeof AuthenticatedDigestsRoute
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
+  AuthenticatedIntegrationsTestRoute: typeof AuthenticatedIntegrationsTestRoute
   AuthenticatedKanbanRoute: typeof AuthenticatedKanbanRoute
   AuthenticatedKnowledgeRoute: typeof AuthenticatedKnowledgeRoute
   AuthenticatedRadarRoute: typeof AuthenticatedRadarRoute
@@ -343,6 +364,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChannelsRoute: AuthenticatedChannelsRoute,
   AuthenticatedDigestsRoute: AuthenticatedDigestsRoute,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
+  AuthenticatedIntegrationsTestRoute: AuthenticatedIntegrationsTestRoute,
   AuthenticatedKanbanRoute: AuthenticatedKanbanRoute,
   AuthenticatedKnowledgeRoute: AuthenticatedKnowledgeRoute,
   AuthenticatedRadarRoute: AuthenticatedRadarRoute,

@@ -20,6 +20,7 @@ import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authent
 import { Route as AuthenticatedDigestsRouteImport } from './routes/_authenticated/digests'
 import { Route as AuthenticatedChannelsRouteImport } from './routes/_authenticated/channels'
 import { Route as AuthenticatedMaterialsIdRouteImport } from './routes/_authenticated/materials.$id'
+import { Route as ApiPublicSyncYoutubeRouteImport } from './routes/api/public/sync/youtube'
 import { Route as ApiPublicHooksYoutubePlaylistRouteImport } from './routes/api/public/hooks/youtube-playlist'
 import { Route as ApiPublicHooksYoutubeChannelsRouteImport } from './routes/api/public/hooks/youtube-channels'
 import { Route as ApiPublicHooksWeeklyDigestRouteImport } from './routes/api/public/hooks/weekly-digest'
@@ -81,6 +82,11 @@ const AuthenticatedMaterialsIdRoute =
     path: '/materials/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicSyncYoutubeRoute = ApiPublicSyncYoutubeRouteImport.update({
+  id: '/api/public/sync/youtube',
+  path: '/api/public/sync/youtube',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksYoutubePlaylistRoute =
   ApiPublicHooksYoutubePlaylistRouteImport.update({
     id: '/api/public/hooks/youtube-playlist',
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/hooks/youtube-channels': typeof ApiPublicHooksYoutubeChannelsRoute
   '/api/public/hooks/youtube-playlist': typeof ApiPublicHooksYoutubePlaylistRoute
+  '/api/public/sync/youtube': typeof ApiPublicSyncYoutubeRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -137,6 +144,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/hooks/youtube-channels': typeof ApiPublicHooksYoutubeChannelsRoute
   '/api/public/hooks/youtube-playlist': typeof ApiPublicHooksYoutubePlaylistRoute
+  '/api/public/sync/youtube': typeof ApiPublicSyncYoutubeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -155,6 +163,7 @@ export interface FileRoutesById {
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/hooks/youtube-channels': typeof ApiPublicHooksYoutubeChannelsRoute
   '/api/public/hooks/youtube-playlist': typeof ApiPublicHooksYoutubePlaylistRoute
+  '/api/public/sync/youtube': typeof ApiPublicSyncYoutubeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -173,6 +182,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/weekly-digest'
     | '/api/public/hooks/youtube-channels'
     | '/api/public/hooks/youtube-playlist'
+    | '/api/public/sync/youtube'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -189,6 +199,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/weekly-digest'
     | '/api/public/hooks/youtube-channels'
     | '/api/public/hooks/youtube-playlist'
+    | '/api/public/sync/youtube'
   id:
     | '__root__'
     | '/_authenticated'
@@ -206,6 +217,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/weekly-digest'
     | '/api/public/hooks/youtube-channels'
     | '/api/public/hooks/youtube-playlist'
+    | '/api/public/sync/youtube'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -215,6 +227,7 @@ export interface RootRouteChildren {
   ApiPublicHooksWeeklyDigestRoute: typeof ApiPublicHooksWeeklyDigestRoute
   ApiPublicHooksYoutubeChannelsRoute: typeof ApiPublicHooksYoutubeChannelsRoute
   ApiPublicHooksYoutubePlaylistRoute: typeof ApiPublicHooksYoutubePlaylistRoute
+  ApiPublicSyncYoutubeRoute: typeof ApiPublicSyncYoutubeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -296,6 +309,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMaterialsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/sync/youtube': {
+      id: '/api/public/sync/youtube'
+      path: '/api/public/sync/youtube'
+      fullPath: '/api/public/sync/youtube'
+      preLoaderRoute: typeof ApiPublicSyncYoutubeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/youtube-playlist': {
       id: '/api/public/hooks/youtube-playlist'
       path: '/api/public/hooks/youtube-playlist'
@@ -361,6 +381,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksWeeklyDigestRoute: ApiPublicHooksWeeklyDigestRoute,
   ApiPublicHooksYoutubeChannelsRoute: ApiPublicHooksYoutubeChannelsRoute,
   ApiPublicHooksYoutubePlaylistRoute: ApiPublicHooksYoutubePlaylistRoute,
+  ApiPublicSyncYoutubeRoute: ApiPublicSyncYoutubeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

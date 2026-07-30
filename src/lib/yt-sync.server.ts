@@ -160,10 +160,12 @@ export async function syncAllSourcesWith(
       apiReturned: 0,
       skippedByDate: 0,
       skippedDuplicates: 0,
+      backfilled: 0,
       found: 0,
       added: 0,
       errors: [],
     };
+
     try {
       const resolved = await resolveChannel(ch.url);
       res.channel = resolved.title;

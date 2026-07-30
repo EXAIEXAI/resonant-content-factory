@@ -9,13 +9,16 @@ export type ChannelSyncResult = {
   apiReturned: number;
   /** Отсеяно по дате публикации (старее границы выборки). */
   skippedByDate: number;
-  /** Отсеяно как дубли по external_id. */
+  /** Отсеяно как дубли: строка есть и у неё уже заполнен drive_file_id. */
   skippedDuplicates: number;
-  /** Прошло фильтры (кандидаты на добавление). */
+  /** Строка была, но без файла на Диске — дозаполнена. */
+  backfilled: number;
+  /** Прошло фильтры (кандидаты на добавление/дозаполнение). */
   found: number;
   added: number;
   errors: string[];
 };
+
 
 function apiKey(): string {
   const key = process.env.YOUTUBE_API_KEY;
@@ -157,10 +160,12 @@ export async function syncAllSourcesWith(
       apiReturned: 0,
       skippedByDate: 0,
       skippedDuplicates: 0,
+      backfilled: 0,
       found: 0,
       added: 0,
       errors: [],
     };
+
     try {
       const resolved = await resolveChannel(ch.url);
       res.channel = resolved.title;
@@ -188,14 +193,33 @@ export async function syncAllSourcesWith(
         continue;
       }
 
+      type KnownRow = {
+        id: string;
+        external_id: string | null;
+        drive_file_id: string | null;
+        views: number | null;
+        reactions: number | null;
+        comments_count: number | null;
+        duration_seconds: number | null;
+        thumbnail_url: string | null;
+      };
       const { data: known } = await supabase
         .from("raw_materials")
-        .select("external_id")
+        .select("id, external_id, drive_file_id, views, reactions, comments_count, duration_seconds, thumbnail_url")
         .in("external_id", entries.map(e => e.videoId));
-      const knownIds = new Set((known ?? []).map((r: { external_id: string | null }) => r.external_id));
-      const fresh = entries.filter(e => !knownIds.has(e.videoId));
-      res.skippedDuplicates = entries.length - fresh.length;
-      if (!fresh.length) {
+      const knownMap = new Map<string, KnownRow>();
+      for (const r of (known ?? []) as KnownRow[]) {
+        if (r.external_id) knownMap.set(r.external_id, r);
+      }
+      // Дубль = строка существует И у неё есть файл на Диске. Иначе — дозаполняем.
+      const targets = entries.filter(e => {
+        const row = knownMap.get(e.videoId);
+        return !row || !row.drive_file_id;
+      });
+      res.skippedDuplicates = entries.length - targets.length;
+      res.found = targets.length;
+
+      if (!targets.length) {
         if (sinceDays && sinceDays > 0) {
           await supabase.from("channels").update({ last_polled_at: new Date().toISOString() }).eq("id", ch.id);
         }
@@ -203,8 +227,9 @@ export async function syncAllSourcesWith(
         continue;
       }
 
-      const videos = await fetchVideos(fresh.map(e => e.videoId));
+      const videos = await fetchVideos(targets.map(e => e.videoId));
       let newest: string | null = ch.last_polled_at ?? null;
+
 
       for (const v of videos) {
         try {
@@ -243,6 +268,38 @@ export async function syncAllSourcesWith(
             res.errors.push(`Drive ${videoId}: ${e instanceof Error ? e.message : String(e)}`);
           }
 
+          const existing = knownMap.get(videoId);
+          const apiViews = Number(st.viewCount ?? 0) || 0;
+          const apiLikes = Number(st.likeCount ?? 0) || 0;
+          const apiComments = Number(st.commentCount ?? 0) || 0;
+          const apiDuration = iso8601ToSeconds(v?.contentDetails?.duration);
+          const apiThumb = (th.high ?? th.medium ?? th.default)?.url ?? null;
+
+          if (existing) {
+            // Строка уже была, но без файла на Диске — дозаполняем.
+            const patch: Record<string, unknown> = {};
+            if (driveFileId) {
+              patch.drive_file_id = driveFileId;
+              patch.drive_file_url = driveFileUrl;
+            }
+            if (!existing.views && apiViews) patch.views = apiViews;
+            if (!existing.reactions && apiLikes) patch.reactions = apiLikes;
+            if (!existing.comments_count && apiComments) patch.comments_count = apiComments;
+            if (!existing.duration_seconds && apiDuration) patch.duration_seconds = apiDuration;
+            if (!existing.thumbnail_url && apiThumb) patch.thumbnail_url = apiThumb;
+
+            if (Object.keys(patch).length) {
+              const { error: updErr } = await supabase
+                .from("raw_materials")
+                .update(patch)
+                .eq("id", existing.id);
+              if (updErr) throw new Error(updErr.message);
+            }
+            res.backfilled++;
+            if (publishedAt && (!newest || new Date(publishedAt) > new Date(newest))) newest = publishedAt;
+            continue;
+          }
+
           const row = {
             external_id: videoId,
             channel_id: ch.id,
@@ -250,14 +307,16 @@ export async function syncAllSourcesWith(
             title: sn.title ?? url,
             url,
             published_at: publishedAt,
-            duration_seconds: iso8601ToSeconds(v?.contentDetails?.duration),
-            thumbnail_url: (th.high ?? th.medium ?? th.default)?.url ?? null,
+            duration_seconds: apiDuration,
+            thumbnail_url: apiThumb,
+            drive_file_id: driveFileId,
+            drive_file_url: driveFileUrl,
             source_type: "youtube_channel",
             is_manual: false,
             status: "found",
-            views: Number(st.viewCount ?? 0) || 0,
-            reactions: Number(st.likeCount ?? 0) || 0,
-            comments_count: Number(st.commentCount ?? 0) || 0,
+            views: apiViews,
+            reactions: apiLikes,
+            comments_count: apiComments,
             engagement_score: 0,
             raw_transcript: null,
             transcript_segments: [],
@@ -272,6 +331,7 @@ export async function syncAllSourcesWith(
           res.added++;
           totalAdded++;
           if (publishedAt && (!newest || new Date(publishedAt) > new Date(newest))) newest = publishedAt;
+
         } catch (e) {
           res.errors.push(e instanceof Error ? e.message : String(e));
         }

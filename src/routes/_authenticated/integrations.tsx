@@ -68,9 +68,10 @@ function IntegrationsPage() {
       addLog(`Синхронизация завершена: добавлено ${r.totalAdded} роликов из ${r.results.length} каналов`);
       r.results.forEach(x =>
         addLog(
-          `• ${x.channel}: API вернул ${x.apiReturned}, по дате отсеяно ${x.skippedByDate}, дублей ${x.skippedDuplicates}, добавлено ${x.added}${x.errors.length ? `, ошибок ${x.errors.length}` : ""}`,
+          `• ${x.channel}: API вернул ${x.apiReturned}, по дате отсеяно ${x.skippedByDate}, уже полных дублей ${x.skippedDuplicates}, дозаполнено ${x.backfilled}, добавлено новых ${x.added}${x.errors.length ? `, ошибок ${x.errors.length}` : ""}`,
         ),
       );
+
       toast.success(`Добавлено роликов: ${r.totalAdded}`);
       qc.invalidateQueries({ queryKey: ["recent_materials"] });
     },
@@ -178,8 +179,9 @@ function IntegrationsPage() {
                     <th className="p-2">Канал</th>
                     <th className="p-2">Вернул API</th>
                     <th className="p-2">Отсеяно по дате</th>
-                    <th className="p-2">Дубли</th>
-                    <th className="p-2">Добавлено</th>
+                    <th className="p-2">Уже полные дубли</th>
+                    <th className="p-2">Дозаполнено</th>
+                    <th className="p-2">Добавлено новых</th>
                     <th className="p-2">Ошибки</th>
                   </tr>
                 </thead>
@@ -190,11 +192,13 @@ function IntegrationsPage() {
                       <td className="p-2">{r.apiReturned}</td>
                       <td className="p-2">{r.skippedByDate}</td>
                       <td className="p-2">{r.skippedDuplicates}</td>
+                      <td className="p-2">{r.backfilled}</td>
                       <td className="p-2">{r.added}</td>
                       <td className="p-2 text-destructive text-xs">{r.errors.join("; ") || "—"}</td>
                     </tr>
                   ))}
                 </tbody>
+
               </table>
             </div>
           )}

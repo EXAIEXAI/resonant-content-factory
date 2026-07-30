@@ -5,6 +5,13 @@ type AnyClient = SupabaseClient<any, any, any>;
 
 export type ChannelSyncResult = {
   channel: string;
+  /** Сколько роликов вернул YouTube API (до фильтров). */
+  apiReturned: number;
+  /** Отсеяно по дате публикации (старее границы выборки). */
+  skippedByDate: number;
+  /** Отсеяно как дубли по external_id. */
+  skippedDuplicates: number;
+  /** Прошло фильтры (кандидаты на добавление). */
   found: number;
   added: number;
   errors: string[];
@@ -77,9 +84,14 @@ export async function resolveChannel(url: string): Promise<ResolvedChannel> {
 
 type PlaylistEntry = { videoId: string; publishedAt: string | null };
 
-async function listPlaylist(uploads: string, since: Date): Promise<PlaylistEntry[]> {
+async function listPlaylist(
+  uploads: string,
+  since: Date,
+): Promise<{ entries: PlaylistEntry[]; apiReturned: number; skippedByDate: number }> {
   const key = apiKey();
   const out: PlaylistEntry[] = [];
+  let apiReturned = 0;
+  let skippedByDate = 0;
   let pageToken: string | undefined;
   for (let page = 0; page < 10; page++) {
     const j: any = await getJson(
@@ -89,11 +101,13 @@ async function listPlaylist(uploads: string, since: Date): Promise<PlaylistEntry
     );
     let stop = false;
     for (const it of j?.items ?? []) {
+      apiReturned++;
       const videoId = it?.contentDetails?.videoId;
       const publishedAt = it?.contentDetails?.videoPublishedAt ?? null;
       if (!videoId) continue;
       if (publishedAt && new Date(publishedAt) <= since) {
         stop = true;
+        skippedByDate++;
         continue;
       }
       out.push({ videoId, publishedAt });
@@ -101,7 +115,7 @@ async function listPlaylist(uploads: string, since: Date): Promise<PlaylistEntry
     pageToken = j?.nextPageToken;
     if (stop || !pageToken) break;
   }
-  return out;
+  return { entries: out, apiReturned, skippedByDate };
 }
 
 async function fetchVideos(ids: string[]): Promise<any[]> {
@@ -123,6 +137,8 @@ async function fetchVideos(ids: string[]): Promise<any[]> {
 export async function syncAllSourcesWith(
   supabase: AnyClient,
   addedBy: string | null,
+  /** Если задан — граница выборки «сейчас минус sinceDays», last_polled_at игнорируется. */
+  sinceDays?: number | null,
 ): Promise<{ results: ChannelSyncResult[]; totalAdded: number; ranAt: string }> {
   const { data: channels, error } = await supabase
     .from("channels")
@@ -136,7 +152,15 @@ export async function syncAllSourcesWith(
   let totalAdded = 0;
 
   for (const ch of channels ?? []) {
-    const res: ChannelSyncResult = { channel: ch.title || ch.url, found: 0, added: 0, errors: [] };
+    const res: ChannelSyncResult = {
+      channel: ch.title || ch.url,
+      apiReturned: 0,
+      skippedByDate: 0,
+      skippedDuplicates: 0,
+      found: 0,
+      added: 0,
+      errors: [],
+    };
     try {
       const resolved = await resolveChannel(ch.url);
       res.channel = resolved.title;
@@ -145,12 +169,21 @@ export async function syncAllSourcesWith(
         .update({ external_id: resolved.channelId, title: resolved.title, subscribers: resolved.subscribers })
         .eq("id", ch.id);
 
-      const since = ch.last_polled_at
-        ? new Date(ch.last_polled_at)
-        : new Date(Date.now() - 30 * 24 * 3600 * 1000);
-      const entries = await listPlaylist(resolved.uploads, since);
+      const since =
+        sinceDays && sinceDays > 0
+          ? new Date(Date.now() - sinceDays * 24 * 3600 * 1000)
+          : ch.last_polled_at
+            ? new Date(ch.last_polled_at)
+            : new Date(Date.now() - 30 * 24 * 3600 * 1000);
+      const poll = await listPlaylist(resolved.uploads, since);
+      const entries = poll.entries;
+      res.apiReturned = poll.apiReturned;
+      res.skippedByDate = poll.skippedByDate;
       res.found = entries.length;
       if (!entries.length) {
+        if (sinceDays && sinceDays > 0) {
+          await supabase.from("channels").update({ last_polled_at: new Date().toISOString() }).eq("id", ch.id);
+        }
         results.push(res);
         continue;
       }
@@ -161,7 +194,11 @@ export async function syncAllSourcesWith(
         .in("external_id", entries.map(e => e.videoId));
       const knownIds = new Set((known ?? []).map((r: { external_id: string | null }) => r.external_id));
       const fresh = entries.filter(e => !knownIds.has(e.videoId));
+      res.skippedDuplicates = entries.length - fresh.length;
       if (!fresh.length) {
+        if (sinceDays && sinceDays > 0) {
+          await supabase.from("channels").update({ last_polled_at: new Date().toISOString() }).eq("id", ch.id);
+        }
         results.push(res);
         continue;
       }
@@ -215,7 +252,7 @@ export async function syncAllSourcesWith(
             published_at: publishedAt,
             duration_seconds: iso8601ToSeconds(v?.contentDetails?.duration),
             thumbnail_url: (th.high ?? th.medium ?? th.default)?.url ?? null,
-            source_type: "youtube",
+            source_type: "youtube_channel",
             is_manual: false,
             status: "found",
             views: Number(st.viewCount ?? 0) || 0,
@@ -240,7 +277,8 @@ export async function syncAllSourcesWith(
         }
       }
 
-      if (newest) await supabase.from("channels").update({ last_polled_at: newest }).eq("id", ch.id);
+      const stamp = sinceDays && sinceDays > 0 ? new Date().toISOString() : newest;
+      if (stamp) await supabase.from("channels").update({ last_polled_at: stamp }).eq("id", ch.id);
     } catch (e) {
       res.errors.push(e instanceof Error ? e.message : String(e));
     }

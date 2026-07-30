@@ -237,10 +237,14 @@ export const rotateWebhookSecret = createServerFn({ method: "POST" })
 /** Синхронизирует все активные YouTube-каналы в raw_materials (метаданные → Диск). */
 export const syncAllSources = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input: { sinceDays?: number | null } | undefined) =>
+    z.object({ sinceDays: z.number().int().positive().max(3650).nullish() }).partial().parse(input ?? {}),
+  )
+  .handler(async ({ context, data }) => {
     const { syncAllSourcesWith } = await import("./yt-sync.server");
-    return await syncAllSourcesWith(context.supabase, context.userId);
+    return await syncAllSourcesWith(context.supabase, context.userId, data?.sinceDays ?? null);
   });
+
 
 /** Проверка YouTube Data API: ключ задан и отвечает. */
 export const checkYoutubeApi = createServerFn({ method: "POST" })

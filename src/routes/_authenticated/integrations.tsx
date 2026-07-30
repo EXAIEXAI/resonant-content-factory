@@ -61,13 +61,15 @@ function IntegrationsPage() {
   });
 
   const syncM = useMutation({
-    mutationFn: () => runSync(),
+    mutationFn: (sinceDays?: number) => runSync({ data: sinceDays ? { sinceDays } : {} }),
     onSuccess: r => {
       setSummary(r.results);
       setLastRun(r.ranAt);
       addLog(`Синхронизация завершена: добавлено ${r.totalAdded} роликов из ${r.results.length} каналов`);
       r.results.forEach(x =>
-        addLog(`• ${x.channel}: найдено ${x.found}, добавлено ${x.added}${x.errors.length ? `, ошибок ${x.errors.length}` : ""}`),
+        addLog(
+          `• ${x.channel}: API вернул ${x.apiReturned}, по дате отсеяно ${x.skippedByDate}, дублей ${x.skippedDuplicates}, добавлено ${x.added}${x.errors.length ? `, ошибок ${x.errors.length}` : ""}`,
+        ),
       );
       toast.success(`Добавлено роликов: ${r.totalAdded}`);
       qc.invalidateQueries({ queryKey: ["recent_materials"] });
@@ -77,6 +79,7 @@ function IntegrationsPage() {
       toast.error(e.message);
     },
   });
+
 
   const yt = ytM.data;
   const drive = driveM.data;

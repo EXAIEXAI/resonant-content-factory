@@ -1,3 +1,4 @@
+// TODO: legacy GAS ingest — оставлен для совместимости, новый путь: /api/public/sync/youtube
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 

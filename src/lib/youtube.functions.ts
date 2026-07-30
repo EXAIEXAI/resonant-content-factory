@@ -234,50 +234,41 @@ export const rotateWebhookSecret = createServerFn({ method: "POST" })
     return { secret };
   });
 
-/** Последние ролики канала через YouTube Data API v3 (ключ из секрета YOUTUBE_API_KEY). */
-export const listChannelUploads = createServerFn({ method: "POST" })
+/** Синхронизирует все активные YouTube-каналы в raw_materials (метаданные → Диск). */
+export const syncAllSources = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { channelId: string; maxResults?: number }) =>
-    z.object({ channelId: z.string().min(2).max(200), maxResults: z.number().int().min(1).max(50).default(10) }).parse(data),
-  )
-  .handler(async ({ data }) => {
-    const { fetchUploads } = await import("./yt-uploads.server");
-    return { items: await fetchUploads(data.channelId.trim(), data.maxResults ?? 10) };
+  .handler(async ({ context }) => {
+    const { syncAllSourcesWith } = await import("./yt-sync.server");
+    return await syncAllSourcesWith(context.supabase, context.userId);
   });
 
-/** Сверяет последние ролики канала с yt_videos и сохраняет новые. */
-export const checkNewUploads = createServerFn({ method: "POST" })
+/** Проверка YouTube Data API: ключ задан и отвечает. */
+export const checkYoutubeApi = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { channelId: string; maxResults?: number }) =>
-    z.object({ channelId: z.string().min(2).max(200), maxResults: z.number().int().min(1).max(50).default(10) }).parse(data),
-  )
-  .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    const channelId = data.channelId.trim();
-    const { fetchUploads } = await import("./yt-uploads.server");
-    const items = await fetchUploads(channelId, data.maxResults ?? 10);
-    if (!items.length) return { checked: 0, newItems: [] as typeof items };
-
-    const { data: existing, error } = await supabase
-      .from("yt_videos")
-      .select("video_id")
-      .in("video_id", items.map(i => i.videoId));
-    if (error) throw new Error(error.message);
-    const known = new Set((existing ?? []).map(r => r.video_id));
-    const fresh = items.filter(i => !known.has(i.videoId));
-
-    if (fresh.length) {
-      const ins = await supabase.from("yt_videos").insert(
-        fresh.map(i => ({
-          channel_id: channelId,
-          video_id: i.videoId,
-          title: i.title,
-          published_at: i.publishedAt,
-          url: i.url,
-          thumbnail: i.thumbnail,
-        })),
+  .handler(async () => {
+    const key = process.env.YOUTUBE_API_KEY;
+    if (!key) return { ok: false as const, hasKey: false, error: "Не задан секрет YOUTUBE_API_KEY" };
+    try {
+      const r = await fetch(
+        `https://www.googleapis.com/youtube/v3/videos?part=id&id=dQw4w9WgXcQ&key=${key}`,
       );
-      if (ins.error) throw new Error(ins.error.message);
+      const body = await r.text();
+      if (!r.ok) return { ok: false as const, hasKey: true, error: `YouTube API [${r.status}]: ${body.slice(0, 200)}` };
+      return { ok: true as const, hasKey: true, error: null as string | null };
+    } catch (e) {
+      return { ok: false as const, hasKey: true, error: e instanceof Error ? e.message : String(e) };
     }
-    return { checked: items.length, newItems: fresh };
+  });
+
+/** Последние загруженные ролики из raw_materials. */
+export const listRecentMaterials = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("raw_materials")
+      .select("id, title, channel_title, published_at, views, url, external_id, drive_file_id, drive_file_url, created_at")
+      .order("created_at", { ascending: false })
+      .limit(25);
+    if (error) throw new Error(error.message);
+    return data ?? [];
   });

@@ -2,7 +2,16 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+/** Возвращает id рабочей папки Диска, создавая «Контент-завод» при необходимости. */
+export const ensureFolder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { ensureDriveFolder } = await import("./gdrive.server");
+    return await ensureDriveFolder();
+  });
+
 /** Загружает текстовый файл в папку GDRIVE_FOLDER_ID. */
+
 export const uploadTextFile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { name: string; content: string }) =>

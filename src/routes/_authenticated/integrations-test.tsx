@@ -106,6 +106,7 @@ function IntegrationsTestPage() {
               disabled={!!busy}
               onClick={() =>
                 run("Папка Диска", async () => {
+                  push("auth: oauth refresh token");
                   const res = await driveEnsureFolder({ data: {} as never });
                   setFolderId(res.id);
                   push(`✓ Папка «${res.name}» ${res.created ? "создана" : "найдена"}: ${res.id}`);
@@ -119,6 +120,7 @@ function IntegrationsTestPage() {
               disabled={!!busy}
               onClick={() =>
                 run("Тест Диска", async () => {
+                  push("auth: oauth refresh token");
                   const name = `test-${Date.now()}.txt`;
                   const res = await driveUpload({
                     data: { name, content: `Проверка загрузки из Контент-завода: ${new Date().toISOString()}` },
@@ -134,6 +136,7 @@ function IntegrationsTestPage() {
               disabled={!!busy}
               onClick={() =>
                 run("Синк в Диск", async () => {
+                  push("auth: oauth refresh token");
                   const res = await driveSync({ data: {} as never });
                   push(`✓ Обработано записей: ${res.total}`);
                   res.results.forEach(r =>

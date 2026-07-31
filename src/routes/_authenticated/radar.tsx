@@ -114,6 +114,9 @@ function RadarPage() {
                   <Input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://youtu.be/... или любой URL" autoFocus />
                   <p className="text-xs text-muted-foreground mt-1">Для YouTube автоматически подтянутся название, автор и субтитры.</p>
                 </div>
+                <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground">
+                  Здесь добавляются ссылки на <span className="font-medium text-foreground">одиночные видео</span>. Ссылки на каналы добавляйте во вкладке <Link to="/channels" className="text-primary hover:underline">«Источники»</Link>.
+                </div>
               </div>
               <DialogFooter><Button onClick={() => addManual.mutate()} disabled={addManual.isPending}>{addManual.isPending ? "Загружаю..." : "Добавить"}</Button></DialogFooter>
             </DialogContent>

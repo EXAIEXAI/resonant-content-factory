@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -134,6 +134,9 @@ function ChannelsPage() {
                   <Label>Ссылка</Label>
                   <Input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://youtube.com/@channel или https://t.me/channel" autoFocus />
                   <p className="text-xs text-muted-foreground mt-2">Для YouTube автоматически подтянутся последние 15 роликов из RSS канала.</p>
+                </div>
+                <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground">
+                  Здесь добавляются ссылки на <span className="font-medium text-foreground">каналы</span>. Ссылки на одиночные видео добавляйте во вкладке <Link to="/radar" className="text-primary hover:underline">«Отраслевой радар»</Link>.
                 </div>
               </div>
               <DialogFooter><Button onClick={() => create.mutate()} disabled={create.isPending}>{create.isPending ? "Загружаю…" : "Сохранить"}</Button></DialogFooter>

@@ -1,0 +1,2 @@
+ALTER TABLE public.raw_materials DROP CONSTRAINT raw_materials_channel_id_fkey;
+ALTER TABLE public.raw_materials ADD CONSTRAINT raw_materials_channel_id_fkey FOREIGN KEY (channel_id) REFERENCES public.channels(id) ON DELETE CASCADE;

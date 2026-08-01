@@ -195,6 +195,50 @@ function IntegrationsPage() {
 
       <Card>
         <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <ListVideo className="h-4 w-4" /> Плейлист «Смотреть в контент-заводе»
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm text-muted-foreground space-y-1">
+            <p className="text-foreground font-medium">Как добавлять ролики без копирования ссылок</p>
+            <p>1. Создайте на YouTube плейлист (например, «Контент-завод») с доступом «Открытый» или «Доступ по ссылке».</p>
+            <p>2. Под любым видео жмите «Сохранить» → выберите этот плейлист. На телефоне — «Поделиться» → «Сохранить в плейлист».</p>
+            <p>3. Вставьте ссылку на плейлист ниже. Приложение само заберёт ролики (проверка каждый час и по кнопке).</p>
+            <p className="text-xs">Личный список «Смотреть позже» YouTube закрыт для внешних приложений, поэтому используется обычный плейлист.</p>
+          </div>
+          <div className="grid gap-2 sm:max-w-xl">
+            <Label htmlFor="playlist">Ссылка на плейлист или его ID</Label>
+            <Input
+              id="playlist"
+              value={playlist}
+              onChange={e => setPlaylist(e.target.value)}
+              placeholder="https://www.youtube.com/playlist?list=PL..."
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button onClick={() => savePlaylistM.mutate()} disabled={savePlaylistM.isPending}>
+              Сохранить плейлист
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => watchlistM.mutate()}
+              disabled={watchlistM.isPending || !settings?.youtube_playlist_id}
+            >
+              <RefreshCw className={`h-4 w-4 ${watchlistM.isPending ? "animate-spin" : ""}`} />
+              Забрать ролики из плейлиста
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Последняя проверка: {fmt(settings?.last_sync_at)}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
+
+      <Card>
+        <CardHeader>
           <CardTitle className="text-base">Синхронизация</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">

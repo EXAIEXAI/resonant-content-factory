@@ -1,0 +1,141 @@
+// Server-only: сбор роликов из личного плейлиста YouTube («Сохранить» → плейлист) в raw_materials.
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { iso8601ToSeconds } from "./yt-sync.server";
+
+type AnyClient = SupabaseClient<any, any, any>;
+
+export type WatchlistSyncResult = {
+  playlistId: string;
+  apiReturned: number;
+  skippedDuplicates: number;
+  added: number;
+  errors: string[];
+};
+
+function apiKey(explicit?: string | null): string {
+  const key = explicit || process.env.YOUTUBE_API_KEY;
+  if (!key) throw new Error("Не задан ключ YouTube Data API");
+  return key;
+}
+
+async function getJson(url: string): Promise<any> {
+  const r = await fetch(url);
+  const body = await r.text();
+  if (!r.ok) throw new Error(`YouTube API [${r.status}]: ${body.slice(0, 300)}`);
+  return JSON.parse(body);
+}
+
+async function fetchTranscript(videoId: string): Promise<{ start: number; dur: number; text: string }[]> {
+  for (const lang of ["ru", "en"]) {
+    try {
+      const r = await fetch(`https://video.google.com/timedtext?lang=${lang}&v=${videoId}`);
+      if (!r.ok) continue;
+      const xml = await r.text();
+      if (!xml.trim()) continue;
+      const re = /<text[^>]*start="([\d.]+)"[^>]*(?:dur="([\d.]+)")?[^>]*>([\s\S]*?)<\/text>/g;
+      const segs: { start: number; dur: number; text: string }[] = [];
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(xml))) {
+        const text = m[3]
+          .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+          .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+          .replace(/<[^>]+>/g, "").trim();
+        if (text) segs.push({ start: parseFloat(m[1]), dur: parseFloat(m[2] ?? "0"), text });
+      }
+      if (segs.length) return segs;
+    } catch {
+      continue;
+    }
+  }
+  return [];
+}
+
+/** Тянет все ролики из плейлиста и добавляет отсутствующие в raw_materials. */
+export async function syncWatchlistPlaylist(
+  supabase: AnyClient,
+  addedBy: string | null,
+  playlistId: string,
+  explicitKey?: string | null,
+): Promise<WatchlistSyncResult> {
+  const key = apiKey(explicitKey);
+  const res: WatchlistSyncResult = { playlistId, apiReturned: 0, skippedDuplicates: 0, added: 0, errors: [] };
+
+  const ids: string[] = [];
+  let pageToken: string | undefined;
+  for (let page = 0; page < 10; page++) {
+    const j: any = await getJson(
+      `https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&maxResults=50&playlistId=${encodeURIComponent(
+        playlistId,
+      )}${pageToken ? `&pageToken=${pageToken}` : ""}&key=${key}`,
+    );
+    for (const it of j?.items ?? []) {
+      res.apiReturned++;
+      const vid = it?.contentDetails?.videoId;
+      if (vid) ids.push(vid);
+    }
+    pageToken = j?.nextPageToken;
+    if (!pageToken) break;
+  }
+  if (!ids.length) return res;
+
+  const { data: known } = await supabase.from("raw_materials").select("external_id").in("external_id", ids);
+  const knownSet = new Set((known ?? []).map((r: any) => r.external_id));
+  const targets = ids.filter(id => !knownSet.has(id));
+  res.skippedDuplicates = ids.length - targets.length;
+  if (!targets.length) return res;
+
+  const videos: any[] = [];
+  for (let i = 0; i < targets.length; i += 50) {
+    const chunk = targets.slice(i, i + 50);
+    const j: any = await getJson(
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${chunk.join(",")}&key=${key}`,
+    );
+    videos.push(...(j?.items ?? []));
+  }
+
+  const { analyzeMaterialById } = await import("./analyze.server");
+
+  for (const v of videos) {
+    try {
+      const videoId: string = v.id;
+      const sn = v.snippet ?? {};
+      const st = v.statistics ?? {};
+      const th = sn.thumbnails ?? {};
+      const segments = await fetchTranscript(videoId);
+
+      const { data: row, error } = await supabase
+        .from("raw_materials")
+        .upsert(
+          {
+            external_id: videoId,
+            title: sn.title ?? `https://www.youtube.com/watch?v=${videoId}`,
+            channel_title: sn.channelTitle ?? null,
+            url: `https://www.youtube.com/watch?v=${videoId}`,
+            thumbnail_url: (th.high ?? th.medium ?? th.default)?.url ?? null,
+            published_at: sn.publishedAt ?? null,
+            duration_seconds: iso8601ToSeconds(v?.contentDetails?.duration),
+            views: Number(st.viewCount ?? 0) || 0,
+            reactions: Number(st.likeCount ?? 0) || 0,
+            comments_count: Number(st.commentCount ?? 0) || 0,
+            raw_transcript: segments.length ? segments.map(s => s.text).join(" ") : null,
+            transcript_segments: segments,
+            is_manual: true,
+            source_type: "youtube_saved",
+            status: "found",
+            engagement_score: 0,
+            added_by: addedBy,
+          },
+          { onConflict: "external_id" },
+        )
+        .select("id")
+        .single();
+      if (error) throw new Error(error.message);
+      res.added++;
+      analyzeMaterialById(supabase, row.id).catch(e => console.error("watchlist analyze failed", e));
+    } catch (e) {
+      res.errors.push(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  return res;
+}

@@ -245,6 +245,29 @@ export const syncAllSources = createServerFn({ method: "POST" })
     return await syncAllSourcesWith(context.supabase, context.userId, data?.sinceDays ?? null);
   });
 
+/** Забирает ролики из личного плейлиста YouTube («Сохранить» → плейлист) в материалы. */
+export const syncWatchlist = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data: settings } = await supabase
+      .from("integration_settings")
+      .select("youtube_playlist_id, youtube_api_key")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const playlistId = settings?.youtube_playlist_id?.trim();
+    if (!playlistId) throw new Error("Плейлист не указан — сохраните ссылку на плейлист в настройках интеграций");
+    const { syncWatchlistPlaylist } = await import("./watchlist.server");
+    const result = await syncWatchlistPlaylist(supabase, userId, playlistId, settings?.youtube_api_key ?? null);
+    await supabase
+      .from("integration_settings")
+      .update({ last_sync_at: new Date().toISOString(), last_sync_count: result.added })
+      .eq("user_id", userId);
+    return result;
+  });
+
+
+
 
 /** Проверка YouTube Data API: ключ задан и отвечает. */
 export const checkYoutubeApi = createServerFn({ method: "POST" })

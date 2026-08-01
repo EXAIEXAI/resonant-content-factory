@@ -1,14 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, RefreshCw, ExternalLink } from "lucide-react";
-import { syncAllSources, checkYoutubeApi, listRecentMaterials } from "@/lib/youtube.functions";
+import { CheckCircle2, XCircle, RefreshCw, ExternalLink, ListVideo } from "lucide-react";
+import {
+  syncAllSources,
+  checkYoutubeApi,
+  listRecentMaterials,
+  syncWatchlist,
+  getIntegrationSettings,
+  saveIntegrationSettings,
+} from "@/lib/youtube.functions";
 import { checkDrive } from "@/lib/gdrive.functions";
+
 
 export const Route = createFileRoute("/_authenticated/integrations")({
   head: () => ({
@@ -81,9 +91,43 @@ function IntegrationsPage() {
     },
   });
 
+  const loadSettings = useServerFn(getIntegrationSettings);
+  const saveSettings = useServerFn(saveIntegrationSettings);
+  const runWatchlist = useServerFn(syncWatchlist);
+  const { data: settings } = useQuery({ queryKey: ["integration_settings"], queryFn: () => loadSettings() });
+  const [playlist, setPlaylist] = useState("");
+  useEffect(() => {
+    if (settings?.youtube_playlist_id) setPlaylist(settings.youtube_playlist_id);
+  }, [settings?.youtube_playlist_id]);
+
+  const savePlaylistM = useMutation({
+    mutationFn: () => saveSettings({ data: { playlist_id: playlist.trim() || null } }),
+    onSuccess: () => {
+      toast.success("Плейлист сохранён");
+      addLog(`Плейлист сохранён: ${playlist.trim() || "—"}`);
+      qc.invalidateQueries({ queryKey: ["integration_settings"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const watchlistM = useMutation({
+    mutationFn: () => runWatchlist(),
+    onSuccess: r => {
+      addLog(
+        `Плейлист: вернул API ${r.apiReturned}, дублей ${r.skippedDuplicates}, добавлено ${r.added}${r.errors.length ? `, ошибок ${r.errors.length}` : ""}`,
+      );
+      toast.success(`Из плейлиста добавлено: ${r.added}`);
+      qc.invalidateQueries({ queryKey: ["recent_materials"] });
+    },
+    onError: (e: Error) => {
+      addLog(`Плейлист: ошибка — ${e.message}`);
+      toast.error(e.message);
+    },
+  });
 
   const yt = ytM.data;
   const drive = driveM.data;
+
 
   return (
     <div className="space-y-6">
@@ -148,6 +192,50 @@ function IntegrationsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <ListVideo className="h-4 w-4" /> Плейлист «Смотреть в контент-заводе»
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm text-muted-foreground space-y-1">
+            <p className="text-foreground font-medium">Как добавлять ролики без копирования ссылок</p>
+            <p>1. Создайте на YouTube плейлист (например, «Контент-завод») с доступом «Открытый» или «Доступ по ссылке».</p>
+            <p>2. Под любым видео жмите «Сохранить» → выберите этот плейлист. На телефоне — «Поделиться» → «Сохранить в плейлист».</p>
+            <p>3. Вставьте ссылку на плейлист ниже. Приложение само заберёт ролики (проверка каждый час и по кнопке).</p>
+            <p className="text-xs">Личный список «Смотреть позже» YouTube закрыт для внешних приложений, поэтому используется обычный плейлист.</p>
+          </div>
+          <div className="grid gap-2 sm:max-w-xl">
+            <Label htmlFor="playlist">Ссылка на плейлист или его ID</Label>
+            <Input
+              id="playlist"
+              value={playlist}
+              onChange={e => setPlaylist(e.target.value)}
+              placeholder="https://www.youtube.com/playlist?list=PL..."
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button onClick={() => savePlaylistM.mutate()} disabled={savePlaylistM.isPending}>
+              Сохранить плейлист
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => watchlistM.mutate()}
+              disabled={watchlistM.isPending || !settings?.youtube_playlist_id}
+            >
+              <RefreshCw className={`h-4 w-4 ${watchlistM.isPending ? "animate-spin" : ""}`} />
+              Забрать ролики из плейлиста
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Последняя проверка: {fmt(settings?.last_sync_at)}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
 
       <Card>
         <CardHeader>

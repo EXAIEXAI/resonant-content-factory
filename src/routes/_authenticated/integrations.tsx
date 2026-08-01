@@ -1,14 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, RefreshCw, ExternalLink } from "lucide-react";
-import { syncAllSources, checkYoutubeApi, listRecentMaterials } from "@/lib/youtube.functions";
+import { CheckCircle2, XCircle, RefreshCw, ExternalLink, ListVideo } from "lucide-react";
+import {
+  syncAllSources,
+  checkYoutubeApi,
+  listRecentMaterials,
+  syncWatchlist,
+  getIntegrationSettings,
+  saveIntegrationSettings,
+} from "@/lib/youtube.functions";
 import { checkDrive } from "@/lib/gdrive.functions";
+
 
 export const Route = createFileRoute("/_authenticated/integrations")({
   head: () => ({

@@ -91,9 +91,43 @@ function IntegrationsPage() {
     },
   });
 
+  const loadSettings = useServerFn(getIntegrationSettings);
+  const saveSettings = useServerFn(saveIntegrationSettings);
+  const runWatchlist = useServerFn(syncWatchlist);
+  const { data: settings } = useQuery({ queryKey: ["integration_settings"], queryFn: () => loadSettings() });
+  const [playlist, setPlaylist] = useState("");
+  useEffect(() => {
+    if (settings?.youtube_playlist_id) setPlaylist(settings.youtube_playlist_id);
+  }, [settings?.youtube_playlist_id]);
+
+  const savePlaylistM = useMutation({
+    mutationFn: () => saveSettings({ data: { playlist_id: playlist.trim() || null } }),
+    onSuccess: () => {
+      toast.success("Плейлист сохранён");
+      addLog(`Плейлист сохранён: ${playlist.trim() || "—"}`);
+      qc.invalidateQueries({ queryKey: ["integration_settings"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const watchlistM = useMutation({
+    mutationFn: () => runWatchlist(),
+    onSuccess: r => {
+      addLog(
+        `Плейлист: вернул API ${r.apiReturned}, дублей ${r.skippedDuplicates}, добавлено ${r.added}${r.errors.length ? `, ошибок ${r.errors.length}` : ""}`,
+      );
+      toast.success(`Из плейлиста добавлено: ${r.added}`);
+      qc.invalidateQueries({ queryKey: ["recent_materials"] });
+    },
+    onError: (e: Error) => {
+      addLog(`Плейлист: ошибка — ${e.message}`);
+      toast.error(e.message);
+    },
+  });
 
   const yt = ytM.data;
   const drive = driveM.data;
+
 
   return (
     <div className="space-y-6">

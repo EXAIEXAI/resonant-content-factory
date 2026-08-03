@@ -94,6 +94,7 @@ export async function syncWatchlistPlaylist(
   }
 
   const { analyzeMaterialById } = await import("./analyze.server");
+  const { driveUploadText } = await import("./gdrive.server");
 
   for (const v of videos) {
     try {
@@ -102,15 +103,48 @@ export async function syncWatchlistPlaylist(
       const st = v.statistics ?? {};
       const th = sn.thumbnails ?? {};
       const segments = await fetchTranscript(videoId);
+      const url = `https://www.youtube.com/watch?v=${videoId}`;
+
+      let driveFileId: string | null = null;
+      let driveFileUrl: string | null = null;
+      try {
+        const file = await driveUploadText(
+          `[YT] ${String(sn.title ?? videoId).replace(/[\\/:*?"<>|]/g, " ").slice(0, 120)}_${videoId}.json`,
+          JSON.stringify(
+            {
+              video_id: videoId,
+              source: "youtube_saved",
+              playlist_id: playlistId,
+              channel_id: sn.channelId ?? null,
+              channel_title: sn.channelTitle ?? null,
+              title: sn.title ?? "",
+              description: sn.description ?? "",
+              published_at: sn.publishedAt ?? null,
+              duration: v?.contentDetails?.duration ?? null,
+              statistics: st,
+              url,
+              transcript: segments.map(s => s.text).join(" "),
+              transcript_segments: segments,
+            },
+            null,
+            2,
+          ),
+          "application/json",
+        );
+        driveFileId = file.id;
+        driveFileUrl = file.webViewLink;
+      } catch (e) {
+        res.errors.push(`Drive ${videoId}: ${e instanceof Error ? e.message : String(e)}`);
+      }
 
       const { data: row, error } = await supabase
         .from("raw_materials")
         .upsert(
           {
             external_id: videoId,
-            title: sn.title ?? `https://www.youtube.com/watch?v=${videoId}`,
+            title: sn.title ?? url,
             channel_title: sn.channelTitle ?? null,
-            url: `https://www.youtube.com/watch?v=${videoId}`,
+            url,
             thumbnail_url: (th.high ?? th.medium ?? th.default)?.url ?? null,
             published_at: sn.publishedAt ?? null,
             duration_seconds: iso8601ToSeconds(v?.contentDetails?.duration),
@@ -119,6 +153,8 @@ export async function syncWatchlistPlaylist(
             comments_count: Number(st.commentCount ?? 0) || 0,
             raw_transcript: segments.length ? segments.map(s => s.text).join(" ") : null,
             transcript_segments: segments,
+            drive_file_id: driveFileId,
+            drive_file_url: driveFileUrl,
             is_manual: true,
             source_type: "youtube_saved",
             status: "found",
@@ -130,6 +166,7 @@ export async function syncWatchlistPlaylist(
         .select("id")
         .single();
       if (error) throw new Error(error.message);
+
       res.added++;
       analyzeMaterialById(supabase, row.id).catch(e => console.error("watchlist analyze failed", e));
     } catch (e) {

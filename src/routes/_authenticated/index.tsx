@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Radio, Rss, FileStack, Sparkles } from "lucide-react";
 import { statusLabels } from "@/lib/ui-labels";
+import { computeScore } from "@/lib/scoring";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Дашборд · Контент-завод" }] }),

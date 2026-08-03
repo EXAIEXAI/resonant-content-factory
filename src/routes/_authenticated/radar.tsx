@@ -37,6 +37,7 @@ function RadarPage() {
   const ranked = useMemo(() => {
     const chMap = new Map((channels ?? []).map(c => [c.id, c]));
     const list = (materials ?? [])
+      .filter(m => m.source_type !== "youtube_saved")
       .map(m => {
         const ch = m.channel_id ? chMap.get(m.channel_id) : null;
         const { score, factors, breakdown } = computeScore({ ...m, subscribers: ch?.subscribers ?? 1000 });

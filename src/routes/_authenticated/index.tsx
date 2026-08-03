@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Radio, Rss, FileStack, Sparkles } from "lucide-react";
 import { statusLabels } from "@/lib/ui-labels";
+import { computeScore } from "@/lib/scoring";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Дашборд · Контент-завод" }] }),
@@ -39,12 +40,18 @@ function Dashboard() {
     queryFn: async () => {
       const { data } = await supabase
         .from("raw_materials")
-        .select("id, title, engagement_score, category, status, created_at")
+        .select("id, title, engagement_score, status, created_at, views, reactions, comments_count, published_at, channel_id")
         .order("created_at", { ascending: false })
         .limit(6);
-      return data ?? [];
+      const { data: chans } = await supabase.from("channels").select("id, subscribers");
+      const subs = new Map((chans ?? []).map(c => [c.id, c.subscribers ?? 1000]));
+      return (data ?? []).map(r => ({
+        ...r,
+        liveScore: computeScore({ ...r, subscribers: r.channel_id ? subs.get(r.channel_id) ?? 1000 : 1000 }).score,
+      }));
     },
   });
+
 
   const cards = [
     { label: "Источников", value: stats?.channels ?? 0, icon: Radio, to: "/channels" },
@@ -83,7 +90,7 @@ function Dashboard() {
               <Link key={r.id} to="/materials/$id" params={{ id: r.id }} className="block p-3 rounded-md border hover:border-primary/40 transition-colors">
                 <div className="text-sm font-medium line-clamp-1">{r.title}</div>
               <div className="text-xs text-muted-foreground mt-1 flex gap-3">
-                <span>Рейтинг {(r.engagement_score ?? 0).toFixed(0)}</span>
+                <span>Рейтинг {r.liveScore ?? Math.round(r.engagement_score ?? 0)}</span>
                 <span>· {statusLabels[r.status ?? ""] ?? r.status ?? "—"}</span>
               </div>
               </Link>

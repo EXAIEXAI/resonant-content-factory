@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Radio, Rss, FileStack, Kanban, BookOpen, Users, LogOut, Lock, Plug, Menu, X } from "lucide-react";
+import { LayoutDashboard, Radio, Rss, FileStack, Kanban, BookOpen, Users, LogOut, Lock, Plug, Menu, X, Bookmark } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState, type ReactNode } from "react";
@@ -9,11 +9,13 @@ const nav = [
   { to: "/", label: "Дашборд", icon: LayoutDashboard },
   { to: "/channels", label: "Источники", icon: Radio },
   { to: "/radar", label: "Отраслевой радар", icon: Rss },
+  { to: "/saved", label: "Из плейлиста", icon: Bookmark },
   { to: "/digests", label: "Дайджесты", icon: FileStack },
   { to: "/kanban", label: "Канбан публикаций", icon: Kanban },
   { to: "/knowledge", label: "База знаний", icon: BookOpen, locked: true },
   { to: "/roles", label: "Роли", icon: Users },
 ];
+
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: s => s.location.pathname });

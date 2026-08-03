@@ -39,12 +39,18 @@ function Dashboard() {
     queryFn: async () => {
       const { data } = await supabase
         .from("raw_materials")
-        .select("id, title, engagement_score, category, status, created_at")
+        .select("id, title, engagement_score, status, created_at, views, reactions, comments_count, published_at, channel_id")
         .order("created_at", { ascending: false })
         .limit(6);
-      return data ?? [];
+      const { data: chans } = await supabase.from("channels").select("id, subscribers");
+      const subs = new Map((chans ?? []).map(c => [c.id, c.subscribers ?? 1000]));
+      return (data ?? []).map(r => ({
+        ...r,
+        liveScore: computeScore({ ...r, subscribers: r.channel_id ? subs.get(r.channel_id) ?? 1000 : 1000 }).score,
+      }));
     },
   });
+
 
   const cards = [
     { label: "Источников", value: stats?.channels ?? 0, icon: Radio, to: "/channels" },

@@ -182,33 +182,36 @@ export const syncChannel = createServerFn({ method: "POST" })
     z.object({ channelId: z.string().uuid() }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
     const { data: ch, error } = await supabase
       .from("channels")
       .select("id, url, external_id, title, platform")
       .eq("id", data.channelId)
+      .eq("user_id", userId)
       .maybeSingle();
     if (error || !ch) throw new Error("Канал не найден");
     if (ch.platform !== "youtube") {
       return { resolved: false, added: 0, total: 0, message: "Автосинхронизация пока только для YouTube" };
     }
-    return ingestChannel(supabase, ch as any);
+    return ingestChannel(supabase, userId, ch as any);
   });
 
 export const syncAllChannels = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
     const { data: chs } = await supabase
       .from("channels")
       .select("id, url, external_id, title, platform")
+      .eq("user_id", userId)
       .eq("active", true)
       .eq("platform", "youtube");
     let added = 0;
     let processed = 0;
     for (const ch of chs ?? []) {
       try {
-        const r = await ingestChannel(supabase, ch as any);
+        const r = await ingestChannel(supabase, userId, ch as any);
+
         added += r.added;
         processed += 1;
       } catch (e) {

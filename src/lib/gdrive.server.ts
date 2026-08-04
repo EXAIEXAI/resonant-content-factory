@@ -33,10 +33,11 @@ export async function getAccessToken(): Promise<string> {
   return token;
 }
 
+/** Рабочая папка Google Диска (задана владельцем проекта). */
+export const TARGET_FOLDER_ID = "1eapqEJAkUHk3yUILiVYlmeWoYbORilSA";
+
 export function driveFolderId(): string {
-  const id = process.env.GDRIVE_FOLDER_ID;
-  if (!id) throw new Error("Не задан секрет GDRIVE_FOLDER_ID");
-  return id;
+  return TARGET_FOLDER_ID;
 }
 
 const FOLDER_NAME = "Контент-завод";
@@ -47,7 +48,7 @@ export async function ensureDriveFolder(): Promise<{ id: string; created: boolea
   if (cachedFolderId) return { id: cachedFolderId, created: false, name: FOLDER_NAME };
 
   const token = await getAccessToken();
-  const fromSecret = process.env.GDRIVE_FOLDER_ID;
+  const fromSecret = TARGET_FOLDER_ID;
 
   if (fromSecret) {
     const res = await fetch(

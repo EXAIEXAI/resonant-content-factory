@@ -273,7 +273,48 @@ function IntegrationsPage() {
               </Button>
             </div>
           )}
+
+          <div className="space-y-3 border-t pt-4">
+            <p className="text-sm font-medium">Автоматическая синхронизация</p>
+            <p className="text-sm text-muted-foreground">
+              Эти данные нужны, чтобы запускать синхронизацию по расписанию из внешнего планировщика: он вызывает
+              указанный адрес методом POST и передаёт ваш секрет в заголовке <code>x-webhook-secret</code>.
+            </p>
+            <div className="space-y-1">
+              <Label className="text-xs">Адрес эндпоинта</Label>
+              <div className="flex gap-2">
+                <Input readOnly value={syncEndpoint} className="font-mono text-xs" />
+                <Button size="icon" variant="outline" onClick={() => copy(syncEndpoint, "Адрес скопирован")}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Персональный секрет (x-webhook-secret)</Label>
+              <div className="flex gap-2">
+                <Input readOnly value={settings?.webhook_secret ?? ""} className="font-mono text-xs" />
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={() => copy(settings?.webhook_secret ?? "", "Секрет скопирован")}
+                  disabled={!settings?.webhook_secret}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => rotateM.mutate()}
+                  disabled={rotateM.isPending}
+                  className="gap-2 whitespace-nowrap"
+                >
+                  <RefreshCw className={`h-4 w-4 ${rotateM.isPending ? "animate-spin" : ""}`} /> Перегенерировать
+                </Button>
+              </div>
+            </div>
+          </div>
         </CardContent>
+
       </Card>
 
 

@@ -9,13 +9,35 @@ export const saveTelegramChatId = createServerFn({ method: "POST" })
     z.object({ chat_id: z.string().max(64).nullish() }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
+    const value = data.chat_id?.trim() || null;
+    // Гарантируем наличие строки настроек, иначе update молча ничего не сохранит
+    const { data: existing } = await context.supabase
       .from("integration_settings")
-      .update({ telegram_chat_id: data.chat_id?.trim() || null } as never)
-      .eq("user_id", context.userId);
-    if (error) throw new Error(error.message);
-    return { ok: true };
+      .select("id")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+
+    if (!existing) {
+      const { error } = await context.supabase
+        .from("integration_settings")
+        .insert({ user_id: context.userId, telegram_chat_id: value } as never);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await context.supabase
+        .from("integration_settings")
+        .update({ telegram_chat_id: value } as never)
+        .eq("user_id", context.userId);
+      if (error) throw new Error(error.message);
+    }
+
+    const { data: saved } = await context.supabase
+      .from("integration_settings")
+      .select("telegram_chat_id")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    return { ok: true, chat_id: (saved as { telegram_chat_id: string | null } | null)?.telegram_chat_id ?? null };
   });
+
 
 /** Отправляет список сохранённых роликов в Telegram прямо сейчас. */
 export const sendTelegramDigestNow = createServerFn({ method: "POST" })

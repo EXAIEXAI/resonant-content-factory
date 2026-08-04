@@ -48,7 +48,7 @@ export async function ensureDriveFolder(): Promise<{ id: string; created: boolea
   if (cachedFolderId) return { id: cachedFolderId, created: false, name: FOLDER_NAME };
 
   const token = await getAccessToken();
-  const fromSecret = process.env.GDRIVE_FOLDER_ID;
+  const fromSecret = TARGET_FOLDER_ID || process.env.GDRIVE_FOLDER_ID;
 
   if (fromSecret) {
     const res = await fetch(

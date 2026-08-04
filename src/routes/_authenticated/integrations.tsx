@@ -171,8 +171,42 @@ function IntegrationsPage() {
     },
   });
 
+  const googleStatus = useServerFn(getGoogleStatus);
+  const startConnect = useServerFn(startGoogleConnect);
+  const disconnect = useServerFn(disconnectGoogle);
+  const { data: google } = useQuery({ queryKey: ["google_status"], queryFn: () => googleStatus() });
+
+  const connectM = useMutation({
+    mutationFn: async () => await startConnect({ data: { origin: window.location.origin } }),
+    onSuccess: r => {
+      window.location.href = r.url;
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const disconnectM = useMutation({
+    mutationFn: () => disconnect(),
+    onSuccess: () => {
+      toast.success("Google отключён");
+      qc.invalidateQueries({ queryKey: ["google_status"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const g = p.get("google");
+    if (!g) return;
+    if (g === "connected") toast.success("Google подключён");
+    else toast.error(`Google: ${p.get("message") ?? "ошибка подключения"}`);
+    qc.invalidateQueries({ queryKey: ["google_status"] });
+    window.history.replaceState({}, "", window.location.pathname);
+  }, [qc]);
+
   const yt = ytM.data;
   const drive = driveM.data;
+
+
 
 
   return (

@@ -125,6 +125,40 @@ function IntegrationsPage() {
     },
   });
 
+  const saveChat = useServerFn(saveTelegramChatId);
+  const sendTg = useServerFn(sendTelegramDigestNow);
+  const [chatId, setChatId] = useState("");
+  useEffect(() => {
+    if (settings?.telegram_chat_id) setChatId(settings.telegram_chat_id);
+  }, [settings?.telegram_chat_id]);
+
+  const saveChatM = useMutation({
+    mutationFn: () => saveChat({ data: { chat_id: chatId.trim() || null } }),
+    onSuccess: () => {
+      toast.success("Telegram-чат сохранён");
+      qc.invalidateQueries({ queryKey: ["integration_settings"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const sendTgM = useMutation({
+    mutationFn: (days: number) => sendTg({ data: { days } }),
+    onSuccess: r => {
+      if (r.skipped) {
+        addLog(`Telegram: ${r.skipped}`);
+        toast.message(r.skipped);
+      } else {
+        addLog(`Telegram: отправлено роликов ${r.sent}`);
+        toast.success(`Отправлено роликов: ${r.sent}`);
+      }
+      qc.invalidateQueries({ queryKey: ["integration_settings"] });
+    },
+    onError: (e: Error) => {
+      addLog(`Telegram: ошибка — ${e.message}`);
+      toast.error(e.message);
+    },
+  });
+
   const yt = ytM.data;
   const drive = driveM.data;
 

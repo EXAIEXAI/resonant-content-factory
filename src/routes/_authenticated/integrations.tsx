@@ -142,12 +142,15 @@ function IntegrationsPage() {
       saveChat({
         data: { chat_id: chatIds.map(c => c.trim()).filter(Boolean).join(",") || null },
       }),
-    onSuccess: () => {
-      toast.success("Получатели Telegram сохранены");
+    onSuccess: r => {
+      const list = (r?.chat_id ?? "").split(/[,\s;]+/).map(s => s.trim()).filter(Boolean);
+      setChatIds(list.length ? list : [""]);
+      toast.success(`Получатели сохранены: ${list.length}`);
       qc.invalidateQueries({ queryKey: ["integration_settings"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
 
   const sendTgM = useMutation({

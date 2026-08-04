@@ -128,19 +128,27 @@ function IntegrationsPage() {
 
   const saveChat = useServerFn(saveTelegramChatId);
   const sendTg = useServerFn(sendTelegramDigestNow);
-  const [chatId, setChatId] = useState("");
+  const [chatIds, setChatIds] = useState<string[]>([""]);
   useEffect(() => {
-    if (settings?.telegram_chat_id) setChatId(settings.telegram_chat_id);
+    const list = (settings?.telegram_chat_id ?? "")
+      .split(/[,\s;]+/)
+      .map((s: string) => s.trim())
+      .filter(Boolean);
+    setChatIds(list.length ? list : [""]);
   }, [settings?.telegram_chat_id]);
 
   const saveChatM = useMutation({
-    mutationFn: () => saveChat({ data: { chat_id: chatId.trim() || null } }),
+    mutationFn: () =>
+      saveChat({
+        data: { chat_id: chatIds.map(c => c.trim()).filter(Boolean).join(",") || null },
+      }),
     onSuccess: () => {
-      toast.success("Telegram-чат сохранён");
+      toast.success("Получатели Telegram сохранены");
       qc.invalidateQueries({ queryKey: ["integration_settings"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const sendTgM = useMutation({
     mutationFn: (days: number) => sendTg({ data: { days } }),
@@ -284,18 +292,46 @@ function IntegrationsPage() {
             <p>Чтобы узнать chat ID: напишите боту любое сообщение и вставьте сюда ваш ID (например, от @userinfobot).</p>
           </div>
           <div className="grid gap-2 sm:max-w-xl">
-            <Label htmlFor="chatid">Telegram chat ID</Label>
-            <Input
-              id="chatid"
-              value={chatId}
-              onChange={e => setChatId(e.target.value)}
-              placeholder="123456789"
-            />
+            <Label htmlFor="chatid-0">Получатели (Telegram chat ID)</Label>
+            {chatIds.map((c, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <Input
+                  id={`chatid-${i}`}
+                  value={c}
+                  onChange={e =>
+                    setChatIds(prev => prev.map((v, j) => (j === i ? e.target.value : v)))
+                  }
+                  placeholder="123456789"
+                />
+                {chatIds.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setChatIds(prev => prev.filter((_, j) => j !== i))}
+                    aria-label="Удалить получателя"
+                  >
+                    <XCircle className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
+            <div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setChatIds(prev => [...prev, ""])}
+              >
+                Добавить пользователя
+              </Button>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <Button onClick={() => saveChatM.mutate()} disabled={saveChatM.isPending}>
-              Сохранить чат
+              Сохранить получателей
             </Button>
+
             <Button
               variant="outline"
               className="gap-2"

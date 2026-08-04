@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, RefreshCw, ExternalLink, ListVideo, Send } from "lucide-react";
+import { CheckCircle2, XCircle, RefreshCw, ExternalLink, ListVideo, Send, Copy } from "lucide-react";
 import {
   syncAllSources,
   checkYoutubeApi,
@@ -16,6 +16,7 @@ import {
   syncWatchlist,
   getIntegrationSettings,
   saveIntegrationSettings,
+  rotateWebhookSecret,
 } from "@/lib/youtube.functions";
 import { checkDrive } from "@/lib/gdrive.functions";
 import { getGoogleStatus, startGoogleConnect, disconnectGoogle } from "@/lib/google.functions";
@@ -98,6 +99,28 @@ function IntegrationsPage() {
   const saveSettings = useServerFn(saveIntegrationSettings);
   const runWatchlist = useServerFn(syncWatchlist);
   const { data: settings } = useQuery({ queryKey: ["integration_settings"], queryFn: () => loadSettings() });
+
+  const rotateSecret = useServerFn(rotateWebhookSecret);
+  const rotateM = useMutation({
+    mutationFn: () => rotateSecret(),
+    onSuccess: () => {
+      toast.success("Секрет обновлён");
+      qc.invalidateQueries({ queryKey: ["integration_settings"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const [origin, setOrigin] = useState("");
+  useEffect(() => setOrigin(window.location.origin), []);
+  const syncEndpoint = `${origin}/api/public/sync/youtube`;
+  const copy = async (text: string, msg: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(msg);
+    } catch {
+      toast.error("Не удалось скопировать");
+    }
+  };
+
   const [playlist, setPlaylist] = useState("");
   useEffect(() => {
     if (settings?.youtube_playlist_id) setPlaylist(settings.youtube_playlist_id);
@@ -273,7 +296,48 @@ function IntegrationsPage() {
               </Button>
             </div>
           )}
+
+          <div className="space-y-3 border-t pt-4">
+            <p className="text-sm font-medium">Автоматическая синхронизация</p>
+            <p className="text-sm text-muted-foreground">
+              Эти данные нужны, чтобы запускать синхронизацию по расписанию из внешнего планировщика: он вызывает
+              указанный адрес методом POST и передаёт ваш секрет в заголовке <code>x-webhook-secret</code>.
+            </p>
+            <div className="space-y-1">
+              <Label className="text-xs">Адрес эндпоинта</Label>
+              <div className="flex gap-2">
+                <Input readOnly value={syncEndpoint} className="font-mono text-xs" />
+                <Button size="icon" variant="outline" onClick={() => copy(syncEndpoint, "Адрес скопирован")}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Персональный секрет (x-webhook-secret)</Label>
+              <div className="flex gap-2">
+                <Input readOnly value={settings?.webhook_secret ?? ""} className="font-mono text-xs" />
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={() => copy(settings?.webhook_secret ?? "", "Секрет скопирован")}
+                  disabled={!settings?.webhook_secret}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => rotateM.mutate()}
+                  disabled={rotateM.isPending}
+                  className="gap-2 whitespace-nowrap"
+                >
+                  <RefreshCw className={`h-4 w-4 ${rotateM.isPending ? "animate-spin" : ""}`} /> Перегенерировать
+                </Button>
+              </div>
+            </div>
+          </div>
         </CardContent>
+
       </Card>
 
 

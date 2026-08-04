@@ -128,19 +128,27 @@ function IntegrationsPage() {
 
   const saveChat = useServerFn(saveTelegramChatId);
   const sendTg = useServerFn(sendTelegramDigestNow);
-  const [chatId, setChatId] = useState("");
+  const [chatIds, setChatIds] = useState<string[]>([""]);
   useEffect(() => {
-    if (settings?.telegram_chat_id) setChatId(settings.telegram_chat_id);
+    const list = (settings?.telegram_chat_id ?? "")
+      .split(/[,\s;]+/)
+      .map((s: string) => s.trim())
+      .filter(Boolean);
+    setChatIds(list.length ? list : [""]);
   }, [settings?.telegram_chat_id]);
 
   const saveChatM = useMutation({
-    mutationFn: () => saveChat({ data: { chat_id: chatId.trim() || null } }),
+    mutationFn: () =>
+      saveChat({
+        data: { chat_id: chatIds.map(c => c.trim()).filter(Boolean).join(",") || null },
+      }),
     onSuccess: () => {
-      toast.success("Telegram-чат сохранён");
+      toast.success("Получатели Telegram сохранены");
       qc.invalidateQueries({ queryKey: ["integration_settings"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const sendTgM = useMutation({
     mutationFn: (days: number) => sendTg({ data: { days } }),

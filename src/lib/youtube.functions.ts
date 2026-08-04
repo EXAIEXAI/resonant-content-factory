@@ -59,7 +59,7 @@ export const ingestUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { url: string }) => z.object({ url: z.string().url().max(1000) }).parse(data))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
     const videoId = extractYoutubeId(data.url);
 
     if (!videoId) {
@@ -67,6 +67,8 @@ export const ingestUrl = createServerFn({ method: "POST" })
       const { data: row, error } = await supabase
         .from("raw_materials")
         .insert({
+          user_id: userId,
+          added_by: userId,
           title: data.url,
           url: data.url,
           is_manual: true,
@@ -82,20 +84,18 @@ export const ingestUrl = createServerFn({ method: "POST" })
 
     const canonicalUrl = `https://www.youtube.com/watch?v=${videoId}`;
     const { fetchVideoStats } = await import("./youtube-stats.server");
-    const { data: settings } = await supabase
-      .from("integration_settings")
-      .select("youtube_api_key")
-      .eq("user_id", context.userId)
-      .maybeSingle();
-    const apiKey = settings?.youtube_api_key || process.env.YOUTUBE_API_KEY || null;
+    const { getUserGoogleToken } = await import("./google.server");
+    const token = await getUserGoogleToken(userId);
     const [meta, segments, stats] = await Promise.all([
       fetchOembed(videoId),
       fetchTranscript(videoId),
-      fetchVideoStats(videoId, apiKey),
+      fetchVideoStats(videoId, token),
     ]);
     const transcriptText = segments.map(s => s.text).join(" ");
 
     const payload = {
+      user_id: userId,
+      added_by: userId,
       external_id: videoId,
       title: meta?.title || canonicalUrl,
       channel_title: meta?.author ?? null,
@@ -114,10 +114,11 @@ export const ingestUrl = createServerFn({ method: "POST" })
 
     const { data: row, error } = await supabase
       .from("raw_materials")
-      .upsert(payload, { onConflict: "external_id" })
+      .upsert(payload, { onConflict: "user_id,external_id" })
       .select()
       .single();
     if (error) throw new Error(error.message);
+
     // Fire-and-forget AI analysis so every source is auto-processed (даже без транскрипта).
     {
       const { analyzeMaterialById } = await import("./analyze.server");
@@ -131,16 +132,14 @@ export const refreshAllMaterials = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const { data: settings } = await supabase
-      .from("integration_settings")
-      .select("youtube_api_key")
-      .eq("user_id", userId)
-      .maybeSingle();
-    const apiKey = settings?.youtube_api_key || process.env.YOUTUBE_API_KEY || null;
+    const { getUserGoogleToken } = await import("./google.server");
+    const apiKey = await getUserGoogleToken(userId);
 
     const { data: materials } = await supabase
       .from("raw_materials")
-      .select("id, external_id, raw_transcript, summary, source_type");
+      .select("id, external_id, raw_transcript, summary, source_type")
+      .eq("user_id", userId);
+
     const list = materials ?? [];
     const withVideoId = list.filter(m => !!m.external_id);
 
@@ -194,32 +193,20 @@ export const getIntegrationSettings = createServerFn({ method: "GET" })
 
 export const saveIntegrationSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { playlist_id?: string | null; drive_folder_id?: string | null; youtube_api_key?: string | null }) =>
-    z
-      .object({
-        playlist_id: z.string().max(200).nullish(),
-        drive_folder_id: z.string().max(200).nullish(),
-        youtube_api_key: z.string().max(200).nullish(),
-      })
-      .parse(data),
+  .inputValidator((data: { playlist_id?: string | null }) =>
+    z.object({ playlist_id: z.string().max(200).nullish() }).parse(data),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const playlist = data.playlist_id ? extractPlaylistId(data.playlist_id) ?? data.playlist_id.trim() : null;
-    const update = {
-      youtube_playlist_id: playlist,
-      drive_folder_id: data.drive_folder_id?.trim() || null,
-      ...(data.youtube_api_key !== undefined
-        ? { youtube_api_key: data.youtube_api_key?.trim() || null }
-        : {}),
-    };
     const { error } = await supabase
       .from("integration_settings")
-      .update(update as never)
+      .update({ youtube_playlist_id: playlist } as never)
       .eq("user_id", userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
 
 export const rotateWebhookSecret = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -252,13 +239,14 @@ export const syncWatchlist = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { data: settings } = await supabase
       .from("integration_settings")
-      .select("youtube_playlist_id, youtube_api_key")
+      .select("youtube_playlist_id")
       .eq("user_id", userId)
       .maybeSingle();
     const playlistId = settings?.youtube_playlist_id?.trim();
     if (!playlistId) throw new Error("Плейлист не указан — сохраните ссылку на плейлист в настройках интеграций");
     const { syncWatchlistPlaylist } = await import("./watchlist.server");
-    const result = await syncWatchlistPlaylist(supabase, userId, playlistId, settings?.youtube_api_key ?? null);
+    const result = await syncWatchlistPlaylist(supabase, userId, playlistId);
+
     await supabase
       .from("integration_settings")
       .update({ last_sync_at: new Date().toISOString(), last_sync_count: result.added })
@@ -269,23 +257,24 @@ export const syncWatchlist = createServerFn({ method: "POST" })
 
 
 
-/** Проверка YouTube Data API: ключ задан и отвечает. */
+/** Проверка YouTube Data API от имени подключённого Google-аккаунта. */
 export const checkYoutubeApi = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
-    const key = process.env.YOUTUBE_API_KEY;
-    if (!key) return { ok: false as const, hasKey: false, error: "Не задан секрет YOUTUBE_API_KEY" };
+  .handler(async ({ context }) => {
     try {
-      const r = await fetch(
-        `https://www.googleapis.com/youtube/v3/videos?part=id&id=dQw4w9WgXcQ&key=${key}`,
-      );
+      const { getUserGoogleToken } = await import("./google.server");
+      const token = await getUserGoogleToken(context.userId);
+      const r = await fetch("https://www.googleapis.com/youtube/v3/videos?part=id&id=dQw4w9WgXcQ", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const body = await r.text();
       if (!r.ok) return { ok: false as const, hasKey: true, error: `YouTube API [${r.status}]: ${body.slice(0, 200)}` };
       return { ok: true as const, hasKey: true, error: null as string | null };
     } catch (e) {
-      return { ok: false as const, hasKey: true, error: e instanceof Error ? e.message : String(e) };
+      return { ok: false as const, hasKey: false, error: e instanceof Error ? e.message : String(e) };
     }
   });
+
 
 /** Последние загруженные ролики из raw_materials. */
 export const listRecentMaterials = createServerFn({ method: "GET" })

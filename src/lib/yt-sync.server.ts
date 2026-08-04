@@ -1,33 +1,23 @@
 // Server-only: синхронизация каналов YouTube → Google Drive → raw_materials.
+// Всё выполняется от имени конкретного пользователя (его OAuth-токен, его данные).
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getUserGoogleToken } from "./google.server";
 
 type AnyClient = SupabaseClient<any, any, any>;
 
 export type ChannelSyncResult = {
   channel: string;
-  /** Сколько роликов вернул YouTube API (до фильтров). */
   apiReturned: number;
-  /** Отсеяно по дате публикации (старее границы выборки). */
   skippedByDate: number;
-  /** Отсеяно как дубли: строка есть и у неё уже заполнен drive_file_id. */
   skippedDuplicates: number;
-  /** Строка была, но без файла на Диске — дозаполнена. */
   backfilled: number;
-  /** Прошло фильтры (кандидаты на добавление/дозаполнение). */
   found: number;
   added: number;
   errors: string[];
 };
 
-
-function apiKey(): string {
-  const key = process.env.YOUTUBE_API_KEY;
-  if (!key) throw new Error("Не задан секрет YOUTUBE_API_KEY");
-  return key;
-}
-
-async function getJson(url: string): Promise<any> {
-  const r = await fetch(url);
+async function getJson(url: string, token: string): Promise<any> {
+  const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   const body = await r.text();
   if (!r.ok) throw new Error(`YouTube API [${r.status}]: ${body.slice(0, 400)}`);
   return JSON.parse(body);
@@ -39,14 +29,13 @@ export function iso8601ToSeconds(iso: string | null | undefined): number | null 
   const m = /^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(iso);
   if (!m) return null;
   const [, d, h, mi, s] = m;
-  return (+(d ?? 0) * 86400) + (+(h ?? 0) * 3600) + (+(mi ?? 0) * 60) + +(s ?? 0);
+  return +(d ?? 0) * 86400 + +(h ?? 0) * 3600 + +(mi ?? 0) * 60 + +(s ?? 0);
 }
 
 type ResolvedChannel = { channelId: string; title: string; subscribers: number; uploads: string };
 
 /** Резолвит канал из ссылки: /channel/UC..., /@handle, /c/..., /user/... */
-export async function resolveChannel(url: string): Promise<ResolvedChannel> {
-  const key = apiKey();
+export async function resolveChannel(url: string, token: string): Promise<ResolvedChannel> {
   const base = "https://www.googleapis.com/youtube/v3";
   const part = "part=snippet,statistics,contentDetails";
 
@@ -57,20 +46,20 @@ export async function resolveChannel(url: string): Promise<ResolvedChannel> {
   const byHandle = /youtube\.com\/@([\w.\-]+)/i.exec(clean) ?? /^@([\w.\-]+)$/.exec(clean);
   const byLegacy = /youtube\.com\/(?:c|user)\/([\w.\-]+)/i.exec(clean);
 
-  if (byId) query = `${base}/channels?${part}&id=${encodeURIComponent(byId[1])}&key=${key}`;
-  else if (byHandle) query = `${base}/channels?${part}&forHandle=${encodeURIComponent(byHandle[1])}&key=${key}`;
+  if (byId) query = `${base}/channels?${part}&id=${encodeURIComponent(byId[1])}`;
+  else if (byHandle) query = `${base}/channels?${part}&forHandle=${encodeURIComponent(byHandle[1])}`;
 
   let item: any = null;
-  if (query) item = (await getJson(query))?.items?.[0] ?? null;
+  if (query) item = (await getJson(query, token))?.items?.[0] ?? null;
 
   if (!item) {
-    // Запасной вариант: поиск по названию / legacy-имени.
     const term = byLegacy?.[1] ?? byHandle?.[1] ?? clean;
     const search = await getJson(
-      `${base}/search?part=snippet&type=channel&maxResults=1&q=${encodeURIComponent(term)}&key=${key}`,
+      `${base}/search?part=snippet&type=channel&maxResults=1&q=${encodeURIComponent(term)}`,
+      token,
     );
     const cid = search?.items?.[0]?.snippet?.channelId ?? search?.items?.[0]?.id?.channelId;
-    if (cid) item = (await getJson(`${base}/channels?${part}&id=${encodeURIComponent(cid)}&key=${key}`))?.items?.[0];
+    if (cid) item = (await getJson(`${base}/channels?${part}&id=${encodeURIComponent(cid)}`, token))?.items?.[0];
   }
 
   if (!item) throw new Error(`Канал не найден по ссылке: ${clean}`);
@@ -90,8 +79,8 @@ type PlaylistEntry = { videoId: string; publishedAt: string | null };
 async function listPlaylist(
   uploads: string,
   since: Date,
+  token: string,
 ): Promise<{ entries: PlaylistEntry[]; apiReturned: number; skippedByDate: number }> {
-  const key = apiKey();
   const out: PlaylistEntry[] = [];
   let apiReturned = 0;
   let skippedByDate = 0;
@@ -100,7 +89,8 @@ async function listPlaylist(
     const j: any = await getJson(
       `https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&maxResults=50&playlistId=${encodeURIComponent(
         uploads,
-      )}${pageToken ? `&pageToken=${pageToken}` : ""}&key=${key}`,
+      )}${pageToken ? `&pageToken=${pageToken}` : ""}`,
+      token,
     );
     let stop = false;
     for (const it of j?.items ?? []) {
@@ -121,31 +111,32 @@ async function listPlaylist(
   return { entries: out, apiReturned, skippedByDate };
 }
 
-async function fetchVideos(ids: string[]): Promise<any[]> {
-  const key = apiKey();
+async function fetchVideos(ids: string[], token: string): Promise<any[]> {
   const out: any[] = [];
   for (let i = 0; i < ids.length; i += 50) {
     const chunk = ids.slice(i, i + 50);
     const j: any = await getJson(
-      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${chunk.join(
-        ",",
-      )}&key=${key}`,
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${chunk.join(",")}`,
+      token,
     );
     out.push(...(j?.items ?? []));
   }
   return out;
 }
 
-/** Синхронизирует все активные YouTube-каналы: новые ролики → Drive → raw_materials. */
+/** Синхронизирует активные YouTube-каналы пользователя: новые ролики → Drive → raw_materials. */
 export async function syncAllSourcesWith(
   supabase: AnyClient,
-  addedBy: string | null,
+  userId: string,
   /** Если задан — граница выборки «сейчас минус sinceDays», last_polled_at игнорируется. */
   sinceDays?: number | null,
 ): Promise<{ results: ChannelSyncResult[]; totalAdded: number; ranAt: string }> {
+  const token = await getUserGoogleToken(userId);
+
   const { data: channels, error } = await supabase
     .from("channels")
     .select("id, url, title, external_id, last_polled_at")
+    .eq("user_id", userId)
     .eq("platform", "youtube")
     .eq("active", true);
   if (error) throw new Error(error.message);
@@ -167,7 +158,7 @@ export async function syncAllSourcesWith(
     };
 
     try {
-      const resolved = await resolveChannel(ch.url);
+      const resolved = await resolveChannel(ch.url, token);
       res.channel = resolved.title;
       await supabase
         .from("channels")
@@ -180,7 +171,7 @@ export async function syncAllSourcesWith(
           : ch.last_polled_at
             ? new Date(ch.last_polled_at)
             : new Date(Date.now() - 30 * 24 * 3600 * 1000);
-      const poll = await listPlaylist(resolved.uploads, since);
+      const poll = await listPlaylist(resolved.uploads, since, token);
       const entries = poll.entries;
       res.apiReturned = poll.apiReturned;
       res.skippedByDate = poll.skippedByDate;
@@ -206,6 +197,7 @@ export async function syncAllSourcesWith(
       const { data: known } = await supabase
         .from("raw_materials")
         .select("id, external_id, drive_file_id, views, reactions, comments_count, duration_seconds, thumbnail_url")
+        .eq("user_id", userId)
         .in("external_id", entries.map(e => e.videoId));
       const knownMap = new Map<string, KnownRow>();
       for (const r of (known ?? []) as KnownRow[]) {
@@ -227,9 +219,8 @@ export async function syncAllSourcesWith(
         continue;
       }
 
-      const videos = await fetchVideos(targets.map(e => e.videoId));
+      const videos = await fetchVideos(targets.map(e => e.videoId), token);
       let newest: string | null = ch.last_polled_at ?? null;
-
 
       for (const v of videos) {
         try {
@@ -244,6 +235,7 @@ export async function syncAllSourcesWith(
           let driveFileUrl: string | null = null;
           try {
             const file = await driveUploadText(
+              userId,
               `[YT] ${String(sn.title ?? videoId).replace(/[\\/:*?"<>|]/g, " ").slice(0, 120)}_${videoId}.json`,
               JSON.stringify(
                 {
@@ -276,7 +268,6 @@ export async function syncAllSourcesWith(
           const apiThumb = (th.high ?? th.medium ?? th.default)?.url ?? null;
 
           if (existing) {
-            // Строка уже была, но без файла на Диске — дозаполняем.
             const patch: Record<string, unknown> = {};
             if (driveFileId) {
               patch.drive_file_id = driveFileId;
@@ -289,10 +280,7 @@ export async function syncAllSourcesWith(
             if (!existing.thumbnail_url && apiThumb) patch.thumbnail_url = apiThumb;
 
             if (Object.keys(patch).length) {
-              const { error: updErr } = await supabase
-                .from("raw_materials")
-                .update(patch)
-                .eq("id", existing.id);
+              const { error: updErr } = await supabase.from("raw_materials").update(patch).eq("id", existing.id);
               if (updErr) throw new Error(updErr.message);
             }
             res.backfilled++;
@@ -301,6 +289,7 @@ export async function syncAllSourcesWith(
           }
 
           const row = {
+            user_id: userId,
             external_id: videoId,
             channel_id: ch.id,
             channel_title: sn.channelTitle ?? resolved.title,
@@ -320,18 +309,17 @@ export async function syncAllSourcesWith(
             engagement_score: 0,
             raw_transcript: null,
             transcript_segments: [],
-            added_by: addedBy,
+            added_by: userId,
           };
 
           const { error: upErr } = await supabase
             .from("raw_materials")
-            .upsert(row, { onConflict: "external_id" });
+            .upsert(row, { onConflict: "user_id,external_id" });
           if (upErr) throw new Error(upErr.message);
 
           res.added++;
           totalAdded++;
           if (publishedAt && (!newest || new Date(publishedAt) > new Date(newest))) newest = publishedAt;
-
         } catch (e) {
           res.errors.push(e instanceof Error ? e.message : String(e));
         }

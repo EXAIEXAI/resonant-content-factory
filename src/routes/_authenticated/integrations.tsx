@@ -99,6 +99,28 @@ function IntegrationsPage() {
   const saveSettings = useServerFn(saveIntegrationSettings);
   const runWatchlist = useServerFn(syncWatchlist);
   const { data: settings } = useQuery({ queryKey: ["integration_settings"], queryFn: () => loadSettings() });
+
+  const rotateSecret = useServerFn(rotateWebhookSecret);
+  const rotateM = useMutation({
+    mutationFn: () => rotateSecret(),
+    onSuccess: () => {
+      toast.success("Секрет обновлён");
+      qc.invalidateQueries({ queryKey: ["integration_settings"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const [origin, setOrigin] = useState("");
+  useEffect(() => setOrigin(window.location.origin), []);
+  const syncEndpoint = `${origin}/api/public/sync/youtube`;
+  const copy = async (text: string, msg: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(msg);
+    } catch {
+      toast.error("Не удалось скопировать");
+    }
+  };
+
   const [playlist, setPlaylist] = useState("");
   useEffect(() => {
     if (settings?.youtube_playlist_id) setPlaylist(settings.youtube_playlist_id);

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, RefreshCw, ExternalLink, ListVideo, Send } from "lucide-react";
+import { CheckCircle2, XCircle, RefreshCw, ExternalLink, ListVideo, Send, Copy } from "lucide-react";
 import {
   syncAllSources,
   checkYoutubeApi,
@@ -16,6 +16,7 @@ import {
   syncWatchlist,
   getIntegrationSettings,
   saveIntegrationSettings,
+  rotateWebhookSecret,
 } from "@/lib/youtube.functions";
 import { checkDrive } from "@/lib/gdrive.functions";
 import { getGoogleStatus, startGoogleConnect, disconnectGoogle } from "@/lib/google.functions";

@@ -9,16 +9,17 @@ export const GOOGLE_SCOPES = [
 ].join(" ");
 
 export function googleClientId(): string {
-  const id = process.env.GOOGLE_OAUTH_CLIENT_ID;
+  const id = process.env.GOOGLE_OAUTH_CLIENT_ID || process.env.GDRIVE_OAUTH_CLIENT_ID;
   if (!id) throw new Error("Не задан секрет GOOGLE_OAUTH_CLIENT_ID");
   return id;
 }
 
 export function googleClientSecret(): string {
-  const s = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+  const s = process.env.GOOGLE_OAUTH_CLIENT_SECRET || process.env.GDRIVE_OAUTH_CLIENT_SECRET;
   if (!s) throw new Error("Не задан секрет GOOGLE_OAUTH_CLIENT_SECRET");
   return s;
 }
+
 
 /** Единый redirect_uri: должен быть зарегистрирован в Google Cloud Console. */
 export function redirectUri(origin: string): string {

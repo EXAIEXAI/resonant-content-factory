@@ -70,7 +70,7 @@ export async function sendSavedDigest(
   const raw = (opts?.chatId ?? settings?.telegram_chat_id ?? "").toString();
   const chatIds = raw
     .split(/[,\s;]+/)
-    .map(s => s.trim())
+    .map((s: string) => s.trim())
     .filter(Boolean);
   if (!chatIds.length) return { chatId: null, materials: 0, sent: 0, skipped: "Не указан Telegram chat ID" };
 

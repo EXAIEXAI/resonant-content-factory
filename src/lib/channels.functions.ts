@@ -91,10 +91,13 @@ async function ingestChannel(
     const { data: existing } = await supabase
       .from("raw_materials")
       .select("id")
+      .eq("user_id", userId)
       .eq("external_id", v.videoId)
       .maybeSingle();
 
     const payload = {
+      user_id: userId,
+      added_by: userId,
       external_id: v.videoId,
       channel_id: channelRow.id,
       title: v.title,
@@ -111,9 +114,10 @@ async function ingestChannel(
 
     const { data: row, error } = await supabase
       .from("raw_materials")
-      .upsert(payload, { onConflict: "external_id" })
+      .upsert(payload, { onConflict: "user_id,external_id" })
       .select()
       .single();
+
     if (error) continue;
     if (!existing) added += 1;
 

@@ -56,8 +56,10 @@ function parseChannelRss(xml: string): { channelTitle: string | null; entries: R
 
 async function ingestChannel(
   supabase: any,
+  userId: string,
   channelRow: { id: string; url: string; external_id: string | null; title: string },
 ): Promise<{ resolved: boolean; added: number; total: number; message?: string }> {
+
   let channelId = channelRow.external_id;
   let resolvedTitle: string | null = null;
 

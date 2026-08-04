@@ -190,6 +190,8 @@ export type Database = {
           id: string
           last_sync_at: string | null
           last_sync_count: number
+          telegram_chat_id: string | null
+          telegram_last_sent_at: string | null
           updated_at: string
           user_id: string
           webhook_secret: string
@@ -202,6 +204,8 @@ export type Database = {
           id?: string
           last_sync_at?: string | null
           last_sync_count?: number
+          telegram_chat_id?: string | null
+          telegram_last_sent_at?: string | null
           updated_at?: string
           user_id: string
           webhook_secret?: string
@@ -214,6 +218,8 @@ export type Database = {
           id?: string
           last_sync_at?: string | null
           last_sync_count?: number
+          telegram_chat_id?: string | null
+          telegram_last_sent_at?: string | null
           updated_at?: string
           user_id?: string
           webhook_secret?: string

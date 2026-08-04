@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, RefreshCw, ExternalLink, ListVideo } from "lucide-react";
+import { CheckCircle2, XCircle, RefreshCw, ExternalLink, ListVideo, Send } from "lucide-react";
 import {
   syncAllSources,
   checkYoutubeApi,
@@ -18,6 +18,7 @@ import {
   saveIntegrationSettings,
 } from "@/lib/youtube.functions";
 import { checkDrive } from "@/lib/gdrive.functions";
+import { saveTelegramChatId, sendTelegramDigestNow } from "@/lib/telegram.functions";
 
 
 export const Route = createFileRoute("/_authenticated/integrations")({
@@ -121,6 +122,40 @@ function IntegrationsPage() {
     },
     onError: (e: Error) => {
       addLog(`Плейлист: ошибка — ${e.message}`);
+      toast.error(e.message);
+    },
+  });
+
+  const saveChat = useServerFn(saveTelegramChatId);
+  const sendTg = useServerFn(sendTelegramDigestNow);
+  const [chatId, setChatId] = useState("");
+  useEffect(() => {
+    if (settings?.telegram_chat_id) setChatId(settings.telegram_chat_id);
+  }, [settings?.telegram_chat_id]);
+
+  const saveChatM = useMutation({
+    mutationFn: () => saveChat({ data: { chat_id: chatId.trim() || null } }),
+    onSuccess: () => {
+      toast.success("Telegram-чат сохранён");
+      qc.invalidateQueries({ queryKey: ["integration_settings"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const sendTgM = useMutation({
+    mutationFn: (days: number) => sendTg({ data: { days } }),
+    onSuccess: r => {
+      if (r.skipped) {
+        addLog(`Telegram: ${r.skipped}`);
+        toast.message(r.skipped);
+      } else {
+        addLog(`Telegram: отправлено роликов ${r.sent}`);
+        toast.success(`Отправлено роликов: ${r.sent}`);
+      }
+      qc.invalidateQueries({ queryKey: ["integration_settings"] });
+    },
+    onError: (e: Error) => {
+      addLog(`Telegram: ошибка — ${e.message}`);
       toast.error(e.message);
     },
   });
@@ -231,6 +266,54 @@ function IntegrationsPage() {
             </Button>
             <span className="text-sm text-muted-foreground">
               Последняя проверка: {fmt(settings?.last_sync_at)}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Send className="h-4 w-4" /> Ежедневная сводка в Telegram
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm text-muted-foreground space-y-1">
+            <p className="text-foreground font-medium">Каждый день в 08:00 по Москве</p>
+            <p>Бот присылает список роликов, сохранённых в плейлист за вчера: заголовок, краткое описание и кнопки «Смотреть» и «Читать обзор».</p>
+            <p>Чтобы узнать chat ID: напишите боту любое сообщение и вставьте сюда ваш ID (например, от @userinfobot).</p>
+          </div>
+          <div className="grid gap-2 sm:max-w-xl">
+            <Label htmlFor="chatid">Telegram chat ID</Label>
+            <Input
+              id="chatid"
+              value={chatId}
+              onChange={e => setChatId(e.target.value)}
+              placeholder="123456789"
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button onClick={() => saveChatM.mutate()} disabled={saveChatM.isPending}>
+              Сохранить чат
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => sendTgM.mutate(1)}
+              disabled={sendTgM.isPending || !settings?.telegram_chat_id}
+            >
+              <Send className="h-4 w-4" /> Отправить за вчера
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => sendTgM.mutate(7)}
+              disabled={sendTgM.isPending || !settings?.telegram_chat_id}
+            >
+              <Send className="h-4 w-4" /> Отправить за 7 дней
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Последняя отправка: {fmt(settings?.telegram_last_sent_at)}
             </span>
           </div>
         </CardContent>

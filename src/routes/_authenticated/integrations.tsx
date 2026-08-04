@@ -236,6 +236,54 @@ function IntegrationsPage() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Send className="h-4 w-4" /> Ежедневная сводка в Telegram
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm text-muted-foreground space-y-1">
+            <p className="text-foreground font-medium">Каждый день в 08:00 по Москве</p>
+            <p>Бот присылает список роликов, сохранённых в плейлист за вчера: заголовок, краткое описание и кнопки «Смотреть» и «Читать обзор».</p>
+            <p>Чтобы узнать chat ID: напишите боту любое сообщение и вставьте сюда ваш ID (например, от @userinfobot).</p>
+          </div>
+          <div className="grid gap-2 sm:max-w-xl">
+            <Label htmlFor="chatid">Telegram chat ID</Label>
+            <Input
+              id="chatid"
+              value={chatId}
+              onChange={e => setChatId(e.target.value)}
+              placeholder="123456789"
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button onClick={() => saveChatM.mutate()} disabled={saveChatM.isPending}>
+              Сохранить чат
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => sendTgM.mutate(1)}
+              disabled={sendTgM.isPending || !settings?.telegram_chat_id}
+            >
+              <Send className="h-4 w-4" /> Отправить за вчера
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => sendTgM.mutate(7)}
+              disabled={sendTgM.isPending || !settings?.telegram_chat_id}
+            >
+              <Send className="h-4 w-4" /> Отправить за 7 дней
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Последняя отправка: {fmt(settings?.telegram_last_sent_at)}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
 
       <Card>
         <CardHeader>

@@ -26,6 +26,7 @@ import { Route as ApiPublicHooksYoutubePlaylistRouteImport } from './routes/api/
 import { Route as ApiPublicHooksYoutubeChannelsRouteImport } from './routes/api/public/hooks/youtube-channels'
 import { Route as ApiPublicHooksWeeklyDigestRouteImport } from './routes/api/public/hooks/weekly-digest'
 import { Route as ApiPublicHooksWatchlistRouteImport } from './routes/api/public/hooks/watchlist'
+import { Route as ApiPublicHooksTelegramDigestRouteImport } from './routes/api/public/hooks/telegram-digest'
 import { Route as ApiPublicHooksDailyRefreshRouteImport } from './routes/api/public/hooks/daily-refresh'
 
 const AuthRoute = AuthRouteImport.update({
@@ -117,6 +118,12 @@ const ApiPublicHooksWatchlistRoute = ApiPublicHooksWatchlistRouteImport.update({
   path: '/api/public/hooks/watchlist',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksTelegramDigestRoute =
+  ApiPublicHooksTelegramDigestRouteImport.update({
+    id: '/api/public/hooks/telegram-digest',
+    path: '/api/public/hooks/telegram-digest',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksDailyRefreshRoute =
   ApiPublicHooksDailyRefreshRouteImport.update({
     id: '/api/public/hooks/daily-refresh',
@@ -137,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/saved': typeof AuthenticatedSavedRoute
   '/materials/$id': typeof AuthenticatedMaterialsIdRoute
   '/api/public/hooks/daily-refresh': typeof ApiPublicHooksDailyRefreshRoute
+  '/api/public/hooks/telegram-digest': typeof ApiPublicHooksTelegramDigestRoute
   '/api/public/hooks/watchlist': typeof ApiPublicHooksWatchlistRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/hooks/youtube-channels': typeof ApiPublicHooksYoutubeChannelsRoute
@@ -156,6 +164,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/materials/$id': typeof AuthenticatedMaterialsIdRoute
   '/api/public/hooks/daily-refresh': typeof ApiPublicHooksDailyRefreshRoute
+  '/api/public/hooks/telegram-digest': typeof ApiPublicHooksTelegramDigestRoute
   '/api/public/hooks/watchlist': typeof ApiPublicHooksWatchlistRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/hooks/youtube-channels': typeof ApiPublicHooksYoutubeChannelsRoute
@@ -177,6 +186,7 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/materials/$id': typeof AuthenticatedMaterialsIdRoute
   '/api/public/hooks/daily-refresh': typeof ApiPublicHooksDailyRefreshRoute
+  '/api/public/hooks/telegram-digest': typeof ApiPublicHooksTelegramDigestRoute
   '/api/public/hooks/watchlist': typeof ApiPublicHooksWatchlistRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/hooks/youtube-channels': typeof ApiPublicHooksYoutubeChannelsRoute
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/saved'
     | '/materials/$id'
     | '/api/public/hooks/daily-refresh'
+    | '/api/public/hooks/telegram-digest'
     | '/api/public/hooks/watchlist'
     | '/api/public/hooks/weekly-digest'
     | '/api/public/hooks/youtube-channels'
@@ -217,6 +228,7 @@ export interface FileRouteTypes {
     | '/'
     | '/materials/$id'
     | '/api/public/hooks/daily-refresh'
+    | '/api/public/hooks/telegram-digest'
     | '/api/public/hooks/watchlist'
     | '/api/public/hooks/weekly-digest'
     | '/api/public/hooks/youtube-channels'
@@ -237,6 +249,7 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/_authenticated/materials/$id'
     | '/api/public/hooks/daily-refresh'
+    | '/api/public/hooks/telegram-digest'
     | '/api/public/hooks/watchlist'
     | '/api/public/hooks/weekly-digest'
     | '/api/public/hooks/youtube-channels'
@@ -248,6 +261,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiPublicHooksDailyRefreshRoute: typeof ApiPublicHooksDailyRefreshRoute
+  ApiPublicHooksTelegramDigestRoute: typeof ApiPublicHooksTelegramDigestRoute
   ApiPublicHooksWatchlistRoute: typeof ApiPublicHooksWatchlistRoute
   ApiPublicHooksWeeklyDigestRoute: typeof ApiPublicHooksWeeklyDigestRoute
   ApiPublicHooksYoutubeChannelsRoute: typeof ApiPublicHooksYoutubeChannelsRoute
@@ -376,6 +390,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksWatchlistRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/telegram-digest': {
+      id: '/api/public/hooks/telegram-digest'
+      path: '/api/public/hooks/telegram-digest'
+      fullPath: '/api/public/hooks/telegram-digest'
+      preLoaderRoute: typeof ApiPublicHooksTelegramDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/daily-refresh': {
       id: '/api/public/hooks/daily-refresh'
       path: '/api/public/hooks/daily-refresh'
@@ -419,6 +440,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiPublicHooksDailyRefreshRoute: ApiPublicHooksDailyRefreshRoute,
+  ApiPublicHooksTelegramDigestRoute: ApiPublicHooksTelegramDigestRoute,
   ApiPublicHooksWatchlistRoute: ApiPublicHooksWatchlistRoute,
   ApiPublicHooksWeeklyDigestRoute: ApiPublicHooksWeeklyDigestRoute,
   ApiPublicHooksYoutubeChannelsRoute: ApiPublicHooksYoutubeChannelsRoute,

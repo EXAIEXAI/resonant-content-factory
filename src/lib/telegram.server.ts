@@ -67,8 +67,12 @@ export async function sendSavedDigest(
     .eq("user_id", userId)
     .maybeSingle();
 
-  const chatId = (opts?.chatId ?? settings?.telegram_chat_id ?? "").toString().trim();
-  if (!chatId) return { chatId: null, materials: 0, sent: 0, skipped: "Не указан Telegram chat ID" };
+  const raw = (opts?.chatId ?? settings?.telegram_chat_id ?? "").toString();
+  const chatIds = raw
+    .split(/[,\s;]+/)
+    .map(s => s.trim())
+    .filter(Boolean);
+  if (!chatIds.length) return { chatId: null, materials: 0, sent: 0, skipped: "Не указан Telegram chat ID" };
 
   const range = yesterdayRangeMsk();
   const from = opts?.from ?? range.from;
@@ -85,33 +89,36 @@ export async function sendSavedDigest(
 
   const materials = rows ?? [];
   if (!materials.length) {
-    return { chatId, materials: 0, sent: 0, skipped: "За период нет сохранённых роликов" };
+    return { chatId: chatIds.join(", "), materials: 0, sent: 0, skipped: "За период нет сохранённых роликов" };
   }
 
   const header = opts?.title ?? `<b>Вчера вы сохранили эти видеоролики</b> (${range.label})`;
-  await tg("sendMessage", { chat_id: chatId, text: header, parse_mode: "HTML" });
 
   let sent = 0;
-  for (const m of materials) {
-    const url = m.url || (m.external_id ? `https://www.youtube.com/watch?v=${m.external_id}` : null);
-    const summary = (m.summary ?? "").trim();
-    const text =
-      `<b>${esc(m.title ?? "Без названия")}</b>` +
-      (m.channel_title ? `\n<i>${esc(m.channel_title)}</i>` : "") +
-      (summary ? `\n\n${esc(summary.slice(0, 600))}` : "\n\nКраткое описание готовится.");
+  for (const chatId of chatIds) {
+    await tg("sendMessage", { chat_id: chatId, text: header, parse_mode: "HTML" });
 
-    const buttons: Array<Array<Record<string, string>>> = [[]];
-    if (url) buttons[0].push({ text: "▶ Смотреть", url });
-    buttons[0].push({ text: "Читать обзор", url: `${APP_URL}/materials/${m.id}` });
+    for (const m of materials) {
+      const url = m.url || (m.external_id ? `https://www.youtube.com/watch?v=${m.external_id}` : null);
+      const summary = (m.summary ?? "").trim();
+      const text =
+        `<b>${esc(m.title ?? "Без названия")}</b>` +
+        (m.channel_title ? `\n<i>${esc(m.channel_title)}</i>` : "") +
+        (summary ? `\n\n${esc(summary.slice(0, 600))}` : "\n\nКраткое описание готовится.");
 
-    await tg("sendMessage", {
-      chat_id: chatId,
-      text,
-      parse_mode: "HTML",
-      disable_web_page_preview: false,
-      reply_markup: { inline_keyboard: buttons },
-    });
-    sent++;
+      const buttons: Array<Array<Record<string, string>>> = [[]];
+      if (url) buttons[0].push({ text: "▶ Смотреть", url });
+      buttons[0].push({ text: "Читать обзор", url: `${APP_URL}/materials/${m.id}` });
+
+      await tg("sendMessage", {
+        chat_id: chatId,
+        text,
+        parse_mode: "HTML",
+        disable_web_page_preview: false,
+        reply_markup: { inline_keyboard: buttons },
+      });
+      sent++;
+    }
   }
 
   await supabase
@@ -119,5 +126,6 @@ export async function sendSavedDigest(
     .update({ telegram_last_sent_at: new Date().toISOString() })
     .eq("user_id", userId);
 
-  return { chatId, materials: materials.length, sent, skipped: null };
+  return { chatId: chatIds.join(", "), materials: materials.length, sent, skipped: null };
 }
+

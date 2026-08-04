@@ -28,6 +28,7 @@ import { Route as ApiPublicHooksWeeklyDigestRouteImport } from './routes/api/pub
 import { Route as ApiPublicHooksWatchlistRouteImport } from './routes/api/public/hooks/watchlist'
 import { Route as ApiPublicHooksTelegramDigestRouteImport } from './routes/api/public/hooks/telegram-digest'
 import { Route as ApiPublicHooksDailyRefreshRouteImport } from './routes/api/public/hooks/daily-refresh'
+import { Route as ApiPublicGoogleCallbackRouteImport } from './routes/api/public/google/callback'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -130,6 +131,11 @@ const ApiPublicHooksDailyRefreshRoute =
     path: '/api/public/hooks/daily-refresh',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicGoogleCallbackRoute = ApiPublicGoogleCallbackRouteImport.update({
+  id: '/api/public/google/callback',
+  path: '/api/public/google/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -143,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/roles': typeof AuthenticatedRolesRoute
   '/saved': typeof AuthenticatedSavedRoute
   '/materials/$id': typeof AuthenticatedMaterialsIdRoute
+  '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
   '/api/public/hooks/daily-refresh': typeof ApiPublicHooksDailyRefreshRoute
   '/api/public/hooks/telegram-digest': typeof ApiPublicHooksTelegramDigestRoute
   '/api/public/hooks/watchlist': typeof ApiPublicHooksWatchlistRoute
@@ -163,6 +170,7 @@ export interface FileRoutesByTo {
   '/saved': typeof AuthenticatedSavedRoute
   '/': typeof AuthenticatedIndexRoute
   '/materials/$id': typeof AuthenticatedMaterialsIdRoute
+  '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
   '/api/public/hooks/daily-refresh': typeof ApiPublicHooksDailyRefreshRoute
   '/api/public/hooks/telegram-digest': typeof ApiPublicHooksTelegramDigestRoute
   '/api/public/hooks/watchlist': typeof ApiPublicHooksWatchlistRoute
@@ -185,6 +193,7 @@ export interface FileRoutesById {
   '/_authenticated/saved': typeof AuthenticatedSavedRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/materials/$id': typeof AuthenticatedMaterialsIdRoute
+  '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
   '/api/public/hooks/daily-refresh': typeof ApiPublicHooksDailyRefreshRoute
   '/api/public/hooks/telegram-digest': typeof ApiPublicHooksTelegramDigestRoute
   '/api/public/hooks/watchlist': typeof ApiPublicHooksWatchlistRoute
@@ -207,6 +216,7 @@ export interface FileRouteTypes {
     | '/roles'
     | '/saved'
     | '/materials/$id'
+    | '/api/public/google/callback'
     | '/api/public/hooks/daily-refresh'
     | '/api/public/hooks/telegram-digest'
     | '/api/public/hooks/watchlist'
@@ -227,6 +237,7 @@ export interface FileRouteTypes {
     | '/saved'
     | '/'
     | '/materials/$id'
+    | '/api/public/google/callback'
     | '/api/public/hooks/daily-refresh'
     | '/api/public/hooks/telegram-digest'
     | '/api/public/hooks/watchlist'
@@ -248,6 +259,7 @@ export interface FileRouteTypes {
     | '/_authenticated/saved'
     | '/_authenticated/'
     | '/_authenticated/materials/$id'
+    | '/api/public/google/callback'
     | '/api/public/hooks/daily-refresh'
     | '/api/public/hooks/telegram-digest'
     | '/api/public/hooks/watchlist'
@@ -260,6 +272,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicGoogleCallbackRoute: typeof ApiPublicGoogleCallbackRoute
   ApiPublicHooksDailyRefreshRoute: typeof ApiPublicHooksDailyRefreshRoute
   ApiPublicHooksTelegramDigestRoute: typeof ApiPublicHooksTelegramDigestRoute
   ApiPublicHooksWatchlistRoute: typeof ApiPublicHooksWatchlistRoute
@@ -404,6 +417,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksDailyRefreshRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/google/callback': {
+      id: '/api/public/google/callback'
+      path: '/api/public/google/callback'
+      fullPath: '/api/public/google/callback'
+      preLoaderRoute: typeof ApiPublicGoogleCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -439,6 +459,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicGoogleCallbackRoute: ApiPublicGoogleCallbackRoute,
   ApiPublicHooksDailyRefreshRoute: ApiPublicHooksDailyRefreshRoute,
   ApiPublicHooksTelegramDigestRoute: ApiPublicHooksTelegramDigestRoute,
   ApiPublicHooksWatchlistRoute: ApiPublicHooksWatchlistRoute,

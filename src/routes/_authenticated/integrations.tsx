@@ -18,7 +18,9 @@ import {
   saveIntegrationSettings,
 } from "@/lib/youtube.functions";
 import { checkDrive } from "@/lib/gdrive.functions";
+import { getGoogleStatus, startGoogleConnect, disconnectGoogle } from "@/lib/google.functions";
 import { saveTelegramChatId, sendTelegramDigestNow } from "@/lib/telegram.functions";
+
 
 
 export const Route = createFileRoute("/_authenticated/integrations")({
@@ -171,8 +173,42 @@ function IntegrationsPage() {
     },
   });
 
+  const googleStatus = useServerFn(getGoogleStatus);
+  const startConnect = useServerFn(startGoogleConnect);
+  const disconnect = useServerFn(disconnectGoogle);
+  const { data: google } = useQuery({ queryKey: ["google_status"], queryFn: () => googleStatus() });
+
+  const connectM = useMutation({
+    mutationFn: async () => await startConnect({ data: { origin: window.location.origin } }),
+    onSuccess: r => {
+      window.location.href = r.url;
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const disconnectM = useMutation({
+    mutationFn: () => disconnect(),
+    onSuccess: () => {
+      toast.success("Google отключён");
+      qc.invalidateQueries({ queryKey: ["google_status"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const g = p.get("google");
+    if (!g) return;
+    if (g === "connected") toast.success("Google подключён");
+    else toast.error(`Google: ${p.get("message") ?? "ошибка подключения"}`);
+    qc.invalidateQueries({ queryKey: ["google_status"] });
+    window.history.replaceState({}, "", window.location.pathname);
+  }, [qc]);
+
   const yt = ytM.data;
   const drive = driveM.data;
+
+
 
 
   return (
@@ -186,58 +222,60 @@ function IntegrationsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Состояние подключений</CardTitle>
+          <CardTitle className="text-base">Подключение Google</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-lg border p-4 space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-medium">YouTube Data API</span>
-                {yt ? (
-                  yt.ok ? (
-                    <Badge className="gap-1"><CheckCircle2 className="h-3 w-3" /> работает</Badge>
-                  ) : (
-                    <Badge variant="destructive" className="gap-1"><XCircle className="h-3 w-3" /> ошибка</Badge>
-                  )
-                ) : (
-                  <Badge variant="secondary">не проверено</Badge>
-                )}
+          {google?.connected ? (
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge className="gap-1"><CheckCircle2 className="h-3 w-3" /> подключено</Badge>
+                <span className="text-sm font-medium">{google.email ?? "аккаунт Google"}</span>
+                <span className="text-sm text-muted-foreground">с {fmt(google.connectedAt)}</span>
               </div>
-              <p className="text-xs text-muted-foreground break-words">
-                {yt ? (yt.ok ? "Ключ задан, проверочный запрос выполнен." : yt.error) : "Ключ хранится в секретах приложения."}
+              <p className="text-sm text-muted-foreground">
+                Папка на Диске:{" "}
+                {google.folderUrl ? (
+                  <a className="underline" href={google.folderUrl} target="_blank" rel="noreferrer">
+                    Контент-завод <ExternalLink className="inline h-3 w-3" />
+                  </a>
+                ) : (
+                  "создастся автоматически при первой синхронизации"
+                )}
               </p>
-              <Button size="sm" variant="outline" onClick={() => ytM.mutate()} disabled={ytM.isPending}>
-                Проверить
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={() => ytM.mutate()} disabled={ytM.isPending}>
+                  Проверить YouTube
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => driveM.mutate()} disabled={driveM.isPending}>
+                  Проверить Диск
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => disconnectM.mutate()} disabled={disconnectM.isPending}>
+                  Отключить
+                </Button>
+              </div>
+              {(yt || drive) && (
+                <p className="text-xs text-muted-foreground break-words">
+                  {yt ? (yt.ok ? "YouTube: подключение работает. " : `YouTube: ${yt.error} `) : ""}
+                  {drive ? (drive.ok ? `Диск: папка «${drive.folderName}» доступна.` : `Диск: ${drive.error}`) : ""}
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <Badge variant="secondary" className="gap-1"><XCircle className="h-3 w-3" /> не подключено</Badge>
+              <p className="text-sm text-muted-foreground">
+                Подключите свой Google-аккаунт — приложение запросит только два права: чтение данных YouTube
+                (просмотр ваших подписок, плейлистов и статистики роликов) и доступ к файлам, которые само создаёт
+                на вашем Google Диске (папка «Контент-завод»). Другие ваши файлы приложению недоступны.
+              </p>
+              <Button onClick={() => connectM.mutate()} disabled={connectM.isPending} className="gap-2">
+                <ExternalLink className="h-4 w-4" /> Подключить Google
               </Button>
             </div>
-
-            <div className="rounded-lg border p-4 space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-medium">Google Диск</span>
-                {drive ? (
-                  drive.ok ? (
-                    <Badge className="gap-1"><CheckCircle2 className="h-3 w-3" /> работает</Badge>
-                  ) : (
-                    <Badge variant="destructive" className="gap-1"><XCircle className="h-3 w-3" /> ошибка</Badge>
-                  )
-                ) : (
-                  <Badge variant="secondary">не проверено</Badge>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground break-words">
-                {drive
-                  ? drive.ok
-                    ? <>Папка: <a className="underline" href={drive.folderUrl ?? "#"} target="_blank" rel="noreferrer">{drive.folderName}</a></>
-                    : drive.error
-                  : "Авторизация — OAuth refresh token из секретов."}
-              </p>
-              <Button size="sm" variant="outline" onClick={() => driveM.mutate()} disabled={driveM.isPending}>
-                Проверить
-              </Button>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
+
 
       <Card>
         <CardHeader>

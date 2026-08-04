@@ -76,10 +76,12 @@ export const Route = createFileRoute("/api/public/hooks/youtube-playlist")({
         const { data: existing } = await supabaseAdmin
           .from("raw_materials")
           .select("id, source_type")
+          .eq("user_id", settings.user_id)
           .eq("external_id", body.video_id)
           .maybeSingle();
 
         const upsertRow = {
+          user_id: settings.user_id,
           external_id: body.video_id,
           title: body.title,
           channel_title: body.channel_title ?? null,
@@ -99,9 +101,10 @@ export const Route = createFileRoute("/api/public/hooks/youtube-playlist")({
 
         const { data: upserted, error: upErr } = await supabaseAdmin
           .from("raw_materials")
-          .upsert(upsertRow, { onConflict: "external_id" })
+          .upsert(upsertRow, { onConflict: "user_id,external_id" })
           .select("id")
           .single();
+
         if (upErr) return Response.json({ error: upErr.message }, { status: 500 });
 
         if (transcriptText) {

@@ -10,7 +10,7 @@ export const Route = createFileRoute("/api/public/hooks/watchlist")({
 
         const { data: rows, error } = await supabaseAdmin
           .from("integration_settings")
-          .select("user_id, youtube_playlist_id, youtube_api_key")
+          .select("user_id, youtube_playlist_id")
           .not("youtube_playlist_id", "is", null);
         if (error) return Response.json({ error: error.message }, { status: 500 });
 
@@ -19,7 +19,8 @@ export const Route = createFileRoute("/api/public/hooks/watchlist")({
           const playlistId = s.youtube_playlist_id?.trim();
           if (!playlistId) continue;
           try {
-            const r = await syncWatchlistPlaylist(supabaseAdmin, s.user_id, playlistId, s.youtube_api_key ?? null);
+            const r = await syncWatchlistPlaylist(supabaseAdmin, s.user_id, playlistId);
+
             await supabaseAdmin
               .from("integration_settings")
               .update({ last_sync_at: new Date().toISOString(), last_sync_count: r.added })

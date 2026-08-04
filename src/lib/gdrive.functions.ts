@@ -5,9 +5,9 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 /** Возвращает id рабочей папки Диска, создавая «Контент-завод» при необходимости. */
 export const ensureFolder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async ({ context }) => {
     const { ensureDriveFolder } = await import("./gdrive.server");
-    return await ensureDriveFolder();
+    return await ensureDriveFolder(context.userId);
   });
 
 /** Загружает текстовый файл в рабочую папку Диска. */
@@ -16,32 +16,32 @@ export const uploadTextFile = createServerFn({ method: "POST" })
   .inputValidator((data: { name: string; content: string }) =>
     z.object({ name: z.string().min(1).max(300), content: z.string().max(500000) }).parse(data),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { driveUploadText } = await import("./gdrive.server");
-    return await driveUploadText(data.name, data.content);
+    return await driveUploadText(context.userId, data.name, data.content);
   });
 
 /** Список файлов в рабочей папке Диска. */
 export const listFolder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async ({ context }) => {
     const { driveListFolder } = await import("./gdrive.server");
-    return { files: await driveListFolder() };
+    return { files: await driveListFolder(context.userId) };
   });
 
-/** Проверка подключения к Google Drive: OAuth + рабочая папка. */
+/** Проверка подключения к Google Drive: OAuth пользователя + рабочая папка. */
 export const checkDrive = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async ({ context }) => {
     const { ensureDriveFolder, DRIVE_AUTH_MODE } = await import("./gdrive.server");
     try {
-      const folder = await ensureDriveFolder();
+      const folder = await ensureDriveFolder(context.userId);
       return {
         ok: true as const,
         auth: DRIVE_AUTH_MODE,
         folderId: folder.id,
         folderName: folder.name,
-        folderUrl: `https://drive.google.com/drive/folders/${folder.id}`,
+        folderUrl: folder.url,
         error: null as string | null,
       };
     } catch (e) {

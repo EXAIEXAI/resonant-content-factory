@@ -26,6 +26,7 @@ export type Database = {
           subscribers: number | null
           title: string
           url: string
+          user_id: string
           weight_factors: Json
         }
         Insert: {
@@ -39,6 +40,7 @@ export type Database = {
           subscribers?: number | null
           title: string
           url: string
+          user_id: string
           weight_factors?: Json
         }
         Update: {
@@ -52,6 +54,7 @@ export type Database = {
           subscribers?: number | null
           title?: string
           url?: string
+          user_id?: string
           weight_factors?: Json
         }
         Relationships: []
@@ -183,6 +186,42 @@ export type Database = {
           },
         ]
       }
+      google_connections: {
+        Row: {
+          access_token: string | null
+          access_token_expires_at: string | null
+          connected_at: string
+          drive_folder_id: string | null
+          google_email: string | null
+          id: string
+          refresh_token: string
+          scopes: string | null
+          user_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          access_token_expires_at?: string | null
+          connected_at?: string
+          drive_folder_id?: string | null
+          google_email?: string | null
+          id?: string
+          refresh_token: string
+          scopes?: string | null
+          user_id: string
+        }
+        Update: {
+          access_token?: string | null
+          access_token_expires_at?: string | null
+          connected_at?: string
+          drive_folder_id?: string | null
+          google_email?: string | null
+          id?: string
+          refresh_token?: string
+          scopes?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       integration_settings: {
         Row: {
           created_at: string
@@ -278,6 +317,7 @@ export type Database = {
           title: string
           transcript_segments: Json
           url: string | null
+          user_id: string
           views: number | null
         }
         Insert: {
@@ -305,6 +345,7 @@ export type Database = {
           title: string
           transcript_segments?: Json
           url?: string | null
+          user_id: string
           views?: number | null
         }
         Update: {
@@ -332,6 +373,7 @@ export type Database = {
           title?: string
           transcript_segments?: Json
           url?: string | null
+          user_id?: string
           views?: number | null
         }
         Relationships: [

@@ -53,12 +53,16 @@ function ChannelsPage() {
       const trimmed = url.trim();
       if (!trimmed) throw new Error("Укажите ссылку");
       const platform = detectPlatform(trimmed);
+      const uid = (await supabase.auth.getUser()).data.user?.id;
+      if (!uid) throw new Error("Нужно войти в аккаунт");
       const { data: inserted, error } = await supabase.from("channels").insert({
+        user_id: uid,
         platform,
         url: trimmed,
         title: deriveTitle(trimmed),
       }).select().single();
       if (error) throw error;
+
       if (platform === "youtube") {
         try {
           const r = await syncFn({ data: { channelId: inserted.id } });

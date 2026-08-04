@@ -1,6 +1,8 @@
 // Server-only: сбор роликов из личного плейлиста YouTube («Сохранить» → плейлист) в raw_materials.
+// Работает от имени конкретного пользователя (его OAuth + его папка на Диске).
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { iso8601ToSeconds } from "./yt-sync.server";
+import { getUserGoogleToken } from "./google.server";
 
 type AnyClient = SupabaseClient<any, any, any>;
 
@@ -12,14 +14,8 @@ export type WatchlistSyncResult = {
   errors: string[];
 };
 
-function apiKey(explicit?: string | null): string {
-  const key = explicit || process.env.YOUTUBE_API_KEY;
-  if (!key) throw new Error("Не задан ключ YouTube Data API");
-  return key;
-}
-
-async function getJson(url: string): Promise<any> {
-  const r = await fetch(url);
+async function getJson(url: string, token: string): Promise<any> {
+  const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   const body = await r.text();
   if (!r.ok) throw new Error(`YouTube API [${r.status}]: ${body.slice(0, 300)}`);
   return JSON.parse(body);
@@ -53,11 +49,10 @@ async function fetchTranscript(videoId: string): Promise<{ start: number; dur: n
 /** Тянет все ролики из плейлиста и добавляет отсутствующие в raw_materials. */
 export async function syncWatchlistPlaylist(
   supabase: AnyClient,
-  addedBy: string | null,
+  userId: string,
   playlistId: string,
-  explicitKey?: string | null,
 ): Promise<WatchlistSyncResult> {
-  const key = apiKey(explicitKey);
+  const token = await getUserGoogleToken(userId);
   const res: WatchlistSyncResult = { playlistId, apiReturned: 0, skippedDuplicates: 0, added: 0, errors: [] };
 
   const ids: string[] = [];
@@ -66,7 +61,8 @@ export async function syncWatchlistPlaylist(
     const j: any = await getJson(
       `https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&maxResults=50&playlistId=${encodeURIComponent(
         playlistId,
-      )}${pageToken ? `&pageToken=${pageToken}` : ""}&key=${key}`,
+      )}${pageToken ? `&pageToken=${pageToken}` : ""}`,
+      token,
     );
     for (const it of j?.items ?? []) {
       res.apiReturned++;
@@ -78,7 +74,11 @@ export async function syncWatchlistPlaylist(
   }
   if (!ids.length) return res;
 
-  const { data: known } = await supabase.from("raw_materials").select("external_id").in("external_id", ids);
+  const { data: known } = await supabase
+    .from("raw_materials")
+    .select("external_id")
+    .eq("user_id", userId)
+    .in("external_id", ids);
   const knownSet = new Set((known ?? []).map((r: any) => r.external_id));
   const targets = ids.filter(id => !knownSet.has(id));
   res.skippedDuplicates = ids.length - targets.length;
@@ -88,7 +88,8 @@ export async function syncWatchlistPlaylist(
   for (let i = 0; i < targets.length; i += 50) {
     const chunk = targets.slice(i, i + 50);
     const j: any = await getJson(
-      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${chunk.join(",")}&key=${key}`,
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${chunk.join(",")}`,
+      token,
     );
     videos.push(...(j?.items ?? []));
   }
@@ -109,6 +110,7 @@ export async function syncWatchlistPlaylist(
       let driveFileUrl: string | null = null;
       try {
         const file = await driveUploadText(
+          userId,
           `[YT] ${String(sn.title ?? videoId).replace(/[\\/:*?"<>|]/g, " ").slice(0, 120)}_${videoId}.json`,
           JSON.stringify(
             {
@@ -141,6 +143,7 @@ export async function syncWatchlistPlaylist(
         .from("raw_materials")
         .upsert(
           {
+            user_id: userId,
             external_id: videoId,
             title: sn.title ?? url,
             channel_title: sn.channelTitle ?? null,
@@ -159,9 +162,9 @@ export async function syncWatchlistPlaylist(
             source_type: "youtube_saved",
             status: "found",
             engagement_score: 0,
-            added_by: addedBy,
+            added_by: userId,
           },
-          { onConflict: "external_id" },
+          { onConflict: "user_id,external_id" },
         )
         .select("id")
         .single();

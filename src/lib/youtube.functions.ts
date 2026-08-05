@@ -85,7 +85,7 @@ export const ingestUrl = createServerFn({ method: "POST" })
     const canonicalUrl = `https://www.youtube.com/watch?v=${videoId}`;
     const { fetchVideoStats } = await import("./youtube-stats.server");
     const { getUserGoogleToken } = await import("./google.server");
-    const token = await getUserGoogleToken(userId);
+    const token = await getUserGoogleToken(userId, "youtube");
     const [meta, segments, stats] = await Promise.all([
       fetchOembed(videoId),
       fetchTranscript(videoId),
@@ -133,7 +133,7 @@ export const refreshAllMaterials = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const { getUserGoogleToken } = await import("./google.server");
-    const apiKey = await getUserGoogleToken(userId);
+    const apiKey = await getUserGoogleToken(userId, "youtube");
 
     const { data: materials } = await supabase
       .from("raw_materials")
@@ -263,7 +263,7 @@ export const checkYoutubeApi = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     try {
       const { getUserGoogleToken } = await import("./google.server");
-      const token = await getUserGoogleToken(context.userId);
+      const token = await getUserGoogleToken(context.userId, "youtube");
       const r = await fetch("https://www.googleapis.com/youtube/v3/videos?part=id&id=dQw4w9WgXcQ", {
         headers: { Authorization: `Bearer ${token}` },
       });

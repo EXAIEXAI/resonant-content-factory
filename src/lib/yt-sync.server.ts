@@ -131,7 +131,7 @@ export async function syncAllSourcesWith(
   /** Если задан — граница выборки «сейчас минус sinceDays», last_polled_at игнорируется. */
   sinceDays?: number | null,
 ): Promise<{ results: ChannelSyncResult[]; totalAdded: number; ranAt: string }> {
-  const token = await getUserGoogleToken(userId);
+  const token = await getUserGoogleToken(userId, "youtube");
 
   const { data: channels, error } = await supabase
     .from("channels")

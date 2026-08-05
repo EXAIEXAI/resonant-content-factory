@@ -52,7 +52,7 @@ export async function syncWatchlistPlaylist(
   userId: string,
   playlistId: string,
 ): Promise<WatchlistSyncResult> {
-  const token = await getUserGoogleToken(userId);
+  const token = await getUserGoogleToken(userId, "youtube");
   const res: WatchlistSyncResult = { playlistId, apiReturned: 0, skippedDuplicates: 0, added: 0, errors: [] };
 
   const ids: string[] = [];

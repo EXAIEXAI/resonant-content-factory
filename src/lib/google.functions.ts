@@ -1,40 +1,57 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-/** Статус подключения Google для текущего пользователя (без токенов). */
+type Provider = "youtube" | "drive";
+const asProvider = (v: unknown): Provider => (v === "youtube" ? "youtube" : "drive");
+
+/** Статус подключений YouTube и Google Диска для текущего пользователя (без токенов). */
 export const getGoogleStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { getConnection } = await import("./google.server");
     const conn = await getConnection(context.userId);
-    if (!conn) return { connected: false as const, email: null, connectedAt: null, folderId: null, folderUrl: null };
     return {
-      connected: true as const,
-      email: conn.google_email,
-      connectedAt: conn.connected_at,
-      folderId: conn.drive_folder_id,
-      folderUrl: conn.drive_folder_id ? `https://drive.google.com/drive/folders/${conn.drive_folder_id}` : null,
+      youtube: {
+        connected: Boolean(conn?.youtube_refresh_token),
+        email: conn?.youtube_email ?? null,
+        connectedAt: conn?.youtube_connected_at ?? null,
+      },
+      drive: {
+        connected: Boolean(conn?.drive_refresh_token),
+        email: conn?.drive_email ?? null,
+        connectedAt: conn?.drive_connected_at ?? null,
+        folderId: conn?.drive_folder_id ?? null,
+        folderUrl: conn?.drive_folder_id
+          ? `https://drive.google.com/drive/folders/${conn.drive_folder_id}`
+          : null,
+      },
     };
   });
 
-/** Возвращает ссылку на согласие Google (клиент делает по ней переход). */
+/** Возвращает ссылку на согласие Google для одного сервиса (клиент делает по ней переход). */
 export const startGoogleConnect = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { origin: string }) => ({ origin: String(data.origin).slice(0, 300) }))
+  .inputValidator((data: { origin: string; provider: Provider }) => ({
+    origin: String(data.origin).slice(0, 300),
+    provider: asProvider(data.provider),
+  }))
   .handler(async ({ data, context }) => {
     const { buildAuthUrl } = await import("./google.server");
-    return { url: await buildAuthUrl(context.userId, data.origin) };
+    return { url: await buildAuthUrl(context.userId, data.origin, data.provider) };
   });
 
-/** Отзывает токен в Google и удаляет подключение. */
+/** Отзывает токен сервиса в Google и удаляет его из подключения. */
 export const disconnectGoogle = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((data: { provider: Provider }) => ({ provider: asProvider(data.provider) }))
+  .handler(async ({ data, context }) => {
     const { getConnection, revokeToken, deleteConnection } = await import("./google.server");
     const conn = await getConnection(context.userId);
     if (conn) {
-      await revokeToken(conn.refresh_token);
-      await deleteConnection(context.userId);
+      const token =
+        data.provider === "youtube" ? conn.youtube_refresh_token : conn.drive_refresh_token;
+      if (token) await revokeToken(token);
+      await deleteConnection(context.userId, data.provider);
     }
-    return { ok: true };
+    return { ok: true, provider: data.provider };
   });

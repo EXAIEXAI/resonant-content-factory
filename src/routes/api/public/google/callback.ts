@@ -1,4 +1,4 @@
-// Google OAuth callback: обменивает code на токены и сохраняет подключение пользователя.
+// Google OAuth callback: обменивает code на токены и сохраняет подключение конкретного сервиса.
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/api/public/google/callback")({
@@ -22,20 +22,25 @@ export const Route = createFileRoute("/api/public/google/callback")({
         try {
           const tokens = await exchangeCode(code, origin);
           if (!tokens.refresh_token) {
-            return back("google=error&message=no_refresh_token");
+            return back(`google=error&provider=${parsed.provider}&message=no_refresh_token`);
           }
           const email = await fetchGoogleEmail(tokens.access_token);
           await saveConnection({
             userId: parsed.userId,
+            provider: parsed.provider,
             refreshToken: tokens.refresh_token,
             accessToken: tokens.access_token,
             expiresIn: tokens.expires_in,
             email,
             scopes: tokens.scope ?? null,
           });
-          return back("google=connected");
+          return back(`google=connected&provider=${parsed.provider}`);
         } catch (e) {
-          return back(`google=error&message=${encodeURIComponent(e instanceof Error ? e.message : String(e))}`);
+          return back(
+            `google=error&provider=${parsed.provider}&message=${encodeURIComponent(
+              e instanceof Error ? e.message : String(e),
+            )}`,
+          );
         }
       },
     },

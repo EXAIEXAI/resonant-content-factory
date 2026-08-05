@@ -10,9 +10,6 @@ export const Route = createFileRoute("/_authenticated")({
     return { user: data.user };
   },
   component: () => (
-    <>
-      <AppShell><Outlet /></AppShell>
-      <Toaster richColors />
-    </>
+    <AppShell><Outlet /></AppShell>
   ),
 });

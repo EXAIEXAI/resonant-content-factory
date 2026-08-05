@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -288,7 +288,7 @@ function IntegrationsPage() {
     email: string | null;
     connectedAt: string | null;
     hint: string;
-    extra?: React.ReactNode;
+    extra?: ReactNode;
   }) => (
     <div className="rounded-lg border p-4 space-y-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -575,14 +575,14 @@ function IntegrationsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={() => syncM.mutate(undefined)} disabled={syncM.isPending} className="gap-2">
+            <Button onClick={() => syncM.mutate(undefined)} disabled={syncM.isPending || !bothConnected} className="gap-2">
               <RefreshCw className={`h-4 w-4 ${syncM.isPending ? "animate-spin" : ""}`} />
               Синхронизировать сейчас
             </Button>
             <Button
               variant="outline"
               onClick={() => syncM.mutate(30)}
-              disabled={syncM.isPending}
+              disabled={syncM.isPending || !bothConnected}
               className="gap-2"
             >
               <RefreshCw className={`h-4 w-4 ${syncM.isPending ? "animate-spin" : ""}`} />

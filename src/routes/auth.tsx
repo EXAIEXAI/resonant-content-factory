@@ -27,6 +27,7 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -34,15 +35,31 @@ function AuthPage() {
     });
   }, [navigate]);
 
+  const translate = (msg: string) => {
+    const m = msg.toLowerCase();
+    if (m.includes("weak") || m.includes("pwned")) return "Этот пароль найден в утечках данных. Придумайте другой, посложнее.";
+    if (m.includes("already registered") || m.includes("user already")) return "Пользователь с таким email уже зарегистрирован. Войдите во вкладке «Вход».";
+    if (m.includes("invalid login")) return "Неверный email или пароль.";
+    if (m.includes("password should be at least")) return "Пароль должен быть не короче 6 символов.";
+    if (m.includes("invalid email") || m.includes("unable to validate email")) return "Некорректный email.";
+    if (m.includes("rate limit") || m.includes("too many")) return "Слишком много попыток. Попробуйте через несколько минут.";
+    return msg;
+  };
+
   const signIn = async () => {
+    setError(null);
+    if (!email || !password) return setError("Заполните email и пароль.");
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (error) return toast.error(error.message);
+    if (error) { const t = translate(error.message); setError(t); toast.error(t); return; }
     navigate({ to: "/" });
   };
 
   const signUp = async () => {
+    setError(null);
+    if (!email || !password) return setError("Заполните email и пароль.");
+    if (password.length < 6) return setError("Пароль должен быть не короче 6 символов.");
     setLoading(true);
     const { error } = await supabase.auth.signUp({
       email,
@@ -53,8 +70,8 @@ function AuthPage() {
       },
     });
     setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Аккаунт создан. Проверьте почту для подтверждения.");
+    if (error) { const t = translate(error.message); setError(t); toast.error(t); return; }
+    toast.success("Аккаунт создан.");
     navigate({ to: "/" });
   };
 

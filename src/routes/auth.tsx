@@ -27,6 +27,7 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -34,15 +35,31 @@ function AuthPage() {
     });
   }, [navigate]);
 
+  const translate = (msg: string) => {
+    const m = msg.toLowerCase();
+    if (m.includes("weak") || m.includes("pwned")) return "Этот пароль найден в утечках данных. Придумайте другой, посложнее.";
+    if (m.includes("already registered") || m.includes("user already")) return "Пользователь с таким email уже зарегистрирован. Войдите во вкладке «Вход».";
+    if (m.includes("invalid login")) return "Неверный email или пароль.";
+    if (m.includes("password should be at least")) return "Пароль должен быть не короче 6 символов.";
+    if (m.includes("invalid email") || m.includes("unable to validate email")) return "Некорректный email.";
+    if (m.includes("rate limit") || m.includes("too many")) return "Слишком много попыток. Попробуйте через несколько минут.";
+    return msg;
+  };
+
   const signIn = async () => {
+    setError(null);
+    if (!email || !password) return setError("Заполните email и пароль.");
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (error) return toast.error(error.message);
+    if (error) { const t = translate(error.message); setError(t); toast.error(t); return; }
     navigate({ to: "/" });
   };
 
   const signUp = async () => {
+    setError(null);
+    if (!email || !password) return setError("Заполните email и пароль.");
+    if (password.length < 6) return setError("Пароль должен быть не короче 6 символов.");
     setLoading(true);
     const { error } = await supabase.auth.signUp({
       email,
@@ -53,8 +70,8 @@ function AuthPage() {
       },
     });
     setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Аккаунт создан. Проверьте почту для подтверждения.");
+    if (error) { const t = translate(error.message); setError(t); toast.error(t); return; }
+    toast.success("Аккаунт создан.");
     navigate({ to: "/" });
   };
 
@@ -76,11 +93,16 @@ function AuthPage() {
             <CardDescription>Войдите или создайте аккаунт, чтобы начать</CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="signin">
+            <Tabs defaultValue="signin" onValueChange={() => setError(null)}>
               <TabsList className="grid grid-cols-2 w-full">
                 <TabsTrigger value="signin">Вход</TabsTrigger>
                 <TabsTrigger value="signup">Регистрация</TabsTrigger>
               </TabsList>
+              {error && (
+                <p role="alert" className="mt-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {error}
+                </p>
+              )}
               <TabsContent value="signin" className="space-y-4 mt-4">
                 <div className="space-y-2"><Label>Email</Label><Input type="email" value={email} onChange={e => setEmail(e.target.value)} /></div>
                 <div className="space-y-2"><Label>Пароль</Label><Input type="password" value={password} onChange={e => setPassword(e.target.value)} /></div>

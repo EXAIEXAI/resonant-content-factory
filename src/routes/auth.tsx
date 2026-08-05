@@ -93,11 +93,16 @@ function AuthPage() {
             <CardDescription>Войдите или создайте аккаунт, чтобы начать</CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="signin">
+            <Tabs defaultValue="signin" onValueChange={() => setError(null)}>
               <TabsList className="grid grid-cols-2 w-full">
                 <TabsTrigger value="signin">Вход</TabsTrigger>
                 <TabsTrigger value="signup">Регистрация</TabsTrigger>
               </TabsList>
+              {error && (
+                <p role="alert" className="mt-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {error}
+                </p>
+              )}
               <TabsContent value="signin" className="space-y-4 mt-4">
                 <div className="space-y-2"><Label>Email</Label><Input type="email" value={email} onChange={e => setEmail(e.target.value)} /></div>
                 <div className="space-y-2"><Label>Пароль</Label><Input type="password" value={password} onChange={e => setPassword(e.target.value)} /></div>

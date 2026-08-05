@@ -201,8 +201,13 @@ function IntegrationsPage() {
   const disconnect = useServerFn(disconnectGoogle);
   const { data: google } = useQuery({ queryKey: ["google_status"], queryFn: () => googleStatus() });
 
+  const ytConnected = Boolean(google?.youtube.connected);
+  const driveConnected = Boolean(google?.drive.connected);
+  const bothConnected = ytConnected && driveConnected;
+
   const connectM = useMutation({
-    mutationFn: async () => await startConnect({ data: { origin: window.location.origin } }),
+    mutationFn: async (provider: "youtube" | "drive") =>
+      await startConnect({ data: { origin: window.location.origin, provider } }),
     onSuccess: r => {
       window.location.href = r.url;
     },
@@ -210,10 +215,28 @@ function IntegrationsPage() {
   });
 
   const disconnectM = useMutation({
-    mutationFn: () => disconnect(),
-    onSuccess: () => {
-      toast.success("Google отключён");
+    mutationFn: (provider: "youtube" | "drive") => disconnect({ data: { provider } }),
+    onSuccess: r => {
+      toast.success(r.provider === "youtube" ? "YouTube отключён" : "Google Диск отключён");
       qc.invalidateQueries({ queryKey: ["google_status"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const checkBothM = useMutation({
+    mutationFn: async () => {
+      const [y, d] = await Promise.allSettled([ytCheck(), driveCheck()]);
+      return { y, d };
+    },
+    onSuccess: ({ y, d }) => {
+      const ytOk = y.status === "fulfilled" && y.value.ok;
+      const drOk = d.status === "fulfilled" && d.value.ok;
+      const ytErr = y.status === "fulfilled" ? y.value.error : y.reason?.message;
+      const drErr = d.status === "fulfilled" ? d.value.error : d.reason?.message;
+      addLog(ytOk ? "YouTube: подключение работает" : `YouTube: недоступен — ${ytErr}`);
+      addLog(drOk ? "Google Диск: подключение работает" : `Google Диск: недоступен — ${drErr}`);
+      if (ytOk && drOk) toast.success("Оба сервиса доступны");
+      else toast.error(`Недоступно: ${[!ytOk && "YouTube", !drOk && "Google Диск"].filter(Boolean).join(", ")}`);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -222,17 +245,86 @@ function IntegrationsPage() {
     const p = new URLSearchParams(window.location.search);
     const g = p.get("google");
     if (!g) return;
-    if (g === "connected") toast.success("Google подключён");
-    else toast.error(`Google: ${p.get("message") ?? "ошибка подключения"}`);
+    const provider = p.get("provider");
+    const label = provider === "youtube" ? "YouTube" : provider === "drive" ? "Google Диск" : "Google";
+    if (g === "connected") {
+      toast.success(`${label} подключён`);
+      // Инкрементальная авторизация: после YouTube сразу предлагаем подключить Диск.
+      if (provider === "youtube") sessionStorage.setItem("google_connect_next", "drive");
+    } else {
+      toast.error(`${label}: ${p.get("message") ?? "ошибка подключения"}`);
+      sessionStorage.removeItem("google_connect_next");
+    }
     qc.invalidateQueries({ queryKey: ["google_status"] });
     window.history.replaceState({}, "", window.location.pathname);
   }, [qc]);
 
+  useEffect(() => {
+    if (!google) return;
+    if (sessionStorage.getItem("google_connect_next") !== "drive") return;
+    sessionStorage.removeItem("google_connect_next");
+    if (!google.drive.connected) {
+      toast.info("Теперь подключим Google Диск");
+      connectM.mutate("drive");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [google]);
+
   const yt = ytM.data;
   const drive = driveM.data;
 
-
-
+  const ServiceBlock = ({
+    title,
+    provider,
+    connected,
+    email,
+    connectedAt,
+    hint,
+    extra,
+  }: {
+    title: string;
+    provider: "youtube" | "drive";
+    connected: boolean;
+    email: string | null;
+    connectedAt: string | null;
+    hint: string;
+    extra?: React.ReactNode;
+  }) => (
+    <div className="rounded-lg border p-4 space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm font-medium">{title}</span>
+        {connected ? (
+          <Badge className="gap-1"><CheckCircle2 className="h-3 w-3" /> подключено</Badge>
+        ) : (
+          <Badge variant="secondary" className="gap-1"><XCircle className="h-3 w-3" /> не подключено</Badge>
+        )}
+      </div>
+      {connected ? (
+        <div className="text-sm text-muted-foreground space-y-1">
+          <div>{email ?? "аккаунт Google"} · с {fmt(connectedAt)}</div>
+          {extra}
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">{hint}</p>
+      )}
+      <div className="flex flex-wrap gap-2">
+        {connected ? (
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={() => disconnectM.mutate(provider)}
+            disabled={disconnectM.isPending}
+          >
+            Отключить
+          </Button>
+        ) : (
+          <Button size="sm" className="gap-2" onClick={() => connectM.mutate(provider)} disabled={connectM.isPending}>
+            <ExternalLink className="h-4 w-4" /> Подключить {title}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -248,54 +340,70 @@ function IntegrationsPage() {
           <CardTitle className="text-base">Подключение Google</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {google?.connected ? (
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge className="gap-1"><CheckCircle2 className="h-3 w-3" /> подключено</Badge>
-                <span className="text-sm font-medium">{google.email ?? "аккаунт Google"}</span>
-                <span className="text-sm text-muted-foreground">с {fmt(google.connectedAt)}</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Папка на Диске:{" "}
-                {google.folderUrl ? (
-                  <a className="underline" href={google.folderUrl} target="_blank" rel="noreferrer">
-                    Контент-завод <ExternalLink className="inline h-3 w-3" />
-                  </a>
-                ) : (
-                  "создастся автоматически при первой синхронизации"
-                )}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Button size="sm" variant="outline" onClick={() => ytM.mutate()} disabled={ytM.isPending}>
-                  Проверить YouTube
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => driveM.mutate()} disabled={driveM.isPending}>
-                  Проверить Диск
-                </Button>
-                <Button size="sm" variant="destructive" onClick={() => disconnectM.mutate()} disabled={disconnectM.isPending}>
-                  Отключить
-                </Button>
-              </div>
-              {(yt || drive) && (
-                <p className="text-xs text-muted-foreground break-words">
-                  {yt ? (yt.ok ? "YouTube: подключение работает. " : `YouTube: ${yt.error} `) : ""}
-                  {drive ? (drive.ok ? `Диск: папка «${drive.folderName}» доступна.` : `Диск: ${drive.error}`) : ""}
-                </p>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <Badge variant="secondary" className="gap-1"><XCircle className="h-3 w-3" /> не подключено</Badge>
-              <p className="text-sm text-muted-foreground">
-                Подключите свой Google-аккаунт — приложение запросит только два права: чтение данных YouTube
-                (просмотр ваших подписок, плейлистов и статистики роликов) и доступ к файлам, которые само создаёт
-                на вашем Google Диске (папка «Контент-завод»). Другие ваши файлы приложению недоступны.
-              </p>
-              <Button onClick={() => connectM.mutate()} disabled={connectM.isPending} className="gap-2">
+          <p className="text-sm text-muted-foreground">
+            Google не разрешает запрашивать доступ к YouTube и к Диску в одном окне согласия, поэтому подключение
+            проходит в два шага — сначала YouTube, затем Google Диск. Приложению доступны только чтение данных
+            YouTube и файлы, которые оно само создаёт в папке «Контент-завод».
+          </p>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <ServiceBlock
+              title="YouTube"
+              provider="youtube"
+              connected={ytConnected}
+              email={google?.youtube.email ?? null}
+              connectedAt={google?.youtube.connectedAt ?? null}
+              hint="Чтение ваших плейлистов, подписок и статистики роликов."
+            />
+            <ServiceBlock
+              title="Google Диск"
+              provider="drive"
+              connected={driveConnected}
+              email={google?.drive.email ?? null}
+              connectedAt={google?.drive.connectedAt ?? null}
+              hint="Сохранение расшифровок и данных роликов в папку «Контент-завод»."
+              extra={
+                <div>
+                  Папка:{" "}
+                  {google?.drive.folderUrl ? (
+                    <a className="underline" href={google.drive.folderUrl} target="_blank" rel="noreferrer">
+                      Контент-завод <ExternalLink className="inline h-3 w-3" />
+                    </a>
+                  ) : (
+                    "создастся автоматически при первой синхронизации"
+                  )}
+                </div>
+              }
+            />
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {!bothConnected && (
+              <Button className="gap-2" onClick={() => connectM.mutate(ytConnected ? "drive" : "youtube")} disabled={connectM.isPending}>
                 <ExternalLink className="h-4 w-4" /> Подключить Google
               </Button>
-            </div>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => checkBothM.mutate()}
+              disabled={checkBothM.isPending || !bothConnected}
+            >
+              Проверить подключение
+            </Button>
+          </div>
+          {!bothConnected && (
+            <p className="text-xs text-muted-foreground">
+              Синхронизация станет доступна, когда подключены оба сервиса.
+            </p>
           )}
+          {(yt || drive) && (
+            <p className="text-xs text-muted-foreground break-words">
+              {yt ? (yt.ok ? "YouTube: подключение работает. " : `YouTube: ${yt.error} `) : ""}
+              {drive ? (drive.ok ? `Диск: папка «${drive.folderName}» доступна.` : `Диск: ${drive.error}`) : ""}
+            </p>
+          )}
+
 
           <div className="space-y-3 border-t pt-4">
             <p className="text-sm font-medium">Автоматическая синхронизация</p>

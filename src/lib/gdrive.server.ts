@@ -13,7 +13,7 @@ const FOLDER_NAME = "Контент-завод";
 export async function ensureDriveFolder(
   userId: string,
 ): Promise<{ id: string; created: boolean; name: string; url: string }> {
-  const token = await getUserGoogleToken(userId);
+  const token = await getUserGoogleToken(userId, "drive");
   const conn = await getConnection(userId);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const db = supabaseAdmin as any;
@@ -69,7 +69,7 @@ export async function driveUploadText(
   content: string,
   mimeType = "text/plain",
 ): Promise<{ id: string; webViewLink: string | null; name: string }> {
-  const token = await getUserGoogleToken(userId);
+  const token = await getUserGoogleToken(userId, "drive");
   const { id: folderId } = await ensureDriveFolder(userId);
   const boundary = "lovable-boundary-" + crypto.randomUUID();
   const metadata = { name, parents: [folderId] };
@@ -99,7 +99,7 @@ export async function driveUploadText(
 export async function driveListFolder(userId: string): Promise<
   Array<{ id: string; name: string; mimeType: string; webViewLink: string | null; modifiedTime: string | null }>
 > {
-  const token = await getUserGoogleToken(userId);
+  const token = await getUserGoogleToken(userId, "drive");
   const { id: folderId } = await ensureDriveFolder(userId);
   const q = encodeURIComponent(`'${folderId}' in parents and trashed = false`);
   const res = await fetch(

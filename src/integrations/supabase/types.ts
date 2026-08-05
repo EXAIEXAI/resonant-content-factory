@@ -188,37 +188,64 @@ export type Database = {
       }
       google_connections: {
         Row: {
-          access_token: string | null
-          access_token_expires_at: string | null
           connected_at: string
+          drive_access_token: string | null
+          drive_connected_at: string | null
+          drive_email: string | null
           drive_folder_id: string | null
+          drive_refresh_token: string | null
+          drive_scopes: string | null
+          drive_token_expires_at: string | null
           google_email: string | null
           id: string
-          refresh_token: string
           scopes: string | null
           user_id: string
+          youtube_access_token: string | null
+          youtube_connected_at: string | null
+          youtube_email: string | null
+          youtube_refresh_token: string | null
+          youtube_scopes: string | null
+          youtube_token_expires_at: string | null
         }
         Insert: {
-          access_token?: string | null
-          access_token_expires_at?: string | null
           connected_at?: string
+          drive_access_token?: string | null
+          drive_connected_at?: string | null
+          drive_email?: string | null
           drive_folder_id?: string | null
+          drive_refresh_token?: string | null
+          drive_scopes?: string | null
+          drive_token_expires_at?: string | null
           google_email?: string | null
           id?: string
-          refresh_token: string
           scopes?: string | null
           user_id: string
+          youtube_access_token?: string | null
+          youtube_connected_at?: string | null
+          youtube_email?: string | null
+          youtube_refresh_token?: string | null
+          youtube_scopes?: string | null
+          youtube_token_expires_at?: string | null
         }
         Update: {
-          access_token?: string | null
-          access_token_expires_at?: string | null
           connected_at?: string
+          drive_access_token?: string | null
+          drive_connected_at?: string | null
+          drive_email?: string | null
           drive_folder_id?: string | null
+          drive_refresh_token?: string | null
+          drive_scopes?: string | null
+          drive_token_expires_at?: string | null
           google_email?: string | null
           id?: string
-          refresh_token?: string
           scopes?: string | null
           user_id?: string
+          youtube_access_token?: string | null
+          youtube_connected_at?: string | null
+          youtube_email?: string | null
+          youtube_refresh_token?: string | null
+          youtube_scopes?: string | null
+          youtube_token_expires_at?: string | null
         }
         Relationships: []
       }

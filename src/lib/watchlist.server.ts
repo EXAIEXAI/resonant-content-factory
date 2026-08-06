@@ -11,6 +11,7 @@ export type WatchlistSyncResult = {
   apiReturned: number;
   skippedDuplicates: number;
   added: number;
+  addedIds: string[];
   errors: string[];
 };
 
@@ -53,7 +54,7 @@ export async function syncWatchlistPlaylist(
   playlistId: string,
 ): Promise<WatchlistSyncResult> {
   const token = await getUserGoogleToken(userId, "youtube");
-  const res: WatchlistSyncResult = { playlistId, apiReturned: 0, skippedDuplicates: 0, added: 0, errors: [] };
+  const res: WatchlistSyncResult = { playlistId, apiReturned: 0, skippedDuplicates: 0, added: 0, addedIds: [], errors: [] };
 
   const ids: string[] = [];
   let pageToken: string | undefined;
@@ -171,6 +172,7 @@ export async function syncWatchlistPlaylist(
       if (error) throw new Error(error.message);
 
       res.added++;
+      res.addedIds.push(row.id);
       analyzeMaterialById(supabase, row.id).catch(e => console.error("watchlist analyze failed", e));
     } catch (e) {
       res.errors.push(e instanceof Error ? e.message : String(e));

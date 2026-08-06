@@ -82,6 +82,14 @@ function MaterialPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const makeReview = useServerFn(generateReview);
+  const runReview = useMutation({
+    mutationFn: (force: boolean) => makeReview({ data: { materialId: id, force } }),
+    onSuccess: () => { toast.success("Разбор готов"); qc.invalidateQueries({ queryKey: ["material", id] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   if (!m) return <div className="text-muted-foreground">Загрузка...</div>;
 
   const keyPoints = Array.isArray(m.key_points) ? m.key_points as any[] : [];

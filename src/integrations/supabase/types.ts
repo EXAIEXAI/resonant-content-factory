@@ -337,6 +337,8 @@ export type Database = {
           published_at: string | null
           raw_transcript: string | null
           reactions: number | null
+          review_generated_at: string | null
+          review_md: string | null
           source_type: string
           status: string
           summary: string | null
@@ -365,6 +367,8 @@ export type Database = {
           published_at?: string | null
           raw_transcript?: string | null
           reactions?: number | null
+          review_generated_at?: string | null
+          review_md?: string | null
           source_type?: string
           status?: string
           summary?: string | null
@@ -393,6 +397,8 @@ export type Database = {
           published_at?: string | null
           raw_transcript?: string | null
           reactions?: number | null
+          review_generated_at?: string | null
+          review_md?: string | null
           source_type?: string
           status?: string
           summary?: string | null

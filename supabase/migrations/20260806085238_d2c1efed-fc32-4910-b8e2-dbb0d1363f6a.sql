@@ -1,0 +1,1 @@
+ALTER TABLE public.raw_materials ADD COLUMN IF NOT EXISTS review_md text, ADD COLUMN IF NOT EXISTS review_generated_at timestamptz;

@@ -120,6 +120,40 @@ function MaterialPage() {
         )}
       </div>
 
+      {/* Разбор видео */}
+      <Card>
+        <CardHeader className="flex-row items-start justify-between gap-4 space-y-0">
+          <div>
+            <CardTitle className="font-serif">Разбор видео</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Смысловые блоки, ключевые мысли, цитаты, вывод и экспертное мнение
+            </p>
+          </div>
+          <Button
+            size="sm"
+            variant={m.review_md ? "outline" : "default"}
+            onClick={() => runReview.mutate(Boolean(m.review_md))}
+            disabled={runReview.isPending}
+          >
+            {runReview.isPending ? "Формирую..." : m.review_md ? "Пересобрать" : "Сформировать разбор"}
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {m.review_md ? (
+            <article className="prose-review max-w-none text-sm">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.review_md}</ReactMarkdown>
+            </article>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Разбор ещё не сформирован. Он готовится автоматически для сохранённых роликов и доступен по кнопке
+              «Читать обзор» в Telegram.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+
+
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Блок А: Источник */}
         <Card className="border-l-4 border-l-muted-foreground/30">

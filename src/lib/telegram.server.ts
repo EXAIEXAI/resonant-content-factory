@@ -94,28 +94,15 @@ export async function sendSavedDigest(
 
   const header = opts?.title ?? `<b>Вчера вы сохранили эти видеоролики</b> (${range.label})`;
 
-  // Готовим краткое саммари и развёрнутый разбор для каждого ролика.
+  // Готовим развёрнутый разбор для каждого ролика.
   const { generateReviewById } = await import("@/lib/review.server");
-  const { analyzeMaterialById } = await import("@/lib/analyze.server");
   for (const m of materials) {
     try {
-      if (!(m.summary ?? "").trim()) {
-        await analyzeMaterialById(supabase, m.id);
-      }
       await generateReviewById(supabase, m.id);
     } catch (e) {
       console.error("digest prepare failed", m.id, e);
     }
   }
-
-  // Перечитываем саммари после анализа.
-  const { data: fresh } = await supabase
-    .from("raw_materials")
-    .select("id, summary")
-    .in("id", materials.map((m: { id: string }) => m.id));
-  const summaries = new Map<string, string>(
-    (fresh ?? []).map((r: { id: string; summary: string | null }) => [r.id, (r.summary ?? "").trim()]),
-  );
 
   let sent = 0;
   for (const chatId of chatIds) {
@@ -123,11 +110,10 @@ export async function sendSavedDigest(
 
     for (const m of materials) {
       const url = m.url || (m.external_id ? `https://www.youtube.com/watch?v=${m.external_id}` : null);
-      const summary = summaries.get(m.id) || (m.summary ?? "").trim();
       const text =
         `<b>${esc(m.title ?? "Без названия")}</b>` +
-        (m.channel_title ? `\n<i>${esc(m.channel_title)}</i>` : "") +
-        (summary ? `\n\n${esc(summary.slice(0, 600))}` : "");
+        (m.channel_title ? `\n<i>${esc(m.channel_title)}</i>` : "");
+
 
       const buttons: Array<Array<Record<string, string>>> = [[]];
       if (url) buttons[0].push({ text: "▶ Смотреть", url });

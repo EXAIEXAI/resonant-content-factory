@@ -94,6 +94,18 @@ export async function sendSavedDigest(
 
   const header = opts?.title ?? `<b>Вчера вы сохранили эти видеоролики</b> (${range.label})`;
 
+  // Готовим развёрнутый разбор для каждого ролика — он открывается по кнопке «Читать обзор».
+  const { generateReviewById } = await import("@/lib/review.server");
+  for (const m of materials) {
+    try {
+      await generateReviewById(supabase, m.id);
+    } catch (e) {
+      console.error("digest review failed", m.id, e);
+    }
+  }
+
+
+
   let sent = 0;
   for (const chatId of chatIds) {
     await tg("sendMessage", { chat_id: chatId, text: header, parse_mode: "HTML" });

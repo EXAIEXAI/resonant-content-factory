@@ -21,6 +21,14 @@ import {
 import { checkDrive } from "@/lib/gdrive.functions";
 import { getGoogleStatus, startGoogleConnect, disconnectGoogle } from "@/lib/google.functions";
 import { saveTelegramChatId, sendTelegramDigestNow } from "@/lib/telegram.functions";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 
 
@@ -241,7 +249,11 @@ function IntegrationsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [bothFlow, setBothFlow] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
   useEffect(() => {
+    setBothFlow(sessionStorage.getItem("google_connect_flow") === "both");
     const p = new URLSearchParams(window.location.search);
     const g = p.get("google");
     if (!g) return;
@@ -249,50 +261,67 @@ function IntegrationsPage() {
     const label = provider === "youtube" ? "YouTube" : provider === "drive" ? "Google Диск" : "Google";
     if (g === "connected") {
       toast.success(`${label} подключён`);
-      // Инкрементальная авторизация: после YouTube сразу предлагаем подключить Диск.
-      if (provider === "youtube") sessionStorage.setItem("google_connect_next", "drive");
+      if (provider === "drive") {
+        sessionStorage.removeItem("google_connect_flow");
+        setBothFlow(false);
+      }
     } else {
       toast.error(`${label}: ${p.get("message") ?? "ошибка подключения"}`);
-      sessionStorage.removeItem("google_connect_next");
     }
     qc.invalidateQueries({ queryKey: ["google_status"] });
     window.history.replaceState({}, "", window.location.pathname);
   }, [qc]);
 
-  useEffect(() => {
-    if (!google) return;
-    if (sessionStorage.getItem("google_connect_next") !== "drive") return;
-    sessionStorage.removeItem("google_connect_next");
-    if (!google.drive.connected) {
-      toast.info("Теперь подключим Google Диск");
-      connectM.mutate("drive");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [google]);
+  const startBoth = () => {
+    sessionStorage.setItem("google_connect_flow", "both");
+    setBothFlow(true);
+    setDialogOpen(false);
+    connectM.mutate(ytConnected ? "drive" : "youtube");
+  };
+
+  const startSingle = (provider: "youtube" | "drive") => {
+    sessionStorage.removeItem("google_connect_flow");
+    setBothFlow(false);
+    connectM.mutate(provider);
+  };
+
+  const showStep2Banner = bothFlow && ytConnected && !driveConnected;
+  const missingLabel = !ytConnected && !driveConnected
+    ? "YouTube и Google Диска"
+    : !ytConnected
+      ? "YouTube"
+      : !driveConnected
+        ? "Google Диска"
+        : null;
 
   const yt = ytM.data;
   const drive = driveM.data;
 
   const ServiceBlock = ({
     title,
+    step,
     provider,
     connected,
     email,
     connectedAt,
     hint,
+    missingHint,
     extra,
   }: {
     title: string;
+    step: string;
     provider: "youtube" | "drive";
     connected: boolean;
     email: string | null;
     connectedAt: string | null;
     hint: string;
+    missingHint: string;
     extra?: ReactNode;
   }) => (
     <div className="rounded-lg border p-4 space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-medium">{title}</span>
+        <span className="text-xs text-muted-foreground">{step}</span>
         {connected ? (
           <Badge className="gap-1"><CheckCircle2 className="h-3 w-3" /> подключено</Badge>
         ) : (
@@ -305,10 +334,13 @@ function IntegrationsPage() {
           {extra}
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">{hint}</p>
+        <div className="space-y-1">
+          <p className="text-sm text-muted-foreground">{hint}</p>
+          <p className="text-sm text-destructive">{missingHint}</p>
+        </div>
       )}
-      <div className="flex flex-wrap gap-2">
-        {connected ? (
+      {connected && (
+        <div className="flex flex-wrap gap-2">
           <Button
             size="sm"
             variant="destructive"
@@ -317,12 +349,8 @@ function IntegrationsPage() {
           >
             Отключить
           </Button>
-        ) : (
-          <Button size="sm" className="gap-2" onClick={() => connectM.mutate(provider)} disabled={connectM.isPending}>
-            <ExternalLink className="h-4 w-4" /> Подключить {title}
-          </Button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 
@@ -340,28 +368,61 @@ function IntegrationsPage() {
           <CardTitle className="text-base">Подключение Google</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Google не разрешает запрашивать доступ к YouTube и к Диску в одном окне согласия, поэтому подключение
-            проходит в два шага — сначала YouTube, затем Google Диск. Приложению доступны только чтение данных
-            YouTube и файлы, которые оно само создаёт в папке «Контент-завод».
-          </p>
+          {showStep2Banner && (
+            <div className="rounded-lg border border-primary/40 bg-primary/5 p-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium">Шаг 2 из 2: осталось подключить Google Диск</p>
+                <p className="text-sm text-muted-foreground">
+                  Без Диска материалы не будут сохраняться в вашу папку, а синхронизация не запустится.
+                </p>
+              </div>
+              <Button className="gap-2" onClick={() => connectM.mutate("drive")} disabled={connectM.isPending}>
+                <ExternalLink className="h-4 w-4" /> Подключить Диск
+              </Button>
+            </div>
+          )}
+
+          {!bothConnected && (
+            <div className="space-y-3">
+              <Button className="gap-2" onClick={() => setDialogOpen(true)} disabled={connectM.isPending}>
+                <ExternalLink className="h-4 w-4" /> Подключить Google
+              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs text-muted-foreground">Нужен только один сервис?</span>
+                {!ytConnected && (
+                  <Button size="sm" variant="outline" onClick={() => startSingle("youtube")} disabled={connectM.isPending}>
+                    Только YouTube
+                  </Button>
+                )}
+                {!driveConnected && (
+                  <Button size="sm" variant="outline" onClick={() => startSingle("drive")} disabled={connectM.isPending}>
+                    Только Google Диск
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="grid gap-3 sm:grid-cols-2">
             <ServiceBlock
               title="YouTube"
+              step="Шаг 1 из 2 — YouTube"
               provider="youtube"
               connected={ytConnected}
               email={google?.youtube.email ?? null}
               connectedAt={google?.youtube.connectedAt ?? null}
               hint="Чтение ваших плейлистов, подписок и статистики роликов."
+              missingHint="Не сможем получать ролики с каналов"
             />
             <ServiceBlock
               title="Google Диск"
+              step="Шаг 2 из 2 — Google Диск"
               provider="drive"
               connected={driveConnected}
               email={google?.drive.email ?? null}
               connectedAt={google?.drive.connectedAt ?? null}
               hint="Сохранение расшифровок и данных роликов в папку «Контент-завод»."
+              missingHint="Материалы не будут сохраняться в вашу папку"
               extra={
                 <div>
                   Папка:{" "}
@@ -378,11 +439,6 @@ function IntegrationsPage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {!bothConnected && (
-              <Button className="gap-2" onClick={() => connectM.mutate(ytConnected ? "drive" : "youtube")} disabled={connectM.isPending}>
-                <ExternalLink className="h-4 w-4" /> Подключить Google
-              </Button>
-            )}
             <Button
               size="sm"
               variant="outline"
@@ -394,7 +450,7 @@ function IntegrationsPage() {
           </div>
           {!bothConnected && (
             <p className="text-xs text-muted-foreground">
-              Синхронизация станет доступна, когда подключены оба сервиса.
+              Синхронизация недоступна: не хватает подключения {missingLabel}.
             </p>
           )}
           {(yt || drive) && (
@@ -403,6 +459,29 @@ function IntegrationsPage() {
               {drive ? (drive.ok ? `Диск: папка «${drive.folderName}» доступна.` : `Диск: ${drive.error}`) : ""}
             </p>
           )}
+
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Потребуется два подтверждения</DialogTitle>
+                <DialogDescription>
+                  Google не позволяет запросить доступ к YouTube и Диску одним окном, поэтому подтверждений будет
+                  два: сначала YouTube — чтобы система видела ролики ваших каналов, затем Google Диск — чтобы создать
+                  рабочую папку и складывать в неё материалы. Пройдите оба шага: если остановиться после первого,
+                  автоматическая синхронизация не заработает.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="text-sm text-muted-foreground space-y-1">
+                <div>Шаг 1 из 2 — YouTube {ytConnected ? "· подключено" : ""}</div>
+                <div>Шаг 2 из 2 — Google Диск {driveConnected ? "· подключено" : ""}</div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDialogOpen(false)}>Отмена</Button>
+                <Button onClick={startBoth} disabled={connectM.isPending}>Продолжить</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
 
 
           <div className="space-y-3 border-t pt-4">

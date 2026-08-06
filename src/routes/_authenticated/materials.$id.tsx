@@ -12,6 +12,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState } from "react";
 import { ArrowLeft, MessageSquare, ThumbsUp, ThumbsDown, HelpCircle, Quote, ExternalLink, Trash2 } from "lucide-react";
 import { analyzeMaterial, generateContent } from "@/lib/ai.functions";
+import { generateReview } from "@/lib/review.functions";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { formatTimecode as formatTC } from "@/lib/youtube";
 import { statusLabels, reactionLabels, formatLabels } from "@/lib/ui-labels";
 import { toast } from "sonner";
@@ -79,6 +82,14 @@ function MaterialPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const makeReview = useServerFn(generateReview);
+  const runReview = useMutation({
+    mutationFn: (force: boolean) => makeReview({ data: { materialId: id, force } }),
+    onSuccess: () => { toast.success("Разбор готов"); qc.invalidateQueries({ queryKey: ["material", id] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   if (!m) return <div className="text-muted-foreground">Загрузка...</div>;
 
   const keyPoints = Array.isArray(m.key_points) ? m.key_points as any[] : [];
@@ -108,6 +119,40 @@ function MaterialPage() {
           </a>
         )}
       </div>
+
+      {/* Разбор видео */}
+      <Card>
+        <CardHeader className="flex-row items-start justify-between gap-4 space-y-0">
+          <div>
+            <CardTitle className="font-serif">Разбор видео</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Смысловые блоки, ключевые мысли, цитаты, вывод и экспертное мнение
+            </p>
+          </div>
+          <Button
+            size="sm"
+            variant={m.review_md ? "outline" : "default"}
+            onClick={() => runReview.mutate(Boolean(m.review_md))}
+            disabled={runReview.isPending}
+          >
+            {runReview.isPending ? "Формирую..." : m.review_md ? "Пересобрать" : "Сформировать разбор"}
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {m.review_md ? (
+            <article className="prose-review max-w-none text-sm">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.review_md}</ReactMarkdown>
+            </article>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Разбор ещё не сформирован. Он готовится автоматически для сохранённых роликов и доступен по кнопке
+              «Читать обзор» в Telegram.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Блок А: Источник */}

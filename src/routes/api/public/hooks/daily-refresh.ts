@@ -36,7 +36,26 @@ export const Route = createFileRoute("/api/public/hooks/daily-refresh")({
           }
         }
 
-        return Response.json({ ok: true, users: perUser, analyzed, at: new Date().toISOString() });
+        // Формируем развёрнутые разборы для сохранённых роликов без разбора.
+        const { generateReviewById } = await import("@/lib/review.server");
+        const { data: needReview } = await db
+          .from("raw_materials")
+          .select("id")
+          .is("review_md", null)
+          .order("created_at", { ascending: false })
+          .limit(40);
+        let reviewed = 0;
+        for (const m of needReview ?? []) {
+          try {
+            await generateReviewById(supabaseAdmin as never, m.id);
+            reviewed += 1;
+          } catch (e) {
+            console.error("daily-refresh review failed", m.id, e);
+          }
+        }
+
+        return Response.json({ ok: true, users: perUser, analyzed, reviewed, at: new Date().toISOString() });
+
       },
     },
   },

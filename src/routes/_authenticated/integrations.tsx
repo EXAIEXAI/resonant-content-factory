@@ -669,6 +669,11 @@ function IntegrationsPage() {
             </Button>
             <span className="text-sm text-muted-foreground">Последний запуск: {fmt(lastRun)}</span>
           </div>
+          {!bothConnected && (
+            <p className="text-xs text-muted-foreground">
+              Запуск недоступен: не хватает подключения {missingLabel}.
+            </p>
+          )}
 
           {summary && (
             <div className="overflow-x-auto rounded-lg border">

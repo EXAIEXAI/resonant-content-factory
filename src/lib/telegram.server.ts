@@ -139,3 +139,75 @@ export async function sendSavedDigest(
   return { chatId: chatIds.join(", "), materials: materials.length, sent, skipped: null };
 }
 
+/**
+ * Мгновенная отправка конкретных роликов (сразу после сохранения в плейлист).
+ */
+export async function sendMaterialsNow(
+  supabase: AnyClient,
+  userId: string,
+  materialIds: string[],
+): Promise<TelegramDigestResult> {
+  if (!materialIds.length) return { chatId: null, materials: 0, sent: 0, skipped: "Нет новых роликов" };
+
+  const { data: settings } = await supabase
+    .from("integration_settings")
+    .select("telegram_chat_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  const chatIds = (settings?.telegram_chat_id ?? "")
+    .toString()
+    .split(/[,\s;]+/)
+    .map((s: string) => s.trim())
+    .filter(Boolean);
+  if (!chatIds.length) return { chatId: null, materials: 0, sent: 0, skipped: "Не указан Telegram chat ID" };
+
+  const { data: rows, error } = await supabase
+    .from("raw_materials")
+    .select("id, title, url, external_id, channel_title")
+    .in("id", materialIds);
+  if (error) throw new Error(error.message);
+
+  const materials = rows ?? [];
+  if (!materials.length) return { chatId: chatIds.join(", "), materials: 0, sent: 0, skipped: "Ролики не найдены" };
+
+  const { generateReviewById } = await import("@/lib/review.server");
+  for (const m of materials) {
+    try {
+      await generateReviewById(supabase, m.id);
+    } catch (e) {
+      console.error("instant review failed", m.id, e);
+    }
+  }
+
+  let sent = 0;
+  for (const chatId of chatIds) {
+    for (const m of materials) {
+      const url = m.url || (m.external_id ? `https://www.youtube.com/watch?v=${m.external_id}` : null);
+      const text =
+        `<b>${esc(m.title ?? "Без названия")}</b>` +
+        (m.channel_title ? `\n<i>${esc(m.channel_title)}</i>` : "");
+
+      const buttons: Array<Array<Record<string, string>>> = [[]];
+      if (url) buttons[0].push({ text: "▶ Смотреть", url });
+      buttons[0].push({ text: "Читать обзор", url: `${APP_URL}/api/public/review/${m.id}` });
+
+      await tg("sendMessage", {
+        chat_id: chatId,
+        text,
+        parse_mode: "HTML",
+        disable_web_page_preview: false,
+        reply_markup: { inline_keyboard: buttons },
+      });
+      sent++;
+    }
+  }
+
+  await supabase
+    .from("integration_settings")
+    .update({ telegram_last_sent_at: new Date().toISOString() })
+    .eq("user_id", userId);
+
+  return { chatId: chatIds.join(", "), materials: materials.length, sent, skipped: null };
+}
+

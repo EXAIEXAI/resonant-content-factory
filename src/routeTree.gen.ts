@@ -22,6 +22,7 @@ import { Route as AuthenticatedDigestsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedChannelsRouteImport } from './routes/_authenticated/channels'
 import { Route as AuthenticatedMaterialsIdRouteImport } from './routes/_authenticated/materials.$id'
 import { Route as ApiPublicSyncYoutubeRouteImport } from './routes/api/public/sync/youtube'
+import { Route as ApiPublicReviewIdRouteImport } from './routes/api/public/review/$id'
 import { Route as ApiPublicHooksYoutubePlaylistRouteImport } from './routes/api/public/hooks/youtube-playlist'
 import { Route as ApiPublicHooksYoutubeChannelsRouteImport } from './routes/api/public/hooks/youtube-channels'
 import { Route as ApiPublicHooksWeeklyDigestRouteImport } from './routes/api/public/hooks/weekly-digest'
@@ -96,6 +97,11 @@ const ApiPublicSyncYoutubeRoute = ApiPublicSyncYoutubeRouteImport.update({
   path: '/api/public/sync/youtube',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicReviewIdRoute = ApiPublicReviewIdRouteImport.update({
+  id: '/api/public/review/$id',
+  path: '/api/public/review/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksYoutubePlaylistRoute =
   ApiPublicHooksYoutubePlaylistRouteImport.update({
     id: '/api/public/hooks/youtube-playlist',
@@ -156,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/hooks/youtube-channels': typeof ApiPublicHooksYoutubeChannelsRoute
   '/api/public/hooks/youtube-playlist': typeof ApiPublicHooksYoutubePlaylistRoute
+  '/api/public/review/$id': typeof ApiPublicReviewIdRoute
   '/api/public/sync/youtube': typeof ApiPublicSyncYoutubeRoute
 }
 export interface FileRoutesByTo {
@@ -177,6 +184,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/hooks/youtube-channels': typeof ApiPublicHooksYoutubeChannelsRoute
   '/api/public/hooks/youtube-playlist': typeof ApiPublicHooksYoutubePlaylistRoute
+  '/api/public/review/$id': typeof ApiPublicReviewIdRoute
   '/api/public/sync/youtube': typeof ApiPublicSyncYoutubeRoute
 }
 export interface FileRoutesById {
@@ -200,6 +208,7 @@ export interface FileRoutesById {
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/hooks/youtube-channels': typeof ApiPublicHooksYoutubeChannelsRoute
   '/api/public/hooks/youtube-playlist': typeof ApiPublicHooksYoutubePlaylistRoute
+  '/api/public/review/$id': typeof ApiPublicReviewIdRoute
   '/api/public/sync/youtube': typeof ApiPublicSyncYoutubeRoute
 }
 export interface FileRouteTypes {
@@ -223,6 +232,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/weekly-digest'
     | '/api/public/hooks/youtube-channels'
     | '/api/public/hooks/youtube-playlist'
+    | '/api/public/review/$id'
     | '/api/public/sync/youtube'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -244,6 +254,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/weekly-digest'
     | '/api/public/hooks/youtube-channels'
     | '/api/public/hooks/youtube-playlist'
+    | '/api/public/review/$id'
     | '/api/public/sync/youtube'
   id:
     | '__root__'
@@ -266,6 +277,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/weekly-digest'
     | '/api/public/hooks/youtube-channels'
     | '/api/public/hooks/youtube-playlist'
+    | '/api/public/review/$id'
     | '/api/public/sync/youtube'
   fileRoutesById: FileRoutesById
 }
@@ -279,6 +291,7 @@ export interface RootRouteChildren {
   ApiPublicHooksWeeklyDigestRoute: typeof ApiPublicHooksWeeklyDigestRoute
   ApiPublicHooksYoutubeChannelsRoute: typeof ApiPublicHooksYoutubeChannelsRoute
   ApiPublicHooksYoutubePlaylistRoute: typeof ApiPublicHooksYoutubePlaylistRoute
+  ApiPublicReviewIdRoute: typeof ApiPublicReviewIdRoute
   ApiPublicSyncYoutubeRoute: typeof ApiPublicSyncYoutubeRoute
 }
 
@@ -375,6 +388,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSyncYoutubeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/review/$id': {
+      id: '/api/public/review/$id'
+      path: '/api/public/review/$id'
+      fullPath: '/api/public/review/$id'
+      preLoaderRoute: typeof ApiPublicReviewIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/youtube-playlist': {
       id: '/api/public/hooks/youtube-playlist'
       path: '/api/public/hooks/youtube-playlist'
@@ -466,8 +486,19 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksWeeklyDigestRoute: ApiPublicHooksWeeklyDigestRoute,
   ApiPublicHooksYoutubeChannelsRoute: ApiPublicHooksYoutubeChannelsRoute,
   ApiPublicHooksYoutubePlaylistRoute: ApiPublicHooksYoutubePlaylistRoute,
+  ApiPublicReviewIdRoute: ApiPublicReviewIdRoute,
   ApiPublicSyncYoutubeRoute: ApiPublicSyncYoutubeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

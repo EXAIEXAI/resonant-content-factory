@@ -1,5 +1,6 @@
 // Fetches YouTube video stats через персональный OAuth-токен пользователя,
 // с best-effort скрейпингом как запасным вариантом.
+import { ytFetch, type YtAuth } from "./google.server";
 
 export type VideoStats = {
   views: number;
@@ -20,11 +21,9 @@ function parseCompact(s: string): number {
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
-async function fetchViaApi(videoId: string, token: string): Promise<VideoStats | null> {
+async function fetchViaApi(videoId: string, token: YtAuth): Promise<VideoStats | null> {
   try {
-    const r = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const r = await ytFetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoId}`, token);
     if (!r.ok) return null;
     const j: any = await r.json();
     const s = j.items?.[0]?.statistics;
@@ -39,15 +38,12 @@ async function fetchViaApi(videoId: string, token: string): Promise<VideoStats |
   }
 }
 
-async function fetchViaApiBatch(ids: string[], token: string): Promise<Map<string, VideoStats>> {
+async function fetchViaApiBatch(ids: string[], token: YtAuth): Promise<Map<string, VideoStats>> {
   const out = new Map<string, VideoStats>();
   for (let i = 0; i < ids.length; i += 50) {
     const chunk = ids.slice(i, i + 50);
     try {
-      const r = await fetch(
-        `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${chunk.join(",")}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      const r = await ytFetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${chunk.join(",")}`, token);
       if (!r.ok) continue;
       const j: any = await r.json();
       for (const it of j.items ?? []) {
@@ -102,7 +98,7 @@ async function fetchCommentCount(videoId: string): Promise<number> {
   }
 }
 
-export async function fetchVideoStats(videoId: string, accessToken?: string | null): Promise<VideoStats | null> {
+export async function fetchVideoStats(videoId: string, accessToken?: YtAuth | null): Promise<VideoStats | null> {
   if (accessToken) {
     const api = await fetchViaApi(videoId, accessToken);
     if (api) return api;
@@ -114,7 +110,7 @@ export async function fetchVideoStats(videoId: string, accessToken?: string | nu
 
 export async function fetchVideoStatsBatch(
   ids: string[],
-  accessToken?: string | null,
+  accessToken?: YtAuth | null,
 ): Promise<Map<string, VideoStats>> {
   if (accessToken) return fetchViaApiBatch(ids, accessToken);
   const out = new Map<string, VideoStats>();

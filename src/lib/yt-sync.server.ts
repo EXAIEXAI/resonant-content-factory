@@ -1,7 +1,7 @@
 // Server-only: синхронизация каналов YouTube → Google Drive → raw_materials.
 // Всё выполняется от имени конкретного пользователя (его OAuth-токен, его данные).
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getUserGoogleToken } from "./google.server";
+import { getYoutubeAuth, ytFetch, type YtAuth } from "./google.server";
 
 type AnyClient = SupabaseClient<any, any, any>;
 
@@ -16,8 +16,8 @@ export type ChannelSyncResult = {
   errors: string[];
 };
 
-async function getJson(url: string, token: string): Promise<any> {
-  const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+async function getJson(url: string, token: YtAuth): Promise<any> {
+  const r = await ytFetch(url, token);
   const body = await r.text();
   if (!r.ok) throw new Error(`YouTube API [${r.status}]: ${body.slice(0, 400)}`);
   return JSON.parse(body);
@@ -35,7 +35,7 @@ export function iso8601ToSeconds(iso: string | null | undefined): number | null 
 type ResolvedChannel = { channelId: string; title: string; subscribers: number; uploads: string };
 
 /** Резолвит канал из ссылки: /channel/UC..., /@handle, /c/..., /user/... */
-export async function resolveChannel(url: string, token: string): Promise<ResolvedChannel> {
+export async function resolveChannel(url: string, token: YtAuth): Promise<ResolvedChannel> {
   const base = "https://www.googleapis.com/youtube/v3";
   const part = "part=snippet,statistics,contentDetails";
 
@@ -79,7 +79,7 @@ type PlaylistEntry = { videoId: string; publishedAt: string | null };
 async function listPlaylist(
   uploads: string,
   since: Date,
-  token: string,
+  token: YtAuth,
 ): Promise<{ entries: PlaylistEntry[]; apiReturned: number; skippedByDate: number }> {
   const out: PlaylistEntry[] = [];
   let apiReturned = 0;
@@ -111,7 +111,7 @@ async function listPlaylist(
   return { entries: out, apiReturned, skippedByDate };
 }
 
-async function fetchVideos(ids: string[], token: string): Promise<any[]> {
+async function fetchVideos(ids: string[], token: YtAuth): Promise<any[]> {
   const out: any[] = [];
   for (let i = 0; i < ids.length; i += 50) {
     const chunk = ids.slice(i, i + 50);
@@ -131,7 +131,7 @@ export async function syncAllSourcesWith(
   /** Если задан — граница выборки «сейчас минус sinceDays», last_polled_at игнорируется. */
   sinceDays?: number | null,
 ): Promise<{ results: ChannelSyncResult[]; totalAdded: number; ranAt: string }> {
-  const token = await getUserGoogleToken(userId, "youtube");
+  const token = await getYoutubeAuth(userId);
 
   const { data: channels, error } = await supabase
     .from("channels")

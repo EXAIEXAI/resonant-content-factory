@@ -2,7 +2,7 @@
 // Работает от имени конкретного пользователя (его OAuth + его папка на Диске).
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { iso8601ToSeconds } from "./yt-sync.server";
-import { getUserGoogleToken } from "./google.server";
+import { getYoutubeAuth, ytFetch, type YtAuth } from "./google.server";
 
 type AnyClient = SupabaseClient<any, any, any>;
 
@@ -15,8 +15,8 @@ export type WatchlistSyncResult = {
   errors: string[];
 };
 
-async function getJson(url: string, token: string): Promise<any> {
-  const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+async function getJson(url: string, token: YtAuth): Promise<any> {
+  const r = await ytFetch(url, token);
   const body = await r.text();
   if (!r.ok) throw new Error(`YouTube API [${r.status}]: ${body.slice(0, 300)}`);
   return JSON.parse(body);
@@ -53,7 +53,7 @@ export async function syncWatchlistPlaylist(
   userId: string,
   playlistId: string,
 ): Promise<WatchlistSyncResult> {
-  const token = await getUserGoogleToken(userId, "youtube");
+  const token = await getYoutubeAuth(userId);
   const res: WatchlistSyncResult = { playlistId, apiReturned: 0, skippedDuplicates: 0, added: 0, addedIds: [], errors: [] };
 
   const ids: string[] = [];

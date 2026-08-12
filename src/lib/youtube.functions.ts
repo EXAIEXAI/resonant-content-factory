@@ -84,8 +84,8 @@ export const ingestUrl = createServerFn({ method: "POST" })
 
     const canonicalUrl = `https://www.youtube.com/watch?v=${videoId}`;
     const { fetchVideoStats } = await import("./youtube-stats.server");
-    const { getUserGoogleToken } = await import("./google.server");
-    const token = await getUserGoogleToken(userId, "youtube");
+    const { getYoutubeAuth } = await import("./google.server");
+    const token = await getYoutubeAuth(userId);
     const [meta, segments, stats] = await Promise.all([
       fetchOembed(videoId),
       fetchTranscript(videoId),
@@ -132,8 +132,8 @@ export const refreshAllMaterials = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const { getUserGoogleToken } = await import("./google.server");
-    const apiKey = await getUserGoogleToken(userId, "youtube");
+    const { getYoutubeAuth } = await import("./google.server");
+    const apiKey = await getYoutubeAuth(userId);
 
     const { data: materials } = await supabase
       .from("raw_materials")
@@ -193,15 +193,32 @@ export const getIntegrationSettings = createServerFn({ method: "GET" })
 
 export const saveIntegrationSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { playlist_id?: string | null }) =>
-    z.object({ playlist_id: z.string().max(200).nullish() }).parse(data),
+  .inputValidator((data: { playlist_id?: string | null; youtube_api_key?: string | null; drive_folder_id?: string | null }) =>
+    z
+      .object({
+        playlist_id: z.string().max(200).nullish(),
+        youtube_api_key: z.string().max(200).nullish(),
+        drive_folder_id: z.string().max(200).nullish(),
+      })
+      .parse(data),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const playlist = data.playlist_id ? extractPlaylistId(data.playlist_id) ?? data.playlist_id.trim() : null;
+    const patch: Record<string, unknown> = {};
+    if (data.playlist_id !== undefined) {
+      patch.youtube_playlist_id = data.playlist_id
+        ? extractPlaylistId(data.playlist_id) ?? data.playlist_id.trim()
+        : null;
+    }
+    if (data.youtube_api_key !== undefined) patch.youtube_api_key = data.youtube_api_key?.trim() || null;
+    if (data.drive_folder_id !== undefined) {
+      const raw = data.drive_folder_id?.trim() || "";
+      const m = /folders\/([\w-]+)/.exec(raw);
+      patch.drive_folder_id = raw ? (m ? m[1] : raw) : null;
+    }
     const { error } = await supabase
       .from("integration_settings")
-      .update({ youtube_playlist_id: playlist } as never)
+      .update(patch as never)
       .eq("user_id", userId);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -262,14 +279,12 @@ export const checkYoutubeApi = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     try {
-      const { getUserGoogleToken } = await import("./google.server");
-      const token = await getUserGoogleToken(context.userId, "youtube");
-      const r = await fetch("https://www.googleapis.com/youtube/v3/videos?part=id&id=dQw4w9WgXcQ", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const { getYoutubeAuth, ytFetch } = await import("./google.server");
+      const auth = await getYoutubeAuth(context.userId);
+      const r = await ytFetch("https://www.googleapis.com/youtube/v3/videos?part=id&id=dQw4w9WgXcQ", auth);
       const body = await r.text();
       if (!r.ok) return { ok: false as const, hasKey: true, error: `YouTube API [${r.status}]: ${body.slice(0, 200)}` };
-      return { ok: true as const, hasKey: true, error: null as string | null };
+      return { ok: true as const, hasKey: true, mode: auth.mode, error: null as string | null };
     } catch (e) {
       return { ok: false as const, hasKey: false, error: e instanceof Error ? e.message : String(e) };
     }

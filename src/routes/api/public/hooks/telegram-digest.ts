@@ -1,5 +1,6 @@
 // Ежедневная (08:00 МСК) отправка вчерашних сохранённых роликов в Telegram.
 import { createFileRoute } from "@tanstack/react-router";
+import { WORKSPACE_OWNER_ID } from "@/lib/workspace";
 
 export const Route = createFileRoute("/api/public/hooks/telegram-digest")({
   server: {
@@ -11,7 +12,8 @@ export const Route = createFileRoute("/api/public/hooks/telegram-digest")({
         const { data: rows, error } = await supabaseAdmin
           .from("integration_settings")
           .select("user_id, telegram_chat_id")
-          .not("telegram_chat_id", "is", null);
+          .not("telegram_chat_id", "is", null)
+          .eq("user_id", WORKSPACE_OWNER_ID);
         if (error) return Response.json({ error: error.message }, { status: 500 });
 
         const results = [];

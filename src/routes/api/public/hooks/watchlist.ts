@@ -1,5 +1,6 @@
 // Периодический опрос личных плейлистов YouTube («Сохранить» → плейлист).
 import { createFileRoute } from "@tanstack/react-router";
+import { WORKSPACE_OWNER_ID } from "@/lib/workspace";
 
 export const Route = createFileRoute("/api/public/hooks/watchlist")({
   server: {
@@ -12,7 +13,8 @@ export const Route = createFileRoute("/api/public/hooks/watchlist")({
         const { data: rows, error } = await supabaseAdmin
           .from("integration_settings")
           .select("user_id, youtube_playlist_id")
-          .not("youtube_playlist_id", "is", null);
+          .not("youtube_playlist_id", "is", null)
+          .eq("user_id", WORKSPACE_OWNER_ID);
         if (error) return Response.json({ error: error.message }, { status: 500 });
 
         const results = [];

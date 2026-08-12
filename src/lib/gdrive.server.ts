@@ -1,38 +1,35 @@
-// Server-only Google Drive: работает от имени конкретного пользователя (персональный OAuth).
-import { getUserGoogleToken, getConnection } from "./google.server";
+// Server-only Google Drive: персональный OAuth пользователя, а при его отсутствии —
+// ключи проекта (сервисный refresh-token + папка из настроек/секрета).
+import { getDriveAccess, type DriveAccess } from "./google.server";
 
-export const DRIVE_AUTH_MODE = "персональный OAuth пользователя";
+export const DRIVE_AUTH_MODE = "персональный OAuth или ключи проекта";
 
 const FOLDER_NAME = "Контент-завод";
 
-/**
- * Возвращает папку «Контент-завод» на Диске пользователя.
- * Scope drive.file видит только файлы/папки, созданные приложением,
- * поэтому папка создаётся приложением и её id хранится в google_connections.
- */
+const folderUrl = (id: string) => `https://drive.google.com/drive/folders/${id}`;
+
+/** Возвращает рабочую папку «Контент-завод» на Диске. */
 export async function ensureDriveFolder(
   userId: string,
+  access?: DriveAccess,
 ): Promise<{ id: string; created: boolean; name: string; url: string }> {
-  const token = await getUserGoogleToken(userId, "drive");
-  const conn = await getConnection(userId);
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const db = supabaseAdmin as any;
+  const acc = access ?? (await getDriveAccess(userId));
+  const token = acc.token;
 
-  if (conn?.drive_folder_id) {
+  if (acc.folderId) {
     const res = await fetch(
-      `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(conn.drive_folder_id)}?fields=id,name,trashed`,
+      `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(acc.folderId)}?fields=id,name,trashed&supportsAllDrives=true`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
     if (res.ok) {
       const j = await res.json();
       if (!j.trashed) {
-        return {
-          id: j.id,
-          created: false,
-          name: j.name ?? FOLDER_NAME,
-          url: `https://drive.google.com/drive/folders/${j.id}`,
-        };
+        return { id: j.id, created: false, name: j.name ?? FOLDER_NAME, url: folderUrl(j.id) };
       }
+    }
+    if (!acc.personal) {
+      // Папка проекта задана вручную — не подменяем её автоматически.
+      return { id: acc.folderId, created: false, name: FOLDER_NAME, url: folderUrl(acc.folderId) };
     }
   }
 
@@ -59,8 +56,11 @@ export async function ensureDriveFolder(
     created = true;
   }
 
-  await db.from("google_connections").update({ drive_folder_id: id }).eq("user_id", userId);
-  return { id: id!, created, name: FOLDER_NAME, url: `https://drive.google.com/drive/folders/${id}` };
+  if (acc.personal) {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await (supabaseAdmin as any).from("google_connections").update({ drive_folder_id: id }).eq("user_id", userId);
+  }
+  return { id: id!, created, name: FOLDER_NAME, url: folderUrl(id!) };
 }
 
 export async function driveUploadText(
@@ -69,8 +69,9 @@ export async function driveUploadText(
   content: string,
   mimeType = "text/plain",
 ): Promise<{ id: string; webViewLink: string | null; name: string }> {
-  const token = await getUserGoogleToken(userId, "drive");
-  const { id: folderId } = await ensureDriveFolder(userId);
+  const acc = await getDriveAccess(userId);
+  const token = acc.token;
+  const { id: folderId } = await ensureDriveFolder(userId, acc);
   const boundary = "lovable-boundary-" + crypto.randomUUID();
   const metadata = { name, parents: [folderId] };
   const body =
@@ -80,7 +81,7 @@ export async function driveUploadText(
     `${content}\r\n--${boundary}--`;
 
   const res = await fetch(
-    "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink",
+    "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink&supportsAllDrives=true",
     {
       method: "POST",
       headers: {
@@ -99,12 +100,12 @@ export async function driveUploadText(
 export async function driveListFolder(userId: string): Promise<
   Array<{ id: string; name: string; mimeType: string; webViewLink: string | null; modifiedTime: string | null }>
 > {
-  const token = await getUserGoogleToken(userId, "drive");
-  const { id: folderId } = await ensureDriveFolder(userId);
+  const acc = await getDriveAccess(userId);
+  const { id: folderId } = await ensureDriveFolder(userId, acc);
   const q = encodeURIComponent(`'${folderId}' in parents and trashed = false`);
   const res = await fetch(
     `https://www.googleapis.com/drive/v3/files?q=${q}&pageSize=100&orderBy=modifiedTime desc&fields=files(id,name,mimeType,webViewLink,modifiedTime)`,
-    { headers: { Authorization: `Bearer ${token}` } },
+    { headers: { Authorization: `Bearer ${acc.token}` } },
   );
   const text = await res.text();
   if (!res.ok) throw new Error(`Drive list [${res.status}]: ${text}`);

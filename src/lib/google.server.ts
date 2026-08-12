@@ -312,3 +312,64 @@ export async function revokeToken(token: string) {
     // отзыв best-effort
   }
 }
+
+// ---- ключи проекта (YouTube Data API / Google Диск) ----------------------
+// Подключение через персональный OAuth остаётся приоритетным, но если его нет,
+// используются ключи, сохранённые пользователем в «Интеграциях», а затем ключи проекта.
+
+export type YtAuth = { token: string | null; apiKey: string | null; mode: "oauth" | "key" };
+
+async function userIntegrationRow(userId: string): Promise<{ youtube_api_key: string | null; drive_folder_id: string | null } | null> {
+  const db = await admin();
+  const { data } = await db
+    .from("integration_settings")
+    .select("youtube_api_key, drive_folder_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  return (data as any) ?? null;
+}
+
+/** Доступ к YouTube Data API: OAuth пользователя → его API-ключ → ключ проекта. */
+export async function getYoutubeAuth(userId: string): Promise<YtAuth> {
+  try {
+    return { token: await getUserGoogleToken(userId, "youtube"), apiKey: null, mode: "oauth" };
+  } catch (e) {
+    const row = await userIntegrationRow(userId);
+    const key = row?.youtube_api_key?.trim() || process.env.YOUTUBE_API_KEY;
+    if (key) return { token: null, apiKey: key, mode: "key" };
+    throw e;
+  }
+}
+
+export function ytUrl(url: string, auth: YtAuth): string {
+  return auth.apiKey ? `${url}${url.includes("?") ? "&" : "?"}key=${encodeURIComponent(auth.apiKey)}` : url;
+}
+
+export function ytHeaders(auth: YtAuth): Record<string, string> {
+  return auth.token ? { Authorization: `Bearer ${auth.token}` } : {};
+}
+
+export async function ytFetch(url: string, auth: YtAuth, init: RequestInit = {}): Promise<Response> {
+  return fetch(ytUrl(url, auth), { ...init, headers: { ...(init.headers ?? {}), ...ytHeaders(auth) } });
+}
+
+export type DriveAccess = { token: string; folderId: string | null; personal: boolean };
+
+/** Доступ к Диску: персональный OAuth → сервисный refresh-token проекта + папка проекта. */
+export async function getDriveAccess(userId: string): Promise<DriveAccess> {
+  try {
+    const token = await getUserGoogleToken(userId, "drive");
+    const conn = await getConnection(userId);
+    return { token, folderId: conn?.drive_folder_id ?? null, personal: true };
+  } catch (e) {
+    const refresh = process.env.GDRIVE_OAUTH_REFRESH_TOKEN;
+    if (!refresh) throw e;
+    const fresh = await refreshAccessToken(refresh);
+    const row = await userIntegrationRow(userId);
+    return {
+      token: fresh.access_token,
+      folderId: row?.drive_folder_id?.trim() || process.env.GDRIVE_FOLDER_ID || null,
+      personal: false,
+    };
+  }
+}

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { WORKSPACE_OWNER_ID } from "./workspace";
 
 /** Build a weekly digest: top 20% (min 3) of materials from the past 7 days. */
 export async function buildWeeklyDigestFor(
@@ -43,4 +44,4 @@ export async function buildWeeklyDigestFor(
 
 export const buildWeeklyDigest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => buildWeeklyDigestFor(context.supabase, context.userId));
+  .handler(async ({ context }) => buildWeeklyDigestFor(context.supabase, WORKSPACE_OWNER_ID));

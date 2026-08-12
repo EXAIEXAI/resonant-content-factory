@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, RefreshCw, ExternalLink, ListVideo, Send, Copy } from "lucide-react";
+import { CheckCircle2, XCircle, RefreshCw, ExternalLink, ListVideo, Send, KeyRound } from "lucide-react";
 import {
   syncAllSources,
   checkYoutubeApi,
@@ -16,7 +16,6 @@ import {
   syncWatchlist,
   getIntegrationSettings,
   saveIntegrationSettings,
-  rotateWebhookSecret,
 } from "@/lib/youtube.functions";
 import { checkDrive } from "@/lib/gdrive.functions";
 import { getGoogleStatus, startGoogleConnect, disconnectGoogle } from "@/lib/google.functions";
@@ -108,31 +107,33 @@ function IntegrationsPage() {
   const runWatchlist = useServerFn(syncWatchlist);
   const { data: settings } = useQuery({ queryKey: ["integration_settings"], queryFn: () => loadSettings() });
 
-  const rotateSecret = useServerFn(rotateWebhookSecret);
-  const rotateM = useMutation({
-    mutationFn: () => rotateSecret(),
-    onSuccess: () => {
-      toast.success("Секрет обновлён");
-      qc.invalidateQueries({ queryKey: ["integration_settings"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-  const [origin, setOrigin] = useState("");
-  useEffect(() => setOrigin(window.location.origin), []);
-  const syncEndpoint = `${origin}/api/public/sync/youtube`;
-  const copy = async (text: string, msg: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success(msg);
-    } catch {
-      toast.error("Не удалось скопировать");
-    }
-  };
-
   const [playlist, setPlaylist] = useState("");
   useEffect(() => {
     if (settings?.youtube_playlist_id) setPlaylist(settings.youtube_playlist_id);
   }, [settings?.youtube_playlist_id]);
+
+  const [ytKey, setYtKey] = useState("");
+  const [driveFolder, setDriveFolder] = useState("");
+  useEffect(() => {
+    setYtKey(settings?.youtube_api_key ?? "");
+    setDriveFolder(settings?.drive_folder_id ?? "");
+  }, [settings?.youtube_api_key, settings?.drive_folder_id]);
+
+  const saveKeysM = useMutation({
+    mutationFn: () =>
+      saveSettings({
+        data: {
+          youtube_api_key: ytKey.trim() || null,
+          drive_folder_id: driveFolder.trim() || null,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Ключи сохранены");
+      addLog("Ключи YouTube/Диска сохранены");
+      qc.invalidateQueries({ queryKey: ["integration_settings"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const savePlaylistM = useMutation({
     mutationFn: () => saveSettings({ data: { playlist_id: playlist.trim() || null } }),
@@ -443,14 +444,14 @@ function IntegrationsPage() {
               size="sm"
               variant="outline"
               onClick={() => checkBothM.mutate()}
-              disabled={checkBothM.isPending || !bothConnected}
+              disabled={checkBothM.isPending}
             >
               Проверить подключение
             </Button>
           </div>
           {!bothConnected && (
             <p className="text-xs text-muted-foreground">
-              Синхронизация недоступна: не хватает подключения {missingLabel}.
+              Нет подключения {missingLabel} — будут использованы ключи API из формы ниже.
             </p>
           )}
           {(yt || drive) && (
@@ -484,49 +485,54 @@ function IntegrationsPage() {
 
 
 
-          <div className="space-y-3 border-t pt-4">
-            <p className="text-sm font-medium">Автоматическая синхронизация</p>
-            <p className="text-sm text-muted-foreground">
-              Эти данные нужны, чтобы запускать синхронизацию по расписанию из внешнего планировщика: он вызывает
-              указанный адрес методом POST и передаёт ваш секрет в заголовке <code>x-webhook-secret</code>.
-            </p>
-            <div className="space-y-1">
-              <Label className="text-xs">Адрес эндпоинта</Label>
-              <div className="flex gap-2">
-                <Input readOnly value={syncEndpoint} className="font-mono text-xs" />
-                <Button size="icon" variant="outline" onClick={() => copy(syncEndpoint, "Адрес скопирован")}>
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Персональный секрет (x-webhook-secret)</Label>
-              <div className="flex gap-2">
-                <Input readOnly value={settings?.webhook_secret ?? ""} className="font-mono text-xs" />
-                <Button
-                  size="icon"
-                  variant="outline"
-                  onClick={() => copy(settings?.webhook_secret ?? "", "Секрет скопирован")}
-                  disabled={!settings?.webhook_secret}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => rotateM.mutate()}
-                  disabled={rotateM.isPending}
-                  className="gap-2 whitespace-nowrap"
-                >
-                  <RefreshCw className={`h-4 w-4 ${rotateM.isPending ? "animate-spin" : ""}`} /> Перегенерировать
-                </Button>
-              </div>
-            </div>
-          </div>
         </CardContent>
 
       </Card>
 
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <KeyRound className="h-4 w-4" /> Ключи YouTube и Google Диска
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Если персональное подключение Google не выполнено, приложение работает по ключам: ключ YouTube Data API
+            v3 и идентификатор папки Google Диска. Оставьте поля пустыми — будут использованы ключи проекта.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="ytkey">Ключ YouTube Data API v3</Label>
+              <Input
+                id="ytkey"
+                value={ytKey}
+                onChange={e => setYtKey(e.target.value)}
+                placeholder="AIza... (по умолчанию — ключ проекта)"
+                className="font-mono text-xs"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="drivefolder">Папка Google Диска (ID или ссылка)</Label>
+              <Input
+                id="drivefolder"
+                value={driveFolder}
+                onChange={e => setDriveFolder(e.target.value)}
+                placeholder="1AbC... или https://drive.google.com/drive/folders/..."
+                className="font-mono text-xs"
+              />
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button onClick={() => saveKeysM.mutate()} disabled={saveKeysM.isPending}>
+              Сохранить ключи
+            </Button>
+            <Button variant="outline" onClick={() => checkBothM.mutate()} disabled={checkBothM.isPending}>
+              Проверить доступ
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -654,14 +660,14 @@ function IntegrationsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={() => syncM.mutate(undefined)} disabled={syncM.isPending || !bothConnected} className="gap-2">
+            <Button onClick={() => syncM.mutate(undefined)} disabled={syncM.isPending} className="gap-2">
               <RefreshCw className={`h-4 w-4 ${syncM.isPending ? "animate-spin" : ""}`} />
               Синхронизировать сейчас
             </Button>
             <Button
               variant="outline"
               onClick={() => syncM.mutate(30)}
-              disabled={syncM.isPending || !bothConnected}
+              disabled={syncM.isPending}
               className="gap-2"
             >
               <RefreshCw className={`h-4 w-4 ${syncM.isPending ? "animate-spin" : ""}`} />
@@ -669,11 +675,6 @@ function IntegrationsPage() {
             </Button>
             <span className="text-sm text-muted-foreground">Последний запуск: {fmt(lastRun)}</span>
           </div>
-          {!bothConnected && (
-            <p className="text-xs text-muted-foreground">
-              Запуск недоступен: не хватает подключения {missingLabel}.
-            </p>
-          )}
 
           {summary && (
             <div className="overflow-x-auto rounded-lg border">

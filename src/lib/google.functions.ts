@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { WORKSPACE_OWNER_ID } from "./workspace";
 
 type Provider = "youtube" | "drive";
 const asProvider = (v: unknown): Provider => (v === "youtube" ? "youtube" : "drive");
@@ -9,7 +10,7 @@ export const getGoogleStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { getConnection } = await import("./google.server");
-    const conn = await getConnection(context.userId);
+    const conn = await getConnection(WORKSPACE_OWNER_ID);
     return {
       youtube: {
         connected: Boolean(conn?.youtube_refresh_token),
@@ -37,7 +38,7 @@ export const startGoogleConnect = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     const { buildAuthUrl } = await import("./google.server");
-    return { url: await buildAuthUrl(context.userId, data.origin, data.provider) };
+    return { url: await buildAuthUrl(WORKSPACE_OWNER_ID, data.origin, data.provider) };
   });
 
 /** Отзывает токен сервиса в Google и удаляет его из подключения. */
@@ -46,12 +47,12 @@ export const disconnectGoogle = createServerFn({ method: "POST" })
   .inputValidator((data: { provider: Provider }) => ({ provider: asProvider(data.provider) }))
   .handler(async ({ data, context }) => {
     const { getConnection, revokeToken, deleteConnection } = await import("./google.server");
-    const conn = await getConnection(context.userId);
+    const conn = await getConnection(WORKSPACE_OWNER_ID);
     if (conn) {
       const token =
         data.provider === "youtube" ? conn.youtube_refresh_token : conn.drive_refresh_token;
       if (token) await revokeToken(token);
-      await deleteConnection(context.userId, data.provider);
+      await deleteConnection(WORKSPACE_OWNER_ID, data.provider);
     }
     return { ok: true, provider: data.provider };
   });

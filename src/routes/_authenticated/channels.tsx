@@ -11,6 +11,7 @@ import { useState } from "react";
 import { Plus, Trash2, Youtube, Send, Link as LinkIcon, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { syncChannel, syncAllChannels } from "@/lib/channels.functions";
+import { WORKSPACE_OWNER_ID } from "@/lib/workspace";
 
 export const Route = createFileRoute("/_authenticated/channels")({
   head: () => ({ meta: [{ title: "Источники · Контент-завод" }] }),
@@ -53,10 +54,8 @@ function ChannelsPage() {
       const trimmed = url.trim();
       if (!trimmed) throw new Error("Укажите ссылку");
       const platform = detectPlatform(trimmed);
-      const uid = (await supabase.auth.getUser()).data.user?.id;
-      if (!uid) throw new Error("Нужно войти в аккаунт");
       const { data: inserted, error } = await supabase.from("channels").insert({
-        user_id: uid,
+        user_id: WORKSPACE_OWNER_ID,
         platform,
         url: trimmed,
         title: deriveTitle(trimmed),

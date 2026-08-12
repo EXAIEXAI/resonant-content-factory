@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { WORKSPACE_OWNER_ID } from "./workspace";
 
 /** Resolve a YouTube channel URL to a UC... channel id. Works for /channel/UC..., /@handle, /c/name, /user/name. */
 async function resolveChannelId(url: string): Promise<{ channelId: string; title: string | null } | null> {
@@ -182,7 +183,8 @@ export const syncChannel = createServerFn({ method: "POST" })
     z.object({ channelId: z.string().uuid() }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { supabase } = context;
+    const userId = WORKSPACE_OWNER_ID;
     const { data: ch, error } = await supabase
       .from("channels")
       .select("id, url, external_id, title, platform")
@@ -199,7 +201,8 @@ export const syncChannel = createServerFn({ method: "POST" })
 export const syncAllChannels = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
+    const { supabase } = context;
+    const userId = WORKSPACE_OWNER_ID;
     const { data: chs } = await supabase
       .from("channels")
       .select("id, url, external_id, title, platform")

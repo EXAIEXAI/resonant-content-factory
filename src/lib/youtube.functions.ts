@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { extractYoutubeId, extractPlaylistId } from "./youtube";
+import { WORKSPACE_OWNER_ID } from "./workspace";
 
 type TranscriptSegment = { start: number; dur: number; text: string };
 
@@ -59,7 +60,8 @@ export const ingestUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { url: string }) => z.object({ url: z.string().url().max(1000) }).parse(data))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { supabase } = context;
+    const userId = WORKSPACE_OWNER_ID;
     const videoId = extractYoutubeId(data.url);
 
     if (!videoId) {
@@ -131,7 +133,8 @@ export const ingestUrl = createServerFn({ method: "POST" })
 export const refreshAllMaterials = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
+    const { supabase } = context;
+    const userId = WORKSPACE_OWNER_ID;
     const { getYoutubeAuth } = await import("./google.server");
     const apiKey = await getYoutubeAuth(userId);
 
@@ -181,7 +184,8 @@ export const refreshAllMaterials = createServerFn({ method: "POST" })
 export const getIntegrationSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
+    const { supabase } = context;
+    const userId = WORKSPACE_OWNER_ID;
     let { data } = await supabase.from("integration_settings").select("*").eq("user_id", userId).maybeSingle();
     if (!data) {
       const ins = await supabase.from("integration_settings").insert({ user_id: userId }).select().single();
@@ -203,7 +207,8 @@ export const saveIntegrationSettings = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { supabase } = context;
+    const userId = WORKSPACE_OWNER_ID;
     const patch: Record<string, unknown> = {};
     if (data.playlist_id !== undefined) {
       patch.youtube_playlist_id = data.playlist_id
@@ -228,7 +233,8 @@ export const saveIntegrationSettings = createServerFn({ method: "POST" })
 export const rotateWebhookSecret = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
+    const { supabase } = context;
+    const userId = WORKSPACE_OWNER_ID;
     const secret = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
     const { error } = await supabase
       .from("integration_settings")
@@ -246,14 +252,15 @@ export const syncAllSources = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { syncAllSourcesWith } = await import("./yt-sync.server");
-    return await syncAllSourcesWith(context.supabase, context.userId, data?.sinceDays ?? null);
+    return await syncAllSourcesWith(context.supabase, WORKSPACE_OWNER_ID, data?.sinceDays ?? null);
   });
 
 /** Забирает ролики из личного плейлиста YouTube («Сохранить» → плейлист) в материалы. */
 export const syncWatchlist = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
+    const { supabase } = context;
+    const userId = WORKSPACE_OWNER_ID;
     const { data: settings } = await supabase
       .from("integration_settings")
       .select("youtube_playlist_id")
@@ -280,7 +287,7 @@ export const checkYoutubeApi = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     try {
       const { getYoutubeAuth, ytFetch } = await import("./google.server");
-      const auth = await getYoutubeAuth(context.userId);
+      const auth = await getYoutubeAuth(WORKSPACE_OWNER_ID);
       const r = await ytFetch("https://www.googleapis.com/youtube/v3/videos?part=id&id=dQw4w9WgXcQ", auth);
       const body = await r.text();
       if (!r.ok) return { ok: false as const, hasKey: true, error: `YouTube API [${r.status}]: ${body.slice(0, 200)}` };

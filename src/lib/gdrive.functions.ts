@@ -1,13 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { WORKSPACE_OWNER_ID } from "./workspace";
 
 /** Возвращает id рабочей папки Диска, создавая «Контент-завод» при необходимости. */
 export const ensureFolder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { ensureDriveFolder } = await import("./gdrive.server");
-    return await ensureDriveFolder(context.userId);
+    return await ensureDriveFolder(WORKSPACE_OWNER_ID);
   });
 
 /** Загружает текстовый файл в рабочую папку Диска. */
@@ -18,7 +19,7 @@ export const uploadTextFile = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { driveUploadText } = await import("./gdrive.server");
-    return await driveUploadText(context.userId, data.name, data.content);
+    return await driveUploadText(WORKSPACE_OWNER_ID, data.name, data.content);
   });
 
 /** Список файлов в рабочей папке Диска. */
@@ -26,7 +27,7 @@ export const listFolder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { driveListFolder } = await import("./gdrive.server");
-    return { files: await driveListFolder(context.userId) };
+    return { files: await driveListFolder(WORKSPACE_OWNER_ID) };
   });
 
 /** Проверка подключения к Google Drive: OAuth пользователя + рабочая папка. */
@@ -35,7 +36,7 @@ export const checkDrive = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { ensureDriveFolder, DRIVE_AUTH_MODE } = await import("./gdrive.server");
     try {
-      const folder = await ensureDriveFolder(context.userId);
+      const folder = await ensureDriveFolder(WORKSPACE_OWNER_ID);
       return {
         ok: true as const,
         auth: DRIVE_AUTH_MODE,

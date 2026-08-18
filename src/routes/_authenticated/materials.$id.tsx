@@ -330,6 +330,7 @@ function MaterialPage() {
           <div className="flex flex-wrap gap-2">
             {[
               ["article", "Статья"],
+              ["essay", "Эссе"],
               ["telegram_post", "Telegram-пост"],
               ["shorts_script", "Сценарий Shorts"],
               ["email", "Email"],

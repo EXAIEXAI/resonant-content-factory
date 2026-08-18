@@ -67,7 +67,7 @@ export const generateContent = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z.object({
       materialId: z.string().uuid(),
-      format: z.enum(["article", "telegram_post", "shorts_script", "email", "speech_theses"]),
+      format: z.enum(["article", "essay", "telegram_post", "shorts_script", "email", "speech_theses"]),
       templateId: z.string().uuid().nullable().optional(),
       promptId: z.string().uuid().nullable().optional(),
     }).parse(d),
@@ -86,6 +86,7 @@ export const generateContent = createServerFn({ method: "POST" })
 
     const formatBrief: Record<string, string> = {
       article: "Экспертная статья 800–1200 слов: сильный хук, подводка, 3–5 смысловых блоков с примерами, кульминация, вывод, призыв к действию.",
+      essay: "Короткое сильное бизнес-эссе на 1–2 страницы: хлёсткое вступление с проблемой, блок «Тайны и основные мысли» (ёмкие тезисы), разбор позиции спикера через призму комментариев эксперта, интеграция правильного подхода по принципам и ценностям, короткий запоминающийся вывод.",
       telegram_post: "Пост для Telegram 800–1500 знаков: цепляющий хук в первой строке, короткие абзацы, эмодзи умеренно, вывод одним предложением.",
       shorts_script: "Сценарий Shorts/Reels 45–60 сек: раскадровка по сценам (Сцена 1: ...), текст диктора, on-screen текст.",
       email: "Email-рассылка: тема письма, прехедер, тело 300–500 слов, CTA.",

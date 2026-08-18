@@ -1,0 +1,2 @@
+ALTER TABLE public.style_templates DROP CONSTRAINT IF EXISTS style_templates_kind_check;
+ALTER TABLE public.style_templates ADD CONSTRAINT style_templates_kind_check CHECK (kind = ANY (ARRAY['template'::text,'prompt'::text]));

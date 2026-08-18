@@ -12,7 +12,7 @@ const nav = [
   { to: "/saved", label: "Из плейлиста", icon: Bookmark },
   { to: "/digests", label: "Дайджесты", icon: FileStack },
   { to: "/kanban", label: "Канбан публикаций", icon: Kanban },
-  { to: "/knowledge", label: "База знаний", icon: BookOpen, locked: true },
+  { to: "/knowledge", label: "База знаний", icon: BookOpen },
   { to: "/roles", label: "Роли", icon: Users },
 ];
 

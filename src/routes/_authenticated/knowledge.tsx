@@ -17,18 +17,23 @@ import { processKnowledgeFile } from "@/lib/ai.functions";
 import { extractTextFromFile } from "@/lib/extract-text";
 
 export const Route = createFileRoute("/_authenticated/knowledge")({
-  head: () => ({ meta: [{ title: "База знаний · Контент-завод" }] }),
-  beforeLoad: () => {
-    throw redirect({ to: "/" });
-  },
+  head: () => ({
+    meta: [
+      { title: "База знаний · Контент-завод" },
+      { name: "description", content: "Шаблоны, промты, постулаты и образцы стиля для генерации контента." },
+      { property: "og:title", content: "База знаний · Контент-завод" },
+      { property: "og:description", content: "Шаблоны, промты, постулаты и образцы стиля для генерации контента." },
+    ],
+  }),
   component: KnowledgePage,
 });
 
 const kinds: Record<string, string> = {
+  template: "Шаблоны контента",
+  prompt: "Промты",
   postulate: "33 постулата",
   aphorism: "Афоризмы",
   golden_sample: "Образцы статей",
-  template: "Шаблоны стиля",
 };
 
 type Item = { id: string; name: string; kind: string; prompt_body: string | null };

@@ -50,6 +50,16 @@ function MaterialPage() {
   });
 
   const [pos, setPos] = useState({ reaction_type: "comment", transcript: "", linked_thesis: "", timecode: "" });
+  const [templateId, setTemplateId] = useState<string>("none");
+  const [promptId, setPromptId] = useState<string>("none");
+
+  const { data: knowledge } = useQuery({
+    queryKey: ["styles"],
+    queryFn: async () =>
+      (await supabase.from("style_templates").select("id, name, kind").order("created_at", { ascending: false })).data ?? [],
+  });
+  const templates = (knowledge ?? []).filter(k => k.kind === "template" || k.kind === "golden_sample");
+  const prompts = (knowledge ?? []).filter(k => k.kind === "prompt");
 
   const addPosition = useMutation({
     mutationFn: async () => {

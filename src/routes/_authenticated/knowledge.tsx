@@ -20,9 +20,9 @@ export const Route = createFileRoute("/_authenticated/knowledge")({
   head: () => ({
     meta: [
       { title: "База знаний · Контент-завод" },
-      { name: "description", content: "Шаблоны, промты, постулаты и образцы стиля для генерации контента." },
+      { name: "description", content: "Шаблоны и промты для генерации статей, постов и сценариев." },
       { property: "og:title", content: "База знаний · Контент-завод" },
-      { property: "og:description", content: "Шаблоны, промты, постулаты и образцы стиля для генерации контента." },
+      { property: "og:description", content: "Шаблоны и промты для генерации статей, постов и сценариев." },
     ],
   }),
   component: KnowledgePage,
@@ -31,9 +31,6 @@ export const Route = createFileRoute("/_authenticated/knowledge")({
 const kinds: Record<string, string> = {
   template: "Шаблоны контента",
   prompt: "Промты",
-  postulate: "33 постулата",
-  aphorism: "Афоризмы",
-  golden_sample: "Образцы статей",
 };
 
 type Item = { id: string; name: string; kind: string; prompt_body: string | null };
@@ -82,7 +79,7 @@ function KnowledgePage() {
     mutationFn: async ({ file, kind }: { file: File; kind: string }) => {
       const text = await extractTextFromFile(file);
       if (!text || text.length < 10) throw new Error("Не удалось извлечь текст из файла");
-      return process({ data: { filename: file.name, text, kind: kind as "postulate" | "aphorism" | "golden_sample" | "template" | "prompt" } });
+      return process({ data: { filename: file.name, text, kind: kind as "template" | "prompt" } });
     },
     onSuccess: (r) => { toast.success(`Добавлено записей: ${r.inserted}`); qc.invalidateQueries({ queryKey: ["styles"] }); },
     onError: (e: Error) => toast.error(e.message),
@@ -101,7 +98,7 @@ function KnowledgePage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl">База знаний</h1>
-          <p className="text-muted-foreground mt-1">Постулаты, афоризмы и образцы стиля — фундамент RAG</p>
+          <p className="text-muted-foreground mt-1">Шаблоны и промты для производства контента</p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={uploadKind} onValueChange={setUploadKind}>

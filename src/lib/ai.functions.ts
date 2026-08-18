@@ -80,9 +80,6 @@ export const generateContent = createServerFn({ method: "POST" })
     ]);
     if (!m) throw new Error("Материал не найден");
 
-    const postulates = (styles ?? []).filter(s => s.kind === "postulate").map(s => "— " + s.prompt_body).join("\n");
-    const aphorisms = (styles ?? []).filter(s => s.kind === "aphorism").map(s => "— " + s.prompt_body).join("\n");
-    const samples = (styles ?? []).filter(s => s.kind === "golden_sample").map(s => s.prompt_body).join("\n---\n");
     const expertBlock = (positions ?? []).map(p =>
       `[${p.reaction_type}] ${p.linked_thesis ? "к тезису: " + p.linked_thesis + " — " : ""}${p.transcript ?? ""}`
     ).join("\n");
@@ -99,9 +96,6 @@ export const generateContent = createServerFn({ method: "POST" })
     const chosenPrompt = data.promptId ? (styles ?? []).find(s => s.id === data.promptId) : null;
 
     const system = `Ты — редактор экспертного контента компании. Пиши в фирменной тональности.
-${postulates ? "Постулаты компании:\n" + postulates + "\n" : ""}
-${aphorisms ? "Афоризмы (используй уместно):\n" + aphorisms + "\n" : ""}
-${samples ? "Образцы стиля:\n" + samples.slice(0, 2000) + "\n" : ""}
 ${chosenTemplate ? `Шаблон структуры «${chosenTemplate.name}» (строго следуй его структуре и оформлению):\n${chosenTemplate.prompt_body}\n` : ""}
 ${chosenPrompt ? `Дополнительная инструкция «${chosenPrompt.name}»:\n${chosenPrompt.prompt_body}\n` : ""}
 Разделяй факты источника и позицию эксперта. Позиция эксперта — основа, факты источника — контекст.`;
@@ -148,15 +142,15 @@ export const processKnowledgeFile = createServerFn({ method: "POST" })
     z.object({
       filename: z.string().min(1).max(200),
       text: z.string().min(10).max(200000),
-      kind: z.enum(["postulate", "aphorism", "golden_sample", "template", "prompt"]),
+      kind: z.enum(["template", "prompt"]),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
     const prompt = `Из содержимого файла «${data.filename}» извлеки записи для базы знаний типа «${data.kind}».
 Верни строго JSON: {"entries":[{"name":"краткое имя (до 80 симв.)","body":"полный текст записи"}]}
 Правила:
-- Для postulate/aphorism — раздели на отдельные короткие записи (1 запись = 1 постулат/афоризм).
-- Для golden_sample/template — сохрани цельный текст как одну запись, name = осмысленный заголовок.
+- Для template — сохрани цельный текст как одну запись, name = осмысленный заголовок.
+- Для prompt — сохрани инструкцию как одну запись, name = краткое имя промта.
 - Убери мусор (шапки, номера страниц, служебные пометки).
 
 Содержимое:

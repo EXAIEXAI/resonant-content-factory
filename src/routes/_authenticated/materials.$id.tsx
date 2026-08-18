@@ -77,7 +77,15 @@ function MaterialPage() {
   });
 
   const runGenerate = useMutation({
-    mutationFn: (format: string) => generate({ data: { materialId: id, format: format as any } }),
+    mutationFn: (format: string) =>
+      generate({
+        data: {
+          materialId: id,
+          format: format as any,
+          templateId: templateId === "none" ? null : templateId,
+          promptId: promptId === "none" ? null : promptId,
+        },
+      }),
     onSuccess: () => { toast.success("Контент сгенерирован"); qc.invalidateQueries({ queryKey: ["outputs", id] }); },
     onError: (e: Error) => toast.error(e.message),
   });

@@ -58,7 +58,7 @@ function MaterialPage() {
     queryFn: async () =>
       (await supabase.from("style_templates").select("id, name, kind").order("created_at", { ascending: false })).data ?? [],
   });
-  const templates = (knowledge ?? []).filter(k => k.kind === "template" || k.kind === "golden_sample");
+  const templates = (knowledge ?? []).filter(k => k.kind === "template");
   const prompts = (knowledge ?? []).filter(k => k.kind === "prompt");
 
   const addPosition = useMutation({

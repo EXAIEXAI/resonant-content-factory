@@ -297,9 +297,36 @@ function MaterialPage() {
       <Card>
         <CardHeader>
           <CardTitle className="font-serif">Производство контента</CardTitle>
-          <p className="text-sm text-muted-foreground">Единый контекст: источник + анализ + позиция эксперта + стилевой профиль</p>
+          <p className="text-sm text-muted-foreground">Единый контекст: источник + анализ + комментарии эксперта + шаблон и промт из базы знаний</p>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <Label className="text-xs">Шаблон из базы знаний</Label>
+              <Select value={templateId} onValueChange={setTemplateId}>
+                <SelectTrigger><SelectValue placeholder="Без шаблона" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Без шаблона</SelectItem>
+                  {templates.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Промт из базы знаний</Label>
+              <Select value={promptId} onValueChange={setPromptId}>
+                <SelectTrigger><SelectValue placeholder="Без промта" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Без промта</SelectItem>
+                  {prompts.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          {(templates.length === 0 && prompts.length === 0) && (
+            <p className="text-xs text-muted-foreground">
+              Шаблоны и промты добавляются в разделе <Link to="/knowledge" className="text-primary underline">База знаний</Link>.
+            </p>
+          )}
           <div className="flex flex-wrap gap-2">
             {[
               ["article", "Статья"],

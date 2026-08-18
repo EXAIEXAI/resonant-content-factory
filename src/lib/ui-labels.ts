@@ -18,6 +18,7 @@ export const reactionLabels: Record<string, string> = {
 
 export const formatLabels: Record<string, string> = {
   article: "Статья",
+  essay: "Эссе",
   telegram_post: "Telegram-пост",
   shorts_script: "Сценарий Shorts",
   email: "Email",

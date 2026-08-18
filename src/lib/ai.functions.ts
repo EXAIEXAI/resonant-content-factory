@@ -68,6 +68,8 @@ export const generateContent = createServerFn({ method: "POST" })
     z.object({
       materialId: z.string().uuid(),
       format: z.enum(["article", "telegram_post", "shorts_script", "email", "speech_theses"]),
+      templateId: z.string().uuid().nullable().optional(),
+      promptId: z.string().uuid().nullable().optional(),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -93,13 +95,18 @@ export const generateContent = createServerFn({ method: "POST" })
       speech_theses: "Тезисы для публичного выступления: 5–7 ключевых тезисов с примерами и переходами.",
     };
 
+    const chosenTemplate = data.templateId ? (styles ?? []).find(s => s.id === data.templateId) : null;
+    const chosenPrompt = data.promptId ? (styles ?? []).find(s => s.id === data.promptId) : null;
+
     const system = `Ты — редактор экспертного контента компании. Пиши в фирменной тональности.
 ${postulates ? "Постулаты компании:\n" + postulates + "\n" : ""}
 ${aphorisms ? "Афоризмы (используй уместно):\n" + aphorisms + "\n" : ""}
 ${samples ? "Образцы стиля:\n" + samples.slice(0, 2000) + "\n" : ""}
+${chosenTemplate ? `Шаблон структуры «${chosenTemplate.name}» (строго следуй его структуре и оформлению):\n${chosenTemplate.prompt_body}\n` : ""}
+${chosenPrompt ? `Дополнительная инструкция «${chosenPrompt.name}»:\n${chosenPrompt.prompt_body}\n` : ""}
 Разделяй факты источника и позицию эксперта. Позиция эксперта — основа, факты источника — контекст.`;
 
-    const user = `Задача: ${formatBrief[data.format]}
+    const user = `Задача: ${chosenTemplate ? "Создай материал строго по шаблону выше. " : ""}${formatBrief[data.format]}
 
 Источник (${m.title}):
 Выжимка: ${m.summary ?? "нет"}
@@ -141,7 +148,7 @@ export const processKnowledgeFile = createServerFn({ method: "POST" })
     z.object({
       filename: z.string().min(1).max(200),
       text: z.string().min(10).max(200000),
-      kind: z.enum(["postulate", "aphorism", "golden_sample", "template"]),
+      kind: z.enum(["postulate", "aphorism", "golden_sample", "template", "prompt"]),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {

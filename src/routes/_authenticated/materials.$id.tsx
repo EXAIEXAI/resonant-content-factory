@@ -50,6 +50,16 @@ function MaterialPage() {
   });
 
   const [pos, setPos] = useState({ reaction_type: "comment", transcript: "", linked_thesis: "", timecode: "" });
+  const [templateId, setTemplateId] = useState<string>("none");
+  const [promptId, setPromptId] = useState<string>("none");
+
+  const { data: knowledge } = useQuery({
+    queryKey: ["styles"],
+    queryFn: async () =>
+      (await supabase.from("style_templates").select("id, name, kind").order("created_at", { ascending: false })).data ?? [],
+  });
+  const templates = (knowledge ?? []).filter(k => k.kind === "template" || k.kind === "golden_sample");
+  const prompts = (knowledge ?? []).filter(k => k.kind === "prompt");
 
   const addPosition = useMutation({
     mutationFn: async () => {
@@ -77,7 +87,15 @@ function MaterialPage() {
   });
 
   const runGenerate = useMutation({
-    mutationFn: (format: string) => generate({ data: { materialId: id, format: format as any } }),
+    mutationFn: (format: string) =>
+      generate({
+        data: {
+          materialId: id,
+          format: format as any,
+          templateId: templateId === "none" ? null : templateId,
+          promptId: promptId === "none" ? null : promptId,
+        },
+      }),
     onSuccess: () => { toast.success("Контент сгенерирован"); qc.invalidateQueries({ queryKey: ["outputs", id] }); },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -279,9 +297,36 @@ function MaterialPage() {
       <Card>
         <CardHeader>
           <CardTitle className="font-serif">Производство контента</CardTitle>
-          <p className="text-sm text-muted-foreground">Единый контекст: источник + анализ + позиция эксперта + стилевой профиль</p>
+          <p className="text-sm text-muted-foreground">Единый контекст: источник + анализ + комментарии эксперта + шаблон и промт из базы знаний</p>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <Label className="text-xs">Шаблон из базы знаний</Label>
+              <Select value={templateId} onValueChange={setTemplateId}>
+                <SelectTrigger><SelectValue placeholder="Без шаблона" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Без шаблона</SelectItem>
+                  {templates.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Промт из базы знаний</Label>
+              <Select value={promptId} onValueChange={setPromptId}>
+                <SelectTrigger><SelectValue placeholder="Без промта" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Без промта</SelectItem>
+                  {prompts.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          {(templates.length === 0 && prompts.length === 0) && (
+            <p className="text-xs text-muted-foreground">
+              Шаблоны и промты добавляются в разделе <Link to="/knowledge" className="text-primary underline">База знаний</Link>.
+            </p>
+          )}
           <div className="flex flex-wrap gap-2">
             {[
               ["article", "Статья"],

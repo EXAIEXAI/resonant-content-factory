@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,18 +17,23 @@ import { processKnowledgeFile } from "@/lib/ai.functions";
 import { extractTextFromFile } from "@/lib/extract-text";
 
 export const Route = createFileRoute("/_authenticated/knowledge")({
-  head: () => ({ meta: [{ title: "База знаний · Контент-завод" }] }),
-  beforeLoad: () => {
-    throw redirect({ to: "/" });
-  },
+  head: () => ({
+    meta: [
+      { title: "База знаний · Контент-завод" },
+      { name: "description", content: "Шаблоны, промты, постулаты и образцы стиля для генерации контента." },
+      { property: "og:title", content: "База знаний · Контент-завод" },
+      { property: "og:description", content: "Шаблоны, промты, постулаты и образцы стиля для генерации контента." },
+    ],
+  }),
   component: KnowledgePage,
 });
 
 const kinds: Record<string, string> = {
+  template: "Шаблоны контента",
+  prompt: "Промты",
   postulate: "33 постулата",
   aphorism: "Афоризмы",
   golden_sample: "Образцы статей",
-  template: "Шаблоны стиля",
 };
 
 type Item = { id: string; name: string; kind: string; prompt_body: string | null };
@@ -44,8 +49,8 @@ function KnowledgePage() {
   });
 
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", kind: "postulate", prompt_body: "" });
-  const [uploadKind, setUploadKind] = useState<string>("postulate");
+  const [form, setForm] = useState({ name: "", kind: "template", prompt_body: "" });
+  const [uploadKind, setUploadKind] = useState<string>("template");
   const [editing, setEditing] = useState<Item | null>(null);
 
   const create = useMutation({
@@ -53,7 +58,7 @@ function KnowledgePage() {
       const { error } = await supabase.from("style_templates").insert(form);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Добавлено"); qc.invalidateQueries({ queryKey: ["styles"] }); setOpen(false); setForm({ name: "", kind: "postulate", prompt_body: "" }); },
+    onSuccess: () => { toast.success("Добавлено"); qc.invalidateQueries({ queryKey: ["styles"] }); setOpen(false); setForm({ name: "", kind: "template", prompt_body: "" }); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -77,7 +82,7 @@ function KnowledgePage() {
     mutationFn: async ({ file, kind }: { file: File; kind: string }) => {
       const text = await extractTextFromFile(file);
       if (!text || text.length < 10) throw new Error("Не удалось извлечь текст из файла");
-      return process({ data: { filename: file.name, text, kind: kind as "postulate" | "aphorism" | "golden_sample" | "template" } });
+      return process({ data: { filename: file.name, text, kind: kind as "postulate" | "aphorism" | "golden_sample" | "template" | "prompt" } });
     },
     onSuccess: (r) => { toast.success(`Добавлено записей: ${r.inserted}`); qc.invalidateQueries({ queryKey: ["styles"] }); },
     onError: (e: Error) => toast.error(e.message),
@@ -138,7 +143,7 @@ function KnowledgePage() {
         Загружаемые файлы (TXT, MD, CSV, JSON, HTML, PDF) обрабатываются ИИ и раскладываются на записи выбранного типа.
       </p>
 
-      <Tabs defaultValue="postulate">
+      <Tabs defaultValue="template">
         <TabsList>{Object.entries(kinds).map(([k, v]) => <TabsTrigger key={k} value={k}>{v}</TabsTrigger>)}</TabsList>
         {Object.keys(kinds).map(k => (
           <TabsContent key={k} value={k} className="space-y-3 mt-4">

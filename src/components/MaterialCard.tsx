@@ -82,10 +82,28 @@ export function MaterialCard({ m, actions, showExpertPick }: { m: any; actions?:
             <p className="text-xs sm:text-sm text-muted-foreground mt-2 leading-relaxed line-clamp-3">{m.summary}</p>
           )}
         </div>
-        <div className="text-right shrink-0">
+        <div className="text-right shrink-0 flex flex-col items-end gap-1">
           <div className="font-serif text-xl sm:text-2xl text-primary whitespace-nowrap">{Math.round(m.computedScore ?? m.engagement_score ?? 0)}<span className="text-xs sm:text-sm text-muted-foreground">/100</span></div>
           <div className="text-xs text-muted-foreground">Рейтинг</div>
+          {showExpertPick && (
+            <button
+              type="button"
+              onClick={toggleExpertPick}
+              disabled={pickBusy}
+              aria-pressed={pick}
+              title={pick ? "Выбор эксперта — в дайджесте" : "Отметить огоньком: добавить в дайджест"}
+              className={`mt-1 inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border transition-colors ${
+                pick
+                  ? "border-accent bg-accent/20 text-accent-foreground"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              }`}
+            >
+              <Flame className={`w-4 h-4 ${pick ? "fill-current text-orange-500" : ""}`} />
+              {pick ? "В дайджесте" : "Огонёк"}
+            </button>
+          )}
         </div>
+
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex items-center justify-between text-sm gap-3 flex-wrap">

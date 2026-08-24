@@ -82,23 +82,20 @@ export function MaterialCard({ m, actions, showExpertPick }: { m: any; actions?:
             <p className="text-xs sm:text-sm text-muted-foreground mt-2 leading-relaxed line-clamp-3">{m.summary}</p>
           )}
         </div>
-        <div className="text-right shrink-0 flex flex-col items-end gap-1">
-          <div className="flex items-center gap-2">
-            <div className="font-serif text-xl sm:text-2xl text-primary whitespace-nowrap">{Math.round(m.computedScore ?? m.engagement_score ?? 0)}<span className="text-xs sm:text-sm text-muted-foreground">/100</span></div>
-            {showExpertPick && (
-              <button
-                type="button"
-                onClick={toggleExpertPick}
-                disabled={pickBusy}
-                aria-pressed={pick}
-                title={pick ? "Выбор эксперта — в дайджесте" : "Отметить огоньком: добавить в дайджест"}
-                className="p-1 rounded-md transition-colors hover:bg-accent hover:text-accent-foreground"
-              >
-                <Flame className={`w-5 h-5 ${pick ? "fill-current text-orange-500" : "text-muted-foreground"}`} />
-              </button>
-            )}
-          </div>
-          <div className="text-xs text-muted-foreground">Рейтинг</div>
+        <div className="text-right shrink-0 flex items-center gap-2">
+          <div className="font-serif text-xl sm:text-2xl text-primary whitespace-nowrap">{Math.round(m.computedScore ?? m.engagement_score ?? 0)}<span className="text-xs sm:text-sm text-muted-foreground">/100</span></div>
+          {showExpertPick && (
+            <button
+              type="button"
+              onClick={toggleExpertPick}
+              disabled={pickBusy}
+              aria-pressed={pick}
+              title={pick ? "Выбор эксперта — в дайджесте" : "Отметить огоньком: добавить в дайджест"}
+              className="p-1 rounded-md transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+              <Flame className={`w-5 h-5 ${pick ? "fill-current text-orange-500" : "text-muted-foreground"}`} />
+            </button>
+          )}
         </div>
 
       </CardHeader>

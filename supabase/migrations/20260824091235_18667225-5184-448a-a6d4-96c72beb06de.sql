@@ -1,0 +1,1 @@
+ALTER TABLE public.raw_materials ADD COLUMN IF NOT EXISTS promoted_to_radar boolean NOT NULL DEFAULT false;

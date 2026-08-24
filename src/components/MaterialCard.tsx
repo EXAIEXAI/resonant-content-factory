@@ -24,7 +24,7 @@ export function getOriginalUrl(m: { external_id?: string | null; url?: string | 
   return null;
 }
 
-export function MaterialCard({ m }: { m: any }) {
+export function MaterialCard({ m, actions }: { m: any; actions?: React.ReactNode }) {
   const fromPlaylist = m.source_type === "youtube_playlist";
   const saved = m.source_type === "youtube_saved";
   const [open, setOpen] = useState(false);
@@ -72,7 +72,8 @@ export function MaterialCard({ m }: { m: any }) {
             <span className="flex items-center gap-1"><ThumbsUp className="w-4 h-4" />{(m.reactions ?? 0).toLocaleString("ru-RU")}</span>
             <span className="flex items-center gap-1"><MessageSquare className="w-4 h-4" />{(m.comments_count ?? 0).toLocaleString("ru-RU")}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {actions}
             {m.drive_file_url && (
               <a
                 href={m.drive_file_url}

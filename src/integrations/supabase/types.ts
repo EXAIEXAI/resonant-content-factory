@@ -334,6 +334,7 @@ export type Database = {
           id: string
           is_manual: boolean
           key_points: Json | null
+          promoted_to_radar: boolean
           published_at: string | null
           raw_transcript: string | null
           reactions: number | null
@@ -364,6 +365,7 @@ export type Database = {
           id?: string
           is_manual?: boolean
           key_points?: Json | null
+          promoted_to_radar?: boolean
           published_at?: string | null
           raw_transcript?: string | null
           reactions?: number | null
@@ -394,6 +396,7 @@ export type Database = {
           id?: string
           is_manual?: boolean
           key_points?: Json | null
+          promoted_to_radar?: boolean
           published_at?: string | null
           raw_transcript?: string | null
           reactions?: number | null

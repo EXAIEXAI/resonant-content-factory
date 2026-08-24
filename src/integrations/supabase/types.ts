@@ -330,6 +330,7 @@ export type Database = {
           drive_file_url: string | null
           duration_seconds: number | null
           engagement_score: number | null
+          expert_pick: boolean
           external_id: string | null
           id: string
           is_manual: boolean
@@ -361,6 +362,7 @@ export type Database = {
           drive_file_url?: string | null
           duration_seconds?: number | null
           engagement_score?: number | null
+          expert_pick?: boolean
           external_id?: string | null
           id?: string
           is_manual?: boolean
@@ -392,6 +394,7 @@ export type Database = {
           drive_file_url?: string | null
           duration_seconds?: number | null
           engagement_score?: number | null
+          expert_pick?: boolean
           external_id?: string | null
           id?: string
           is_manual?: boolean

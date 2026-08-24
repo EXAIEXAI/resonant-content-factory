@@ -1,0 +1,1 @@
+ALTER TABLE public.raw_materials ADD COLUMN IF NOT EXISTS expert_pick boolean NOT NULL DEFAULT false;

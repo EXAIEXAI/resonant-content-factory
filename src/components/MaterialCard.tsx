@@ -3,7 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState } from "react";
-import { Sparkles, ExternalLink, Crown, FileText, ChevronDown, Eye, ThumbsUp, MessageSquare, Bookmark } from "lucide-react";
+import { Sparkles, ExternalLink, Crown, FileText, ChevronDown, Eye, ThumbsUp, MessageSquare, Bookmark, Flame } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import type { ScoreFactor } from "@/lib/scoring";
 
 export function formatRaw(key: ScoreFactor["key"], raw: number): string {

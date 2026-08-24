@@ -126,7 +126,7 @@ function RadarPage() {
       </div>
 
       <div className="space-y-3">
-        {ranked.map(m => <MaterialCard key={m.id} m={m} />)}
+        {ranked.map(m => <MaterialCard key={m.id} m={m} showExpertPick />)}
         {ranked.length === 0 && <EmptyRadar />}
       </div>
     </div>

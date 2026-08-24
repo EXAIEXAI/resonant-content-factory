@@ -3,7 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState } from "react";
-import { Sparkles, ExternalLink, Crown, FileText, ChevronDown, Eye, ThumbsUp, MessageSquare, Bookmark } from "lucide-react";
+import { Sparkles, ExternalLink, Crown, FileText, ChevronDown, Eye, ThumbsUp, MessageSquare, Bookmark, Flame } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import type { ScoreFactor } from "@/lib/scoring";
 
 export function formatRaw(key: ScoreFactor["key"], raw: number): string {
@@ -24,13 +27,32 @@ export function getOriginalUrl(m: { external_id?: string | null; url?: string | 
   return null;
 }
 
-export function MaterialCard({ m, actions }: { m: any; actions?: React.ReactNode }) {
+export function MaterialCard({ m, actions, showExpertPick }: { m: any; actions?: React.ReactNode; showExpertPick?: boolean }) {
   const fromPlaylist = m.source_type === "youtube_playlist";
   const saved = m.source_type === "youtube_saved";
   const [open, setOpen] = useState(false);
+  const qc = useQueryClient();
+  const [pick, setPick] = useState<boolean>(!!m.expert_pick);
+  const [pickBusy, setPickBusy] = useState(false);
   const factors: ScoreFactor[] = m.factors ?? [];
   const topFactor = factors.slice().sort((a, b) => b.contribution - a.contribution)[0];
   const originalUrl = getOriginalUrl(m);
+
+  const toggleExpertPick = async () => {
+    const next = !pick;
+    setPickBusy(true);
+    setPick(next);
+    const { error } = await supabase.from("raw_materials").update({ expert_pick: next }).eq("id", m.id);
+    setPickBusy(false);
+    if (error) {
+      setPick(!next);
+      toast.error(error.message);
+      return;
+    }
+    toast.success(next ? "Добавлено в дайджест как выбор эксперта" : "Отметка эксперта снята");
+    qc.invalidateQueries({ queryKey: ["materials"] });
+  };
+
   return (
     <Card>
       <CardHeader className="grid grid-cols-[auto_minmax(0,1fr)_auto] gap-3 sm:gap-4 space-y-0">
@@ -60,10 +82,28 @@ export function MaterialCard({ m, actions }: { m: any; actions?: React.ReactNode
             <p className="text-xs sm:text-sm text-muted-foreground mt-2 leading-relaxed line-clamp-3">{m.summary}</p>
           )}
         </div>
-        <div className="text-right shrink-0">
+        <div className="text-right shrink-0 flex flex-col items-end gap-1">
           <div className="font-serif text-xl sm:text-2xl text-primary whitespace-nowrap">{Math.round(m.computedScore ?? m.engagement_score ?? 0)}<span className="text-xs sm:text-sm text-muted-foreground">/100</span></div>
           <div className="text-xs text-muted-foreground">Рейтинг</div>
+          {showExpertPick && (
+            <button
+              type="button"
+              onClick={toggleExpertPick}
+              disabled={pickBusy}
+              aria-pressed={pick}
+              title={pick ? "Выбор эксперта — в дайджесте" : "Отметить огоньком: добавить в дайджест"}
+              className={`mt-1 inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border transition-colors ${
+                pick
+                  ? "border-accent bg-accent/20 text-accent-foreground"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              }`}
+            >
+              <Flame className={`w-4 h-4 ${pick ? "fill-current text-orange-500" : ""}`} />
+              {pick ? "В дайджесте" : "Огонёк"}
+            </button>
+          )}
         </div>
+
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex items-center justify-between text-sm gap-3 flex-wrap">

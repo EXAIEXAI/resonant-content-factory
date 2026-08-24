@@ -27,13 +27,32 @@ export function getOriginalUrl(m: { external_id?: string | null; url?: string | 
   return null;
 }
 
-export function MaterialCard({ m, actions }: { m: any; actions?: React.ReactNode }) {
+export function MaterialCard({ m, actions, showExpertPick }: { m: any; actions?: React.ReactNode; showExpertPick?: boolean }) {
   const fromPlaylist = m.source_type === "youtube_playlist";
   const saved = m.source_type === "youtube_saved";
   const [open, setOpen] = useState(false);
+  const qc = useQueryClient();
+  const [pick, setPick] = useState<boolean>(!!m.expert_pick);
+  const [pickBusy, setPickBusy] = useState(false);
   const factors: ScoreFactor[] = m.factors ?? [];
   const topFactor = factors.slice().sort((a, b) => b.contribution - a.contribution)[0];
   const originalUrl = getOriginalUrl(m);
+
+  const toggleExpertPick = async () => {
+    const next = !pick;
+    setPickBusy(true);
+    setPick(next);
+    const { error } = await supabase.from("raw_materials").update({ expert_pick: next }).eq("id", m.id);
+    setPickBusy(false);
+    if (error) {
+      setPick(!next);
+      toast.error(error.message);
+      return;
+    }
+    toast.success(next ? "Добавлено в дайджест как выбор эксперта" : "Отметка эксперта снята");
+    qc.invalidateQueries({ queryKey: ["materials"] });
+  };
+
   return (
     <Card>
       <CardHeader className="grid grid-cols-[auto_minmax(0,1fr)_auto] gap-3 sm:gap-4 space-y-0">

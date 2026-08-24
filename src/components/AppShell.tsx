@@ -8,8 +8,8 @@ import logoAsset from "@/assets/logo.png.asset.json";
 const nav = [
   { to: "/", label: "Дашборд", icon: LayoutDashboard },
   { to: "/channels", label: "Источники", icon: Radio },
-  { to: "/radar", label: "Отраслевой радар", icon: Rss },
   { to: "/new-channels", label: "Новые каналы", icon: Sparkles },
+  { to: "/radar", label: "Отраслевой радар", icon: Rss },
   { to: "/saved", label: "Из плейлиста", icon: Bookmark },
   { to: "/digests", label: "Дайджесты", icon: FileStack },
   { to: "/kanban", label: "Канбан публикаций", icon: Kanban },

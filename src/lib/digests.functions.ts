@@ -22,6 +22,16 @@ export async function buildWeeklyDigestFor(
   const picked = list.slice(0, cutoff);
   const material_ids = picked.map(p => p.id);
 
+  // Материалы, отмеченные экспертом «огоньком», попадают в дайджест дополнительно.
+  const { data: expertPicks } = await supabase
+    .from("raw_materials")
+    .select("id")
+    .eq("expert_pick", true)
+    .neq("status", "in_digest");
+  for (const p of expertPicks ?? []) {
+    if (!material_ids.includes(p.id)) material_ids.push(p.id);
+  }
+
   const now = new Date();
   const weekLabel = `Неделя ${now.toLocaleDateString("ru", { day: "2-digit", month: "short" })}`;
 
@@ -31,7 +41,14 @@ export async function buildWeeklyDigestFor(
       title: `Дайджест · ${weekLabel}`,
       status: "draft",
       material_ids,
-      content_json: { window_days: 7, picked: picked.length, pool: list.length, auto: true },
+      content_json: {
+        window_days: 7,
+        picked: picked.length,
+        expert_picks: material_ids.length - picked.length,
+        pool: list.length,
+        auto: true,
+      },
+
       created_by: createdBy,
     })
     .select("id")

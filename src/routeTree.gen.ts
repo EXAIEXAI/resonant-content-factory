@@ -15,6 +15,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedSavedRouteImport } from './routes/_authenticated/saved'
 import { Route as AuthenticatedRolesRouteImport } from './routes/_authenticated/roles'
 import { Route as AuthenticatedRadarRouteImport } from './routes/_authenticated/radar'
+import { Route as AuthenticatedNewChannelsRouteImport } from './routes/_authenticated/new-channels'
 import { Route as AuthenticatedKnowledgeRouteImport } from './routes/_authenticated/knowledge'
 import { Route as AuthenticatedKanbanRouteImport } from './routes/_authenticated/kanban'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
@@ -60,6 +61,12 @@ const AuthenticatedRadarRoute = AuthenticatedRadarRouteImport.update({
   path: '/radar',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedNewChannelsRoute =
+  AuthenticatedNewChannelsRouteImport.update({
+    id: '/new-channels',
+    path: '/new-channels',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedKnowledgeRoute = AuthenticatedKnowledgeRouteImport.update({
   id: '/knowledge',
   path: '/knowledge',
@@ -151,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/kanban': typeof AuthenticatedKanbanRoute
   '/knowledge': typeof AuthenticatedKnowledgeRoute
+  '/new-channels': typeof AuthenticatedNewChannelsRoute
   '/radar': typeof AuthenticatedRadarRoute
   '/roles': typeof AuthenticatedRolesRoute
   '/saved': typeof AuthenticatedSavedRoute
@@ -172,6 +180,7 @@ export interface FileRoutesByTo {
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/kanban': typeof AuthenticatedKanbanRoute
   '/knowledge': typeof AuthenticatedKnowledgeRoute
+  '/new-channels': typeof AuthenticatedNewChannelsRoute
   '/radar': typeof AuthenticatedRadarRoute
   '/roles': typeof AuthenticatedRolesRoute
   '/saved': typeof AuthenticatedSavedRoute
@@ -196,6 +205,7 @@ export interface FileRoutesById {
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
   '/_authenticated/kanban': typeof AuthenticatedKanbanRoute
   '/_authenticated/knowledge': typeof AuthenticatedKnowledgeRoute
+  '/_authenticated/new-channels': typeof AuthenticatedNewChannelsRoute
   '/_authenticated/radar': typeof AuthenticatedRadarRoute
   '/_authenticated/roles': typeof AuthenticatedRolesRoute
   '/_authenticated/saved': typeof AuthenticatedSavedRoute
@@ -221,6 +231,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/kanban'
     | '/knowledge'
+    | '/new-channels'
     | '/radar'
     | '/roles'
     | '/saved'
@@ -242,6 +253,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/kanban'
     | '/knowledge'
+    | '/new-channels'
     | '/radar'
     | '/roles'
     | '/saved'
@@ -265,6 +277,7 @@ export interface FileRouteTypes {
     | '/_authenticated/integrations'
     | '/_authenticated/kanban'
     | '/_authenticated/knowledge'
+    | '/_authenticated/new-channels'
     | '/_authenticated/radar'
     | '/_authenticated/roles'
     | '/_authenticated/saved'
@@ -337,6 +350,13 @@ declare module '@tanstack/react-router' {
       path: '/radar'
       fullPath: '/radar'
       preLoaderRoute: typeof AuthenticatedRadarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/new-channels': {
+      id: '/_authenticated/new-channels'
+      path: '/new-channels'
+      fullPath: '/new-channels'
+      preLoaderRoute: typeof AuthenticatedNewChannelsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/knowledge': {
@@ -453,6 +473,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
   AuthenticatedKanbanRoute: typeof AuthenticatedKanbanRoute
   AuthenticatedKnowledgeRoute: typeof AuthenticatedKnowledgeRoute
+  AuthenticatedNewChannelsRoute: typeof AuthenticatedNewChannelsRoute
   AuthenticatedRadarRoute: typeof AuthenticatedRadarRoute
   AuthenticatedRolesRoute: typeof AuthenticatedRolesRoute
   AuthenticatedSavedRoute: typeof AuthenticatedSavedRoute
@@ -466,6 +487,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
   AuthenticatedKanbanRoute: AuthenticatedKanbanRoute,
   AuthenticatedKnowledgeRoute: AuthenticatedKnowledgeRoute,
+  AuthenticatedNewChannelsRoute: AuthenticatedNewChannelsRoute,
   AuthenticatedRadarRoute: AuthenticatedRadarRoute,
   AuthenticatedRolesRoute: AuthenticatedRolesRoute,
   AuthenticatedSavedRoute: AuthenticatedSavedRoute,

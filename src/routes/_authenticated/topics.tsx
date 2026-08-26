@@ -81,7 +81,14 @@ function TopicsPage() {
 
       <div className="space-y-3">
         {(topics ?? []).map(t => (
-          <button key={t.id} type="button" onClick={() => setOpenTopicId(t.id)} className="block w-full text-left">
+          <div
+            key={t.id}
+            role="button"
+            tabIndex={0}
+            onClick={() => setOpenTopicId(t.id)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setOpenTopicId(t.id); }}
+            className="block w-full text-left cursor-pointer"
+          >
             <Card className="hover:border-primary/50 transition-colors">
               <CardContent className="py-4 flex items-center justify-between gap-3">
                 <div className="min-w-0">

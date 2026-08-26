@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedTopicsRouteImport } from './routes/_authenticated/topics'
 import { Route as AuthenticatedSavedRouteImport } from './routes/_authenticated/saved'
 import { Route as AuthenticatedRolesRouteImport } from './routes/_authenticated/roles'
 import { Route as AuthenticatedRadarRouteImport } from './routes/_authenticated/radar'
@@ -44,6 +45,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTopicsRoute = AuthenticatedTopicsRouteImport.update({
+  id: '/topics',
+  path: '/topics',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSavedRoute = AuthenticatedSavedRouteImport.update({
@@ -162,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/radar': typeof AuthenticatedRadarRoute
   '/roles': typeof AuthenticatedRolesRoute
   '/saved': typeof AuthenticatedSavedRoute
+  '/topics': typeof AuthenticatedTopicsRoute
   '/materials/$id': typeof AuthenticatedMaterialsIdRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
   '/api/public/hooks/daily-refresh': typeof ApiPublicHooksDailyRefreshRoute
@@ -184,6 +191,7 @@ export interface FileRoutesByTo {
   '/radar': typeof AuthenticatedRadarRoute
   '/roles': typeof AuthenticatedRolesRoute
   '/saved': typeof AuthenticatedSavedRoute
+  '/topics': typeof AuthenticatedTopicsRoute
   '/': typeof AuthenticatedIndexRoute
   '/materials/$id': typeof AuthenticatedMaterialsIdRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
@@ -209,6 +217,7 @@ export interface FileRoutesById {
   '/_authenticated/radar': typeof AuthenticatedRadarRoute
   '/_authenticated/roles': typeof AuthenticatedRolesRoute
   '/_authenticated/saved': typeof AuthenticatedSavedRoute
+  '/_authenticated/topics': typeof AuthenticatedTopicsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/materials/$id': typeof AuthenticatedMaterialsIdRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
@@ -235,6 +244,7 @@ export interface FileRouteTypes {
     | '/radar'
     | '/roles'
     | '/saved'
+    | '/topics'
     | '/materials/$id'
     | '/api/public/google/callback'
     | '/api/public/hooks/daily-refresh'
@@ -257,6 +267,7 @@ export interface FileRouteTypes {
     | '/radar'
     | '/roles'
     | '/saved'
+    | '/topics'
     | '/'
     | '/materials/$id'
     | '/api/public/google/callback'
@@ -281,6 +292,7 @@ export interface FileRouteTypes {
     | '/_authenticated/radar'
     | '/_authenticated/roles'
     | '/_authenticated/saved'
+    | '/_authenticated/topics'
     | '/_authenticated/'
     | '/_authenticated/materials/$id'
     | '/api/public/google/callback'
@@ -329,6 +341,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/topics': {
+      id: '/_authenticated/topics'
+      path: '/topics'
+      fullPath: '/topics'
+      preLoaderRoute: typeof AuthenticatedTopicsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/saved': {
@@ -477,6 +496,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRadarRoute: typeof AuthenticatedRadarRoute
   AuthenticatedRolesRoute: typeof AuthenticatedRolesRoute
   AuthenticatedSavedRoute: typeof AuthenticatedSavedRoute
+  AuthenticatedTopicsRoute: typeof AuthenticatedTopicsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedMaterialsIdRoute: typeof AuthenticatedMaterialsIdRoute
 }
@@ -491,6 +511,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRadarRoute: AuthenticatedRadarRoute,
   AuthenticatedRolesRoute: AuthenticatedRolesRoute,
   AuthenticatedSavedRoute: AuthenticatedSavedRoute,
+  AuthenticatedTopicsRoute: AuthenticatedTopicsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedMaterialsIdRoute: AuthenticatedMaterialsIdRoute,
 }

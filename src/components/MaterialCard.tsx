@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState } from "react";
-import { Sparkles, ExternalLink, Crown, FileText, ChevronDown, Eye, ThumbsUp, MessageSquare, Bookmark, Flame } from "lucide-react";
+import { Sparkles, ExternalLink, Crown, FileText, ChevronDown, Eye, ThumbsUp, MessageSquare, MessageSquareQuote, Bookmark, Flame } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -105,6 +105,16 @@ export function MaterialCard({ m, actions, showExpertPick }: { m: any; actions?:
             <span className="flex items-center gap-1"><Eye className="w-4 h-4" />{(m.views ?? 0).toLocaleString("ru-RU")}</span>
             <span className="flex items-center gap-1"><ThumbsUp className="w-4 h-4" />{(m.reactions ?? 0).toLocaleString("ru-RU")}</span>
             <span className="flex items-center gap-1"><MessageSquare className="w-4 h-4" />{(m.comments_count ?? 0).toLocaleString("ru-RU")}</span>
+            {typeof m.commentCount === "number" && (
+              <Link
+                to="/materials/$id"
+                params={{ id: m.id }}
+                title="Комментарии экспертов"
+                className={`flex items-center gap-1 ${m.commentCount > 0 ? "text-primary font-medium" : "text-muted-foreground/60"}`}
+              >
+                <MessageSquareQuote className="w-4 h-4" />{m.commentCount}
+              </Link>
+            )}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {actions}

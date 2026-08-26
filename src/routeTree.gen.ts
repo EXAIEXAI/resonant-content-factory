@@ -21,7 +21,9 @@ import { Route as AuthenticatedKnowledgeRouteImport } from './routes/_authentica
 import { Route as AuthenticatedKanbanRouteImport } from './routes/_authenticated/kanban'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
 import { Route as AuthenticatedDigestsRouteImport } from './routes/_authenticated/digests'
+import { Route as AuthenticatedCommentsRouteImport } from './routes/_authenticated/comments'
 import { Route as AuthenticatedChannelsRouteImport } from './routes/_authenticated/channels'
+import { Route as AuthenticatedTopicsIdRouteImport } from './routes/_authenticated/topics.$id'
 import { Route as AuthenticatedMaterialsIdRouteImport } from './routes/_authenticated/materials.$id'
 import { Route as ApiPublicSyncYoutubeRouteImport } from './routes/api/public/sync/youtube'
 import { Route as ApiPublicReviewIdRouteImport } from './routes/api/public/review/$id'
@@ -94,10 +96,20 @@ const AuthenticatedDigestsRoute = AuthenticatedDigestsRouteImport.update({
   path: '/digests',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCommentsRoute = AuthenticatedCommentsRouteImport.update({
+  id: '/comments',
+  path: '/comments',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedChannelsRoute = AuthenticatedChannelsRouteImport.update({
   id: '/channels',
   path: '/channels',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTopicsIdRoute = AuthenticatedTopicsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedTopicsRoute,
 } as any)
 const AuthenticatedMaterialsIdRoute =
   AuthenticatedMaterialsIdRouteImport.update({
@@ -160,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/channels': typeof AuthenticatedChannelsRoute
+  '/comments': typeof AuthenticatedCommentsRoute
   '/digests': typeof AuthenticatedDigestsRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/kanban': typeof AuthenticatedKanbanRoute
@@ -168,8 +181,9 @@ export interface FileRoutesByFullPath {
   '/radar': typeof AuthenticatedRadarRoute
   '/roles': typeof AuthenticatedRolesRoute
   '/saved': typeof AuthenticatedSavedRoute
-  '/topics': typeof AuthenticatedTopicsRoute
+  '/topics': typeof AuthenticatedTopicsRouteWithChildren
   '/materials/$id': typeof AuthenticatedMaterialsIdRoute
+  '/topics/$id': typeof AuthenticatedTopicsIdRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
   '/api/public/hooks/daily-refresh': typeof ApiPublicHooksDailyRefreshRoute
   '/api/public/hooks/telegram-digest': typeof ApiPublicHooksTelegramDigestRoute
@@ -183,6 +197,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/channels': typeof AuthenticatedChannelsRoute
+  '/comments': typeof AuthenticatedCommentsRoute
   '/digests': typeof AuthenticatedDigestsRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/kanban': typeof AuthenticatedKanbanRoute
@@ -191,9 +206,10 @@ export interface FileRoutesByTo {
   '/radar': typeof AuthenticatedRadarRoute
   '/roles': typeof AuthenticatedRolesRoute
   '/saved': typeof AuthenticatedSavedRoute
-  '/topics': typeof AuthenticatedTopicsRoute
+  '/topics': typeof AuthenticatedTopicsRouteWithChildren
   '/': typeof AuthenticatedIndexRoute
   '/materials/$id': typeof AuthenticatedMaterialsIdRoute
+  '/topics/$id': typeof AuthenticatedTopicsIdRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
   '/api/public/hooks/daily-refresh': typeof ApiPublicHooksDailyRefreshRoute
   '/api/public/hooks/telegram-digest': typeof ApiPublicHooksTelegramDigestRoute
@@ -209,6 +225,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/channels': typeof AuthenticatedChannelsRoute
+  '/_authenticated/comments': typeof AuthenticatedCommentsRoute
   '/_authenticated/digests': typeof AuthenticatedDigestsRoute
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
   '/_authenticated/kanban': typeof AuthenticatedKanbanRoute
@@ -217,9 +234,10 @@ export interface FileRoutesById {
   '/_authenticated/radar': typeof AuthenticatedRadarRoute
   '/_authenticated/roles': typeof AuthenticatedRolesRoute
   '/_authenticated/saved': typeof AuthenticatedSavedRoute
-  '/_authenticated/topics': typeof AuthenticatedTopicsRoute
+  '/_authenticated/topics': typeof AuthenticatedTopicsRouteWithChildren
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/materials/$id': typeof AuthenticatedMaterialsIdRoute
+  '/_authenticated/topics/$id': typeof AuthenticatedTopicsIdRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
   '/api/public/hooks/daily-refresh': typeof ApiPublicHooksDailyRefreshRoute
   '/api/public/hooks/telegram-digest': typeof ApiPublicHooksTelegramDigestRoute
@@ -236,6 +254,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/channels'
+    | '/comments'
     | '/digests'
     | '/integrations'
     | '/kanban'
@@ -246,6 +265,7 @@ export interface FileRouteTypes {
     | '/saved'
     | '/topics'
     | '/materials/$id'
+    | '/topics/$id'
     | '/api/public/google/callback'
     | '/api/public/hooks/daily-refresh'
     | '/api/public/hooks/telegram-digest'
@@ -259,6 +279,7 @@ export interface FileRouteTypes {
   to:
     | '/auth'
     | '/channels'
+    | '/comments'
     | '/digests'
     | '/integrations'
     | '/kanban'
@@ -270,6 +291,7 @@ export interface FileRouteTypes {
     | '/topics'
     | '/'
     | '/materials/$id'
+    | '/topics/$id'
     | '/api/public/google/callback'
     | '/api/public/hooks/daily-refresh'
     | '/api/public/hooks/telegram-digest'
@@ -284,6 +306,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/channels'
+    | '/_authenticated/comments'
     | '/_authenticated/digests'
     | '/_authenticated/integrations'
     | '/_authenticated/kanban'
@@ -295,6 +318,7 @@ export interface FileRouteTypes {
     | '/_authenticated/topics'
     | '/_authenticated/'
     | '/_authenticated/materials/$id'
+    | '/_authenticated/topics/$id'
     | '/api/public/google/callback'
     | '/api/public/hooks/daily-refresh'
     | '/api/public/hooks/telegram-digest'
@@ -406,12 +430,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDigestsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/comments': {
+      id: '/_authenticated/comments'
+      path: '/comments'
+      fullPath: '/comments'
+      preLoaderRoute: typeof AuthenticatedCommentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/channels': {
       id: '/_authenticated/channels'
       path: '/channels'
       fullPath: '/channels'
       preLoaderRoute: typeof AuthenticatedChannelsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/topics/$id': {
+      id: '/_authenticated/topics/$id'
+      path: '/$id'
+      fullPath: '/topics/$id'
+      preLoaderRoute: typeof AuthenticatedTopicsIdRouteImport
+      parentRoute: typeof AuthenticatedTopicsRoute
     }
     '/_authenticated/materials/$id': {
       id: '/_authenticated/materials/$id'
@@ -486,8 +524,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedTopicsRouteChildren {
+  AuthenticatedTopicsIdRoute: typeof AuthenticatedTopicsIdRoute
+}
+
+const AuthenticatedTopicsRouteChildren: AuthenticatedTopicsRouteChildren = {
+  AuthenticatedTopicsIdRoute: AuthenticatedTopicsIdRoute,
+}
+
+const AuthenticatedTopicsRouteWithChildren =
+  AuthenticatedTopicsRoute._addFileChildren(AuthenticatedTopicsRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedChannelsRoute: typeof AuthenticatedChannelsRoute
+  AuthenticatedCommentsRoute: typeof AuthenticatedCommentsRoute
   AuthenticatedDigestsRoute: typeof AuthenticatedDigestsRoute
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
   AuthenticatedKanbanRoute: typeof AuthenticatedKanbanRoute
@@ -496,13 +546,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRadarRoute: typeof AuthenticatedRadarRoute
   AuthenticatedRolesRoute: typeof AuthenticatedRolesRoute
   AuthenticatedSavedRoute: typeof AuthenticatedSavedRoute
-  AuthenticatedTopicsRoute: typeof AuthenticatedTopicsRoute
+  AuthenticatedTopicsRoute: typeof AuthenticatedTopicsRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedMaterialsIdRoute: typeof AuthenticatedMaterialsIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChannelsRoute: AuthenticatedChannelsRoute,
+  AuthenticatedCommentsRoute: AuthenticatedCommentsRoute,
   AuthenticatedDigestsRoute: AuthenticatedDigestsRoute,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
   AuthenticatedKanbanRoute: AuthenticatedKanbanRoute,
@@ -511,7 +562,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRadarRoute: AuthenticatedRadarRoute,
   AuthenticatedRolesRoute: AuthenticatedRolesRoute,
   AuthenticatedSavedRoute: AuthenticatedSavedRoute,
-  AuthenticatedTopicsRoute: AuthenticatedTopicsRoute,
+  AuthenticatedTopicsRoute: AuthenticatedTopicsRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedMaterialsIdRoute: AuthenticatedMaterialsIdRoute,
 }

@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Radio, Rss, FileStack, Kanban, BookOpen, Users, LogOut, Plug, Menu, X, Bookmark, Sparkles } from "lucide-react";
+import { LayoutDashboard, Radio, Rss, FileStack, Kanban, BookOpen, Users, LogOut, Plug, Menu, X, Bookmark, Sparkles, Lightbulb, MessagesSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState, type ReactNode } from "react";
@@ -10,6 +10,8 @@ const nav = [
   { to: "/channels", label: "Источники", icon: Radio },
   { to: "/new-channels", label: "Новые каналы", icon: Sparkles },
   { to: "/radar", label: "Отраслевой радар", icon: Rss },
+  { to: "/topics", label: "Темы роликов", icon: Lightbulb },
+  { to: "/comments", label: "Комментарии", icon: MessagesSquare },
   { to: "/saved", label: "Из плейлиста", icon: Bookmark },
   { to: "/digests", label: "Дайджесты", icon: FileStack },
   { to: "/kanban", label: "Канбан публикаций", icon: Kanban },

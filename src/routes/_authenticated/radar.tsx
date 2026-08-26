@@ -12,6 +12,7 @@ import { Plus } from "lucide-react";
 import { computeScore } from "@/lib/scoring";
 import { MaterialCard } from "@/components/MaterialCard";
 import { ingestUrl, refreshAllMaterials } from "@/lib/youtube.functions";
+import { CreateTopicDialog } from "@/components/CreateTopicDialog";
 import { toast } from "sonner";
 
 
@@ -33,6 +34,15 @@ function RadarPage() {
     queryKey: ["materials"],
     queryFn: async () => (await supabase.from("raw_materials").select("*").order("engagement_score", { ascending: false })).data ?? [],
   });
+  const { data: positions } = useQuery({
+    queryKey: ["all-positions"],
+    queryFn: async () => (await supabase.from("expert_positions").select("material_id")).data ?? [],
+  });
+  const commentCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const p of positions ?? []) map.set(p.material_id, (map.get(p.material_id) ?? 0) + 1);
+    return map;
+  }, [positions]);
 
   const ranked = useMemo(() => {
     const chMap = new Map((channels ?? []).map(c => [c.id, c]));
@@ -41,11 +51,11 @@ function RadarPage() {
       .map(m => {
         const ch = m.channel_id ? chMap.get(m.channel_id) : null;
         const { score, factors, breakdown } = computeScore({ ...m, subscribers: ch?.subscribers ?? 1000 });
-        return { ...m, computedScore: score, factors, breakdown, channel: ch, subscribers: ch?.subscribers ?? 1000 };
+        return { ...m, computedScore: score, factors, breakdown, channel: ch, subscribers: ch?.subscribers ?? 1000, commentCount: commentCounts.get(m.id) ?? 0 };
       })
       .sort((a, b) => b.computedScore - a.computedScore);
     return list.map((m, i) => ({ ...m, rank: i + 1, total: list.length }));
-  }, [channels, materials]);
+  }, [channels, materials, commentCounts]);
 
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState("");
@@ -104,6 +114,7 @@ function RadarPage() {
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">Все материалы с ваших каналов, ранжированные по формуле резонанса</p>
         </div>
         <div className="flex gap-2 flex-wrap">
+          <CreateTopicDialog />
           <Button variant="outline" onClick={() => recompute.mutate()}>Пересчитать</Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" /> Ручной материал</Button></DialogTrigger>

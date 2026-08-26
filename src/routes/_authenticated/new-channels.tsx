@@ -36,6 +36,15 @@ function NewChannelsPage() {
     queryFn: async () =>
       (await supabase.from("raw_materials").select("*").order("engagement_score", { ascending: false })).data ?? [],
   });
+  const { data: positions } = useQuery({
+    queryKey: ["all-positions"],
+    queryFn: async () => (await supabase.from("expert_positions").select("material_id")).data ?? [],
+  });
+  const commentCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const p of positions ?? []) map.set(p.material_id, (map.get(p.material_id) ?? 0) + 1);
+    return map;
+  }, [positions]);
 
   const promote = useMutation({
     mutationFn: async (id: string) => {
@@ -64,14 +73,14 @@ function NewChannelsPage() {
       .map(m => {
         const ch = chMap.get(m.channel_id!);
         const { score, factors, breakdown } = computeScore({ ...m, subscribers: ch?.subscribers ?? 1000 });
-        return { ...m, computedScore: score, factors, breakdown, channel: ch, subscribers: ch?.subscribers ?? 1000 };
+        return { ...m, computedScore: score, factors, breakdown, channel: ch, subscribers: ch?.subscribers ?? 1000, commentCount: commentCounts.get(m.id) ?? 0 };
       })
       .sort((a, b) => b.computedScore - a.computedScore);
     return {
       ranked: list.map((m, i) => ({ ...m, rank: i + 1, total: list.length })),
       newChannels: fresh,
     };
-  }, [channels, materials]);
+  }, [channels, materials, commentCounts]);
 
   return (
     <div className="space-y-6">

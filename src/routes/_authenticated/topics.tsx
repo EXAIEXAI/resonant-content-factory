@@ -116,7 +116,7 @@ function TopicsPage() {
                 </div>
               </CardContent>
             </Card>
-          </button>
+          </div>
         ))}
         {(topics ?? []).length === 0 && (
           <Card>

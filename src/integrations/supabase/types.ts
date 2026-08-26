@@ -69,6 +69,7 @@ export type Database = {
           id: string
           material_id: string | null
           status: string
+          topic_id: string | null
           updated_at: string
           version: number
         }
@@ -81,6 +82,7 @@ export type Database = {
           id?: string
           material_id?: string | null
           status?: string
+          topic_id?: string | null
           updated_at?: string
           version?: number
         }
@@ -93,6 +95,7 @@ export type Database = {
           id?: string
           material_id?: string | null
           status?: string
+          topic_id?: string | null
           updated_at?: string
           version?: number
         }
@@ -102,6 +105,13 @@ export type Database = {
             columns: ["material_id"]
             isOneToOne: false
             referencedRelation: "raw_materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_outputs_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
             referencedColumns: ["id"]
           },
         ]
@@ -449,6 +459,42 @@ export type Database = {
           name?: string
           prompt_body?: string | null
           rules_json?: Json | null
+        }
+        Relationships: []
+      }
+      topics: {
+        Row: {
+          angles: Json
+          chosen_angle: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          selected_material_ids: string[]
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          angles?: Json
+          chosen_angle?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          selected_material_ids?: string[]
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          angles?: Json
+          chosen_angle?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          selected_material_ids?: string[]
+          status?: string
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }

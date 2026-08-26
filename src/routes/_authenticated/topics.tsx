@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Lightbulb } from "lucide-react";
+import { Lightbulb, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { CreateTopicDialog } from "@/components/CreateTopicDialog";
 import { TopicFlow } from "@/components/TopicFlow";
 
@@ -36,12 +38,32 @@ export const topicStatusLabels: Record<string, string> = {
 
 function TopicsPage() {
   const [openTopicId, setOpenTopicId] = useState<string | null>(null);
+  const qc = useQueryClient();
 
   const { data: topics } = useQuery({
     queryKey: ["topics"],
     queryFn: async () =>
       (await supabase.from("topics").select("*").order("created_at", { ascending: false })).data ?? [],
   });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("topics").delete().eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Тема удалена");
+      qc.invalidateQueries({ queryKey: ["topics"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const askDelete = (t: any) => {
+    if (window.confirm(`Удалить тему «${t.chosen_angle ?? t.title}» вместе с эссе и сценариями?`)) {
+      if (openTopicId === t.id) setOpenTopicId(null);
+      remove.mutate(t.id);
+    }
+  };
 
   const openTopic = (topics ?? []).find(t => t.id === openTopicId);
 
@@ -59,7 +81,14 @@ function TopicsPage() {
 
       <div className="space-y-3">
         {(topics ?? []).map(t => (
-          <button key={t.id} type="button" onClick={() => setOpenTopicId(t.id)} className="block w-full text-left">
+          <div
+            key={t.id}
+            role="button"
+            tabIndex={0}
+            onClick={() => setOpenTopicId(t.id)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setOpenTopicId(t.id); }}
+            className="block w-full text-left cursor-pointer"
+          >
             <Card className="hover:border-primary/50 transition-colors">
               <CardContent className="py-4 flex items-center justify-between gap-3">
                 <div className="min-w-0">
@@ -71,12 +100,23 @@ function TopicsPage() {
                     {new Date(t.created_at).toLocaleDateString("ru-RU")} · роликов: {(t.selected_material_ids ?? []).length}
                   </div>
                 </div>
-                <Badge variant={t.status === "done" ? "default" : "secondary"} className="shrink-0">
-                  {topicStatusLabels[t.status] ?? t.status}
-                </Badge>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Badge variant={t.status === "done" ? "default" : "secondary"}>
+                    {topicStatusLabels[t.status] ?? t.status}
+                  </Badge>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                    title="Удалить тему"
+                    onClick={(e) => { e.stopPropagation(); askDelete(t); }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </CardContent>
             </Card>
-          </button>
+          </div>
         ))}
         {(topics ?? []).length === 0 && (
           <Card>

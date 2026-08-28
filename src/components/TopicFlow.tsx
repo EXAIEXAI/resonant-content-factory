@@ -119,10 +119,9 @@ export function TopicFlow({ id }: { id: string }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  // Шаг 3: эссе
-  const [essayPromptId, setEssayPromptId] = useState("none");
+  // Шаг 3: эссе (промт по умолчанию)
   const runEssay = useMutation({
-    mutationFn: () => genEssay({ data: { topicId: id, promptId: essayPromptId === "none" ? null : essayPromptId } }),
+    mutationFn: () => genEssay({ data: { topicId: id } }),
     onSuccess: () => {
       toast.success("Эссе сгенерировано");
       qc.invalidateQueries({ queryKey: ["topic-outputs", id] });

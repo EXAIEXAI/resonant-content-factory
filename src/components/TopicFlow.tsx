@@ -299,16 +299,6 @@ export function TopicFlow({ id }: { id: string }) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex gap-2 items-end flex-wrap">
-              <div className="min-w-[220px]">
-                <Label className="text-xs">Промт для эссе</Label>
-                <Select value={essayPromptId} onValueChange={setEssayPromptId}>
-                  <SelectTrigger><SelectValue placeholder="Без промта" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Без промта</SelectItem>
-                    {(prompts ?? []).map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
               <Button onClick={() => runEssay.mutate()} disabled={runEssay.isPending}>
                 <Sparkles className="w-4 h-4 mr-2" />
                 {runEssay.isPending ? "Пишу эссе..." : essayOutputs.length ? "Сгенерировать заново" : "Сгенерировать эссе"}

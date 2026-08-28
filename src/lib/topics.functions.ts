@@ -125,6 +125,32 @@ export const generateTopicEssay = createServerFn({ method: "POST" })
     const { data: topic } = await context.supabase.from("topics").select("*").eq("id", data.topicId).maybeSingle();
     if (!topic) throw new Error("Тема не найдена");
     const ids: string[] = topic.selected_material_ids ?? [];
+
+    // Промт для эссе берётся по умолчанию: «Мастер-промт: эссе» или первый доступный промт.
+    let promptId = data.promptId;
+    if (!promptId) {
+      const { data: defaultPrompt } = await context.supabase
+        .from("style_templates")
+        .select("id")
+        .eq("kind", "prompt")
+        .ilike("name", "%эссе%")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (defaultPrompt?.id) {
+        promptId = defaultPrompt.id;
+      } else {
+        const { data: fallbackPrompt } = await context.supabase
+          .from("style_templates")
+          .select("id")
+          .eq("kind", "prompt")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (fallbackPrompt?.id) promptId = fallbackPrompt.id;
+      }
+    }
+
     const [{ data: materials }, { data: positions }, { data: promptRow }] = await Promise.all([
       ids.length
         ? context.supabase.from("raw_materials").select("id, title, summary, key_points").in("id", ids)
@@ -132,8 +158,8 @@ export const generateTopicEssay = createServerFn({ method: "POST" })
       ids.length
         ? context.supabase.from("expert_positions").select("material_id, reaction_type, transcript, linked_thesis").in("material_id", ids)
         : Promise.resolve({ data: [] as any[] }),
-      data.promptId
-        ? context.supabase.from("style_templates").select("name, prompt_body").eq("id", data.promptId).maybeSingle()
+      promptId
+        ? context.supabase.from("style_templates").select("name, prompt_body").eq("id", promptId).maybeSingle()
         : Promise.resolve({ data: null as any }),
     ]);
 

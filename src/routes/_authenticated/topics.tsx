@@ -95,8 +95,18 @@ function TopicsPage() {
         <CreateTopicDialog />
       </div>
 
+      <div className="relative">
+        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Поиск по темам, углам подачи, ключевым словам, статусам"
+          className="pl-9"
+        />
+      </div>
+
       <div className="space-y-3">
-        {(topics ?? []).map(t => (
+        {filtered.map(t => (
           <div
             key={t.id}
             role="button"

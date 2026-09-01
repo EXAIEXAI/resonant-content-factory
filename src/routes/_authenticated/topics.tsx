@@ -6,7 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Lightbulb, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Lightbulb, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { CreateTopicDialog } from "@/components/CreateTopicDialog";
 import { TopicFlow } from "@/components/TopicFlow";
@@ -38,6 +39,7 @@ export const topicStatusLabels: Record<string, string> = {
 
 function TopicsPage() {
   const [openTopicId, setOpenTopicId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
   const qc = useQueryClient();
 
   const { data: topics } = useQuery({
@@ -67,6 +69,21 @@ function TopicsPage() {
 
   const openTopic = (topics ?? []).find(t => t.id === openTopicId);
 
+  const q = search.trim().toLowerCase();
+  const words = q.split(/\s+/).filter(Boolean);
+  const filtered = (topics ?? []).filter(t => {
+    if (words.length === 0) return true;
+    const haystack = [
+      t.title,
+      t.chosen_angle ?? "",
+      Array.isArray(t.angles) ? (t.angles as unknown[]).join(" ") : "",
+      topicStatusLabels[t.status] ?? t.status,
+    ]
+      .join(" ")
+      .toLowerCase();
+    return words.every(w => haystack.includes(w));
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -79,8 +96,18 @@ function TopicsPage() {
         <CreateTopicDialog />
       </div>
 
+      <div className="relative">
+        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Поиск по темам, углам подачи, ключевым словам, статусам"
+          className="pl-9"
+        />
+      </div>
+
       <div className="space-y-3">
-        {(topics ?? []).map(t => (
+        {filtered.map(t => (
           <div
             key={t.id}
             role="button"
@@ -118,11 +145,13 @@ function TopicsPage() {
             </Card>
           </div>
         ))}
-        {(topics ?? []).length === 0 && (
+        {filtered.length === 0 && (
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground">
               <Lightbulb className="w-8 h-8 mx-auto mb-3 opacity-40" />
-              Тем пока нет. Нажмите «Создать тему ролика», чтобы начать.
+              {q
+                ? `Ничего не найдено по запросу «${search.trim()}».`
+                : "Тем пока нет. Нажмите «Создать тему ролика», чтобы начать."}
             </CardContent>
           </Card>
         )}

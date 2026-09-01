@@ -68,6 +68,21 @@ function TopicsPage() {
 
   const openTopic = (topics ?? []).find(t => t.id === openTopicId);
 
+  const q = search.trim().toLowerCase();
+  const words = q.split(/\s+/).filter(Boolean);
+  const filtered = (topics ?? []).filter(t => {
+    if (words.length === 0) return true;
+    const haystack = [
+      t.title,
+      t.chosen_angle ?? "",
+      Array.isArray(t.angles) ? (t.angles as unknown[]).join(" ") : "",
+      topicStatusLabels[t.status] ?? t.status,
+    ]
+      .join(" ")
+      .toLowerCase();
+    return words.every(w => haystack.includes(w));
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

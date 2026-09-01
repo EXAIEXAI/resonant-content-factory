@@ -144,11 +144,13 @@ function TopicsPage() {
             </Card>
           </div>
         ))}
-        {(topics ?? []).length === 0 && (
+        {filtered.length === 0 && (
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground">
               <Lightbulb className="w-8 h-8 mx-auto mb-3 opacity-40" />
-              Тем пока нет. Нажмите «Создать тему ролика», чтобы начать.
+              {q
+                ? `Ничего не найдено по запросу «${search.trim()}».`
+                : "Тем пока нет. Нажмите «Создать тему ролика», чтобы начать."}
             </CardContent>
           </Card>
         )}

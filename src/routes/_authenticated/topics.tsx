@@ -38,6 +38,7 @@ export const topicStatusLabels: Record<string, string> = {
 
 function TopicsPage() {
   const [openTopicId, setOpenTopicId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
   const qc = useQueryClient();
 
   const { data: topics } = useQuery({

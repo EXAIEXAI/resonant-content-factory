@@ -164,9 +164,13 @@ function DigestsPage() {
                                   <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3" />{(m.reactions ?? 0).toLocaleString("ru")}</span>
                                   <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3" />{(m.comments_count ?? 0).toLocaleString("ru")}</span>
                                   {originalUrl && (
-                                    <a href={originalUrl} target="_top" rel="noopener noreferrer" className="ml-auto inline-flex items-center gap-1 text-primary hover:underline">
+                                    <span
+                                      role="link"
+                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(originalUrl, "_blank", "noopener,noreferrer"); }}
+                                      className="ml-auto inline-flex items-center gap-1 text-primary hover:underline"
+                                    >
                                       <ExternalLink className="w-3 h-3" />Открыть оригинал
-                                    </a>
+                                    </span>
                                   )}
                                 </div>
                               </div>

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -142,7 +142,12 @@ function DigestsPage() {
                           );
                           const originalUrl = getOriginalUrl(m);
                           return (
-                            <li key={mid} className="border rounded-md p-3 flex gap-3">
+                            <li key={mid}>
+                              <Link
+                                to="/materials/$id"
+                                params={{ id: mid }}
+                                className="border rounded-md p-3 flex gap-3 transition-colors hover:bg-accent/50 hover:border-primary/40 cursor-pointer"
+                              >
                               <div className="text-xs text-muted-foreground font-mono pt-1 w-6 shrink-0">#{idx + 1}</div>
                               {m.thumbnail_url && (
                                 <img src={m.thumbnail_url} alt="" className="w-24 h-14 object-cover rounded shrink-0" />
@@ -159,12 +164,17 @@ function DigestsPage() {
                                   <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3" />{(m.reactions ?? 0).toLocaleString("ru")}</span>
                                   <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3" />{(m.comments_count ?? 0).toLocaleString("ru")}</span>
                                   {originalUrl && (
-                                    <a href={originalUrl} target="_top" rel="noopener noreferrer" className="ml-auto inline-flex items-center gap-1 text-primary hover:underline">
+                                    <span
+                                      role="link"
+                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(originalUrl, "_blank", "noopener,noreferrer"); }}
+                                      className="ml-auto inline-flex items-center gap-1 text-primary hover:underline"
+                                    >
                                       <ExternalLink className="w-3 h-3" />Открыть оригинал
-                                    </a>
+                                    </span>
                                   )}
                                 </div>
                               </div>
+                              </Link>
                             </li>
                           );
                         })}

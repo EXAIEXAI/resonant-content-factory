@@ -26,6 +26,33 @@ function KanbanPage() {
     queryFn: async () => (await supabase.from("raw_materials").select("id, title, status, category, engagement_score")).data ?? [],
   });
 
+  // Synchronized top scrollbar
+  const topRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const [scrollWidth, setScrollWidth] = useState(0);
+  const syncing = useRef(false);
+
+  useEffect(() => {
+    const bottom = bottomRef.current;
+    if (!bottom) return;
+    const update = () => setScrollWidth(bottom.scrollWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(bottom);
+    return () => ro.disconnect();
+  }, [materials]);
+
+  const sync = (from: "top" | "bottom") => () => {
+    if (syncing.current) return;
+    syncing.current = true;
+    const top = topRef.current, bottom = bottomRef.current;
+    if (top && bottom) {
+      if (from === "top") bottom.scrollLeft = top.scrollLeft;
+      else top.scrollLeft = bottom.scrollLeft;
+    }
+    syncing.current = false;
+  };
+
   return (
     <div className="space-y-6">
       <div>

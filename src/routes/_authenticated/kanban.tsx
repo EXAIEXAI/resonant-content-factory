@@ -60,7 +60,16 @@ function KanbanPage() {
         <p className="text-muted-foreground mt-1">Жизненный цикл материала — от радара до публикации</p>
       </div>
 
-      <div className="flex gap-3 overflow-x-auto pb-4">
+      <div
+        ref={topRef}
+        onScroll={sync("top")}
+        className="overflow-x-auto overflow-y-hidden h-4"
+        aria-hidden
+      >
+        <div style={{ width: scrollWidth, height: 1 }} />
+      </div>
+
+      <div ref={bottomRef} onScroll={sync("bottom")} className="flex gap-3 overflow-x-auto pb-4">
         {columns.map(([status, label]) => {
           const items = (materials ?? []).filter(m => m.status === status);
           return (
@@ -73,9 +82,6 @@ function KanbanPage() {
                 {items.map(m => (
                   <Card key={m.id} className="p-3">
                     <Link to="/materials/$id" params={{ id: m.id }} className="text-sm font-medium line-clamp-2 hover:text-primary block">{m.title}</Link>
-                    <div className="flex items-center justify-between mt-2">
-                      <Badge variant="outline" className="text-xs">{(m.engagement_score ?? 0).toFixed(1)}</Badge>
-                    </div>
                   </Card>
                 ))}
                 {items.length === 0 && <div className="text-xs text-muted-foreground text-center py-4">пусто</div>}

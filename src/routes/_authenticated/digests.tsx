@@ -170,6 +170,7 @@ function DigestsPage() {
                                   )}
                                 </div>
                               </div>
+                              </Link>
                             </li>
                           );
                         })}

@@ -142,7 +142,12 @@ function DigestsPage() {
                           );
                           const originalUrl = getOriginalUrl(m);
                           return (
-                            <li key={mid} className="border rounded-md p-3 flex gap-3">
+                            <li key={mid}>
+                              <Link
+                                to="/materials/$id"
+                                params={{ id: mid }}
+                                className="border rounded-md p-3 flex gap-3 transition-colors hover:bg-accent/50 hover:border-primary/40 cursor-pointer"
+                              >
                               <div className="text-xs text-muted-foreground font-mono pt-1 w-6 shrink-0">#{idx + 1}</div>
                               {m.thumbnail_url && (
                                 <img src={m.thumbnail_url} alt="" className="w-24 h-14 object-cover rounded shrink-0" />

@@ -144,6 +144,7 @@ export async function syncAllSourcesWith(
   const { driveUploadText } = await import("./gdrive.server");
   const results: ChannelSyncResult[] = [];
   let totalAdded = 0;
+  const addedIds: string[] = [];
 
   for (const ch of channels ?? []) {
     const res: ChannelSyncResult = {

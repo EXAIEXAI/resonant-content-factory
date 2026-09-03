@@ -41,11 +41,13 @@ export function TopicFlow({ id }: { id: string }) {
     },
   });
 
-  const { data: prompts } = useQuery({
+  const { data: allPrompts } = useQuery({
     queryKey: ["styles-prompts"],
     queryFn: async () =>
-      (await supabase.from("style_templates").select("id, name").eq("kind", "prompt").order("created_at", { ascending: false })).data ?? [],
+      (await supabase.from("style_templates").select("id, name, purpose").eq("kind", "prompt").order("created_at", { ascending: false })).data ?? [],
   });
+  const essayPrompts = (allPrompts ?? []).filter(p => p.purpose === "essay");
+  const scriptPrompts = (allPrompts ?? []).filter(p => p.purpose === "script");
 
   const { data: outputs } = useQuery({
     queryKey: ["topic-outputs", id],

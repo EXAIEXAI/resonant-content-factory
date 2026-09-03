@@ -37,14 +37,49 @@ export const generateChapters = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: m } = await context.supabase
       .from("raw_materials")
-      .select("id, title, raw_transcript, transcript_segments")
+      .select("id, title, raw_transcript, transcript_segments, external_id, duration_seconds")
       .eq("id", data.materialId)
       .maybeSingle();
     if (!m) throw new Error("Материал не найден");
 
-    const segs = Array.isArray(m.transcript_segments) ? (m.transcript_segments as any[]) : [];
+    let segs = Array.isArray(m.transcript_segments) ? (m.transcript_segments as any[]) : [];
+
+    // Нет сегментов — пробуем догрузить субтитры с YouTube.
+    if (segs.length === 0 && m.external_id) {
+      try {
+        const { fetchTranscriptSegments } = await import("./transcript.server");
+        const fetched = await fetchTranscriptSegments(m.external_id);
+        if (fetched.length) {
+          segs = fetched;
+          await context.supabase
+            .from("raw_materials")
+            .update({
+              transcript_segments: fetched as never,
+              raw_transcript: m.raw_transcript || fetched.map(s => s.text).join(" "),
+            })
+            .eq("id", m.id);
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+
+    // Всё ещё нет таймкодов — строим приблизительные из текста расшифровки.
+    const plain = (m.raw_transcript ?? "").trim();
+    if (segs.length === 0 && plain.length > 0) {
+      const total = m.duration_seconds && m.duration_seconds > 0 ? m.duration_seconds : 0;
+      const CHUNK = 800;
+      const chunks: string[] = [];
+      for (let i = 0; i < plain.length; i += CHUNK) chunks.push(plain.slice(i, i + CHUNK));
+      segs = chunks.map((text, i) => ({
+        start: total ? Math.floor((total * i) / chunks.length) : i * 60,
+        dur: 0,
+        text,
+      }));
+    }
+
     if (segs.length === 0) {
-      throw new Error("Нет транскрипта с таймкодами — таймкоды построить нельзя");
+      throw new Error("У ролика нет расшифровки — таймкоды построить нельзя");
     }
 
     // Сжимаем транскрипт до строк вида [секунды] текст, чтобы модель видела время.
@@ -60,6 +95,7 @@ export const generateChapters = createServerFn({ method: "POST" })
       }
     }
     if (buffer.length) lines.push(`[${bucketStart}] ${buffer.join(" ")}`);
+
 
     const prompt = `Раздели ролик «${m.title}» на смысловые блоки по таймкодам.
 Верни строго JSON: {"chapters":[{"start":СЕКУНДЫ_ЧИСЛОМ,"title":"название блока","summary":"2-3 предложения о сути блока"}]}

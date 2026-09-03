@@ -78,9 +78,50 @@ export const generateChapters = createServerFn({ method: "POST" })
       }));
     }
 
+    // Расшифровки нет — берём авторские главы (плеер/описание) и, если надо,
+    // равномерно делим ролик по длительности.
     if (segs.length === 0) {
-      throw new Error("У ролика нет расшифровки — таймкоды построить нельзя");
+      if (m.external_id) {
+        try {
+          const { fetchYoutubeChapters } = await import("./transcript.server");
+          const yt = await fetchYoutubeChapters(m.external_id);
+          if (yt.length >= 2) {
+            const chapters: Chapter[] = yt.map(c => ({ start: c.start, title: c.title, summary: "" }));
+            const { error } = await context.supabase
+              .from("raw_materials")
+              .update({ chapters: chapters as never })
+              .eq("id", data.materialId);
+            if (error) throw new Error(error.message);
+            return { chapters };
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+
+      const total = m.duration_seconds && m.duration_seconds > 0 ? m.duration_seconds : 0;
+      if (total > 300) {
+        const step = total > 3600 ? 600 : 300;
+        const chapters: Chapter[] = [];
+        for (let s = 0; s < total; s += step) {
+          const mm = Math.floor(s / 60);
+          chapters.push({
+            start: s,
+            title: `Блок ${chapters.length + 1} (с ${mm} мин)`,
+            summary: "",
+          });
+        }
+        const { error } = await context.supabase
+          .from("raw_materials")
+          .update({ chapters: chapters as never })
+          .eq("id", data.materialId);
+        if (error) throw new Error(error.message);
+        return { chapters };
+      }
+
+      throw new Error("У ролика нет ни расшифровки, ни таймкодов — построить разбивку не получилось");
     }
+
 
     // Сжимаем транскрипт до строк вида [секунды] текст, чтобы модель видела время.
     const lines: string[] = [];

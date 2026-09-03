@@ -37,10 +37,52 @@ export const generateChapters = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: m } = await context.supabase
       .from("raw_materials")
-      .select("id, title, raw_transcript, transcript_segments, external_id, duration_seconds")
+      .select("id, title, summary, key_points, review_md, raw_transcript, transcript_segments, external_id, duration_seconds")
       .eq("id", data.materialId)
       .maybeSingle();
     if (!m) throw new Error("Материал не найден");
+
+    const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+
+    /** Осмысленные названия блоков по доступному контексту (без расшифровки). */
+    const nameBlocks = async (starts: number[], titles?: string[]): Promise<Chapter[]> => {
+      const ctx = [
+        `Название ролика: ${m.title}`,
+        m.summary ? `Краткое описание: ${m.summary}` : "",
+        Array.isArray(m.key_points) && m.key_points.length ? `Ключевые тезисы: ${JSON.stringify(m.key_points)}` : "",
+        m.review_md ? `Разбор ролика:\n${String(m.review_md).slice(0, 8000)}` : "",
+      ].filter(Boolean).join("\n\n");
+
+      const list = starts.map((s, i) => `${fmt(s)}${titles?.[i] ? ` — ${titles[i]}` : ""}`).join("\n");
+      const raw = await callLLM(
+        "Ты — редактор экспертного видеоконтента. Отвечай ТОЛЬКО валидным JSON без markdown.",
+        `Для ролика есть таймкоды блоков, но нет их описаний. По контексту ниже придумай для каждого таймкода осмысленное название (о чём идёт речь в этот момент) и краткую суть.
+Верни строго JSON: {"chapters":[{"start":СЕКУНДЫ_ЧИСЛОМ,"title":"суть блока в 3-7 словах","summary":"1-2 предложения"}]}
+Правила: ровно ${starts.length} блоков, start — ровно те секунды, что даны ниже; по-русски, конкретно, без слов «Блок», «Часть», «Раздел» и без нумерации.
+
+Таймкоды (мм:сс) в порядке:
+${starts.map((s, i) => `${i + 1}) ${fmt(s)} = ${s} сек`).join("\n")}
+${titles?.some(Boolean) ? `\nАвторские названия:\n${list}` : ""}
+
+Контекст:
+${ctx}`,
+      );
+      try {
+        const parsed = JSON.parse(raw.replace(/^```json\n?|\n?```$/g, ""));
+        const out: Chapter[] = starts.map((s, i) => {
+          const c = (parsed.chapters ?? []).find((x: any) => Number(x.start) === s) ?? parsed.chapters?.[i];
+          return {
+            start: s,
+            title: (c?.title || titles?.[i] || `Фрагмент с ${fmt(s)}`).toString(),
+            summary: (c?.summary ?? "").toString(),
+          };
+        });
+        return out;
+      } catch {
+        return starts.map((s, i) => ({ start: s, title: titles?.[i] || `Фрагмент с ${fmt(s)}`, summary: "" }));
+      }
+    };
+
 
     let segs = Array.isArray(m.transcript_segments) ? (m.transcript_segments as any[]) : [];
 

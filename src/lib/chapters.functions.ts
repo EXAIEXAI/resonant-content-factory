@@ -128,7 +128,7 @@ ${ctx}`,
           const { fetchYoutubeChapters } = await import("./transcript.server");
           const yt = await fetchYoutubeChapters(m.external_id);
           if (yt.length >= 2) {
-            const chapters: Chapter[] = yt.map(c => ({ start: c.start, title: c.title, summary: "" }));
+            const chapters = await nameBlocks(yt.map(c => c.start), yt.map(c => c.title));
             const { error } = await context.supabase
               .from("raw_materials")
               .update({ chapters: chapters as never })
@@ -144,15 +144,9 @@ ${ctx}`,
       const total = m.duration_seconds && m.duration_seconds > 0 ? m.duration_seconds : 0;
       if (total > 300) {
         const step = total > 3600 ? 600 : 300;
-        const chapters: Chapter[] = [];
-        for (let s = 0; s < total; s += step) {
-          const mm = Math.floor(s / 60);
-          chapters.push({
-            start: s,
-            title: `Блок ${chapters.length + 1} (с ${mm} мин)`,
-            summary: "",
-          });
-        }
+        const starts: number[] = [];
+        for (let s = 0; s < total; s += step) starts.push(s);
+        const chapters = await nameBlocks(starts);
         const { error } = await context.supabase
           .from("raw_materials")
           .update({ chapters: chapters as never })
@@ -160,6 +154,7 @@ ${ctx}`,
         if (error) throw new Error(error.message);
         return { chapters };
       }
+
 
       throw new Error("У ролика нет ни расшифровки, ни таймкодов — построить разбивку не получилось");
     }

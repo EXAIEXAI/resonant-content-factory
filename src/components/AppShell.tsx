@@ -14,7 +14,7 @@ const nav = [
   { to: "/digests", label: "Дайджесты", icon: FileStack },
   { to: "/topics", label: "Темы роликов", icon: Lightbulb },
   { to: "/comments", label: "Комментарии", icon: MessagesSquare },
-  { to: "/kanban", label: "Канбан публикаций", icon: Kanban },
+  { to: "/kanban", label: "Канбан/Календарь", icon: Kanban },
   { to: "/knowledge", label: "База знаний", icon: BookOpen },
   { to: "/roles", label: "Роли", icon: Users },
 ];

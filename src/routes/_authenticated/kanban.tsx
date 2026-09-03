@@ -108,6 +108,12 @@ function KanbanPage() {
           );
         })}
       </div>
+        </TabsContent>
+
+        <TabsContent value="calendar">
+          <ContentCalendar />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

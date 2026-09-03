@@ -308,7 +308,7 @@ export function TopicFlow({ id }: { id: string }) {
                   <SelectTrigger><SelectValue placeholder="По умолчанию" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="auto">По умолчанию</SelectItem>
-                    {(prompts ?? []).map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                    {essayPrompts.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -340,7 +340,7 @@ export function TopicFlow({ id }: { id: string }) {
                   <SelectTrigger><SelectValue placeholder="Без промта" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Без промта</SelectItem>
-                    {(prompts ?? []).map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                    {scriptPrompts.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

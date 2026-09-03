@@ -33,7 +33,21 @@ const kinds: Record<string, string> = {
   prompt: "Промты",
 };
 
-type Item = { id: string; name: string; kind: string; prompt_body: string | null };
+const purposes: Record<string, string> = {
+  essay: "Для эссе",
+  script: "Для сценариев",
+  general: "Общие",
+};
+
+/** Вкладки базы знаний: шаблоны + промты, разделённые по назначению. */
+const tabs: { key: string; label: string; match: (i: Item) => boolean }[] = [
+  { key: "template", label: "Шаблоны контента", match: i => i.kind === "template" },
+  { key: "prompt_essay", label: "Промты для эссе", match: i => i.kind === "prompt" && i.purpose === "essay" },
+  { key: "prompt_script", label: "Промты для сценариев", match: i => i.kind === "prompt" && i.purpose === "script" },
+  { key: "prompt_general", label: "Прочие промты", match: i => i.kind === "prompt" && i.purpose !== "essay" && i.purpose !== "script" },
+];
+
+type Item = { id: string; name: string; kind: string; purpose: string; prompt_body: string | null };
 
 function KnowledgePage() {
   const qc = useQueryClient();

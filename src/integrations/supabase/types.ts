@@ -116,6 +116,44 @@ export type Database = {
           },
         ]
       }
+      content_plan: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          plan_date: string
+          topic_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          plan_date: string
+          topic_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          plan_date?: string
+          topic_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_plan_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       digests: {
         Row: {
           category: string

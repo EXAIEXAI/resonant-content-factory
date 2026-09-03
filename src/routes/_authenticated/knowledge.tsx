@@ -214,6 +214,14 @@ function KnowledgePage() {
                   <SelectContent>{Object.entries(kinds).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
+              {editing.kind === "prompt" && (
+                <div><Label>Назначение промта</Label>
+                  <Select value={editing.purpose ?? "general"} onValueChange={v => setEditing({ ...editing, purpose: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{Object.entries(purposes).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              )}
               <div><Label>Содержание</Label><Textarea rows={8} value={editing.prompt_body ?? ""} onChange={e => setEditing({ ...editing, prompt_body: e.target.value })} /></div>
             </div>
           )}

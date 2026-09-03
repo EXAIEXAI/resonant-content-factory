@@ -170,7 +170,7 @@ function MaterialPage() {
         </CardContent>
       </Card>
 
-
+      <ChaptersCard material={m} materialId={id} positions={positions ?? []} />
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Блок А: Источник */}

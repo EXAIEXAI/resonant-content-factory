@@ -144,6 +144,7 @@ export async function syncAllSourcesWith(
   const { driveUploadText } = await import("./gdrive.server");
   const results: ChannelSyncResult[] = [];
   let totalAdded = 0;
+  const addedIds: string[] = [];
 
   for (const ch of channels ?? []) {
     const res: ChannelSyncResult = {
@@ -312,10 +313,13 @@ export async function syncAllSourcesWith(
             added_by: userId,
           };
 
-          const { error: upErr } = await supabase
+          const { data: upserted, error: upErr } = await supabase
             .from("raw_materials")
-            .upsert(row, { onConflict: "user_id,external_id" });
+            .upsert(row, { onConflict: "user_id,external_id" })
+            .select("id")
+            .maybeSingle();
           if (upErr) throw new Error(upErr.message);
+          if (upserted?.id) addedIds.push(upserted.id as string);
 
           res.added++;
           totalAdded++;
@@ -331,6 +335,19 @@ export async function syncAllSourcesWith(
       res.errors.push(e instanceof Error ? e.message : String(e));
     }
     results.push(res);
+  }
+
+  // Для каждого нового ролика с канала сразу формируем разбор по мастер-промту,
+  // как это делается для роликов из плейлиста.
+  if (addedIds.length) {
+    const { generateReviewById } = await import("./review.server");
+    for (const id of addedIds.slice(0, 25)) {
+      try {
+        await generateReviewById(supabase as never, id);
+      } catch (e) {
+        console.error("channel sync review failed", id, e);
+      }
+    }
   }
 
   return { results, totalAdded, ranAt: new Date().toISOString() };

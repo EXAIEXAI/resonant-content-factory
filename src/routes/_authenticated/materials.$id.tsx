@@ -107,7 +107,13 @@ function MaterialPage() {
     onSuccess: () => { toast.success("Разбор готов"); qc.invalidateQueries({ queryKey: ["material", id] }); },
     onError: (e: Error) => toast.error(e.message),
   });
-
+  // Разбор по мастер-промту должен быть у каждого ролика, независимо от источника.
+  const autoReviewRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!m || m.review_md || autoReviewRef.current === id || runReview.isPending) return;
+    autoReviewRef.current = id;
+    runReview.mutate(false);
+  }, [m, id, runReview]);
 
   if (!m) return <div className="text-muted-foreground">Загрузка...</div>;
 

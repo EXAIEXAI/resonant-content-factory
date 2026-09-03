@@ -156,6 +156,14 @@ function KnowledgePage() {
                     <SelectContent>{Object.entries(kinds).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
+                {form.kind === "prompt" && (
+                  <div><Label>Назначение промта</Label>
+                    <Select value={form.purpose} onValueChange={v => setForm({ ...form, purpose: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{Object.entries(purposes).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div><Label>Содержание</Label><Textarea rows={6} value={form.prompt_body} onChange={e => setForm({ ...form, prompt_body: e.target.value })} /></div>
               </div>
               <DialogFooter><Button onClick={() => create.mutate()} disabled={create.isPending}>Сохранить</Button></DialogFooter>
@@ -169,26 +177,29 @@ function KnowledgePage() {
       </p>
 
       <Tabs defaultValue="template">
-        <TabsList>{Object.entries(kinds).map(([k, v]) => <TabsTrigger key={k} value={k}>{v}</TabsTrigger>)}</TabsList>
-        {Object.keys(kinds).map(k => (
-          <TabsContent key={k} value={k} className="space-y-3 mt-4">
-            {(items ?? []).filter(i => i.kind === k).map(i => (
-              <Card key={i.id}>
-                <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
-                  <CardTitle className="text-base">{i.name}</CardTitle>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => setEditing(i)} aria-label="Редактировать"><Pencil className="w-4 h-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => remove.mutate(i.id)} aria-label="Удалить"><Trash2 className="w-4 h-4" /></Button>
-                  </div>
-                </CardHeader>
-                <CardContent><p className="text-sm text-muted-foreground whitespace-pre-wrap">{i.prompt_body}</p></CardContent>
-              </Card>
-            ))}
-            {(items ?? []).filter(i => i.kind === k).length === 0 && (
-              <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">Пока пусто</CardContent></Card>
-            )}
-          </TabsContent>
-        ))}
+        <TabsList className="flex-wrap h-auto">{tabs.map(t => <TabsTrigger key={t.key} value={t.key}>{t.label}</TabsTrigger>)}</TabsList>
+        {tabs.map(t => {
+          const list = (items ?? []).filter(t.match);
+          return (
+            <TabsContent key={t.key} value={t.key} className="space-y-3 mt-4">
+              {list.map(i => (
+                <Card key={i.id}>
+                  <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
+                    <CardTitle className="text-base">{i.name}</CardTitle>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => setEditing(i)} aria-label="Редактировать"><Pencil className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => remove.mutate(i.id)} aria-label="Удалить"><Trash2 className="w-4 h-4" /></Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent><p className="text-sm text-muted-foreground whitespace-pre-wrap">{i.prompt_body}</p></CardContent>
+                </Card>
+              ))}
+              {list.length === 0 && (
+                <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">Пока пусто</CardContent></Card>
+              )}
+            </TabsContent>
+          );
+        })}
       </Tabs>
 
       <Dialog open={!!editing} onOpenChange={o => !o && setEditing(null)}>

@@ -233,15 +233,35 @@ export const generateTopicScript = createServerFn({ method: "POST" })
       ? await context.supabase.from("style_templates").select("name, prompt_body").eq("id", data.promptId).maybeSingle()
       : { data: null as any };
 
+    const ids: string[] = topic.selected_material_ids ?? [];
+    const { data: positions } = ids.length
+      ? await context.supabase
+          .from("expert_positions")
+          .select("reaction_type, transcript, linked_thesis, timecode")
+          .in("material_id", ids)
+          .order("created_at", { ascending: true })
+      : { data: [] as any[] };
+    const commentsBlock = (positions ?? [])
+      .map(
+        (p: any) =>
+          `  [${p.reaction_type ?? "комментарий"}]${p.timecode ? ` (таймкод ${p.timecode})` : ""}${
+            p.linked_thesis ? ` к тезису «${p.linked_thesis}»` : ""
+          }: ${p.transcript ?? ""}`,
+      )
+      .join("\n");
+
     const system = `Ты — сценарист видеоконтента компании.
-${promptRow?.prompt_body ? `Инструкция «${promptRow.name}» (строго следуй):\n${promptRow.prompt_body}\n` : ""}`;
+${promptRow?.prompt_body ? `Инструкция «${promptRow.name}» (строго следуй):\n${promptRow.prompt_body}\n` : ""}
+Комментарии экспертов к исходным роликам обязательны к учёту: их позиция должна звучать в сценарии.`;
 
     const user = `На основании подтверждённого эссе ниже напиши сценарий ролика: раскадровка по сценам, текст диктора, on-screen текст.
 
 Эссе:
 ${(essay.edited_text ?? essay.generated_text ?? "").slice(0, 12000)}
 
+${commentsBlock ? `Комментарии экспертов по выбранным роликам (учти каждый):\n${commentsBlock.slice(0, 6000)}\n` : ""}
 Верни готовый сценарий без вводных фраз.`;
+
 
     const text = await callLLM(system, user);
     const { data: out, error } = await context.supabase

@@ -3,10 +3,21 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ContentCalendar } from "@/components/ContentCalendar";
 import { useEffect, useRef, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/kanban")({
-  head: () => ({ meta: [{ title: "Канбан · Контент-завод" }] }),
+  head: () => ({
+    meta: [
+      { title: "Канбан и календарь · Контент-завод" },
+      { name: "description", content: "Канбан публикаций и контент-план по месяцам с перетаскиванием тем." },
+      { property: "og:title", content: "Канбан и календарь · Контент-завод" },
+      { property: "og:description", content: "Канбан публикаций и контент-план по месяцам с перетаскиванием тем." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: KanbanPage,
 });
 

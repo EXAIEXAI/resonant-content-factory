@@ -144,6 +144,7 @@ export const processKnowledgeFile = createServerFn({ method: "POST" })
       filename: z.string().min(1).max(200),
       text: z.string().min(10).max(200000),
       kind: z.enum(["template", "prompt"]),
+      purpose: z.enum(["essay", "script", "general"]).optional(),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {

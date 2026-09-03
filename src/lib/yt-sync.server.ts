@@ -312,10 +312,13 @@ export async function syncAllSourcesWith(
             added_by: userId,
           };
 
-          const { error: upErr } = await supabase
+          const { data: upserted, error: upErr } = await supabase
             .from("raw_materials")
-            .upsert(row, { onConflict: "user_id,external_id" });
+            .upsert(row, { onConflict: "user_id,external_id" })
+            .select("id")
+            .maybeSingle();
           if (upErr) throw new Error(upErr.message);
+          if (upserted?.id) addedIds.push(upserted.id as string);
 
           res.added++;
           totalAdded++;

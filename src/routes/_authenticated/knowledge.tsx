@@ -127,6 +127,12 @@ function KnowledgePage() {
             <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
             <SelectContent>{Object.entries(kinds).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
           </Select>
+          {uploadKind === "prompt" && (
+            <Select value={uploadPurpose} onValueChange={setUploadPurpose}>
+              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectContent>{Object.entries(purposes).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+            </Select>
+          )}
           <input
             ref={fileInput}
             type="file"

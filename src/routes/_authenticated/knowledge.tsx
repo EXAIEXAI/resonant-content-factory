@@ -62,6 +62,7 @@ function KnowledgePage() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: "", kind: "template", purpose: "general", prompt_body: "" });
   const [uploadKind, setUploadKind] = useState<string>("template");
+  const [uploadPurpose, setUploadPurpose] = useState<string>("general");
   const [editing, setEditing] = useState<Item | null>(null);
 
   const create = useMutation({
@@ -90,10 +91,17 @@ function KnowledgePage() {
   });
 
   const upload = useMutation({
-    mutationFn: async ({ file, kind }: { file: File; kind: string }) => {
+    mutationFn: async ({ file, kind, purpose }: { file: File; kind: string; purpose: string }) => {
       const text = await extractTextFromFile(file);
       if (!text || text.length < 10) throw new Error("Не удалось извлечь текст из файла");
-      return process({ data: { filename: file.name, text, kind: kind as "template" | "prompt" } });
+      return process({
+        data: {
+          filename: file.name,
+          text,
+          kind: kind as "template" | "prompt",
+          purpose: purpose as "essay" | "script" | "general",
+        },
+      });
     },
     onSuccess: (r) => { toast.success(`Добавлено записей: ${r.inserted}`); qc.invalidateQueries({ queryKey: ["styles"] }); },
     onError: (e: Error) => toast.error(e.message),
@@ -102,7 +110,7 @@ function KnowledgePage() {
   const onPickFiles = async (files: FileList | null) => {
     if (!files?.length) return;
     for (const f of Array.from(files)) {
-      await upload.mutateAsync({ file: f, kind: uploadKind });
+      await upload.mutateAsync({ file: f, kind: uploadKind, purpose: uploadKind === "prompt" ? uploadPurpose : "general" });
     }
     if (fileInput.current) fileInput.current.value = "";
   };

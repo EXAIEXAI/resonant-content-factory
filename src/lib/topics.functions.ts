@@ -157,30 +157,42 @@ export const generateTopicEssay = createServerFn({ method: "POST" })
         ? context.supabase.from("raw_materials").select("id, title, summary, key_points").in("id", ids)
         : Promise.resolve({ data: [] as any[] }),
       ids.length
-        ? context.supabase.from("expert_positions").select("material_id, reaction_type, transcript, linked_thesis").in("material_id", ids)
+        ? context.supabase
+            .from("expert_positions")
+            .select("material_id, reaction_type, transcript, linked_thesis, timecode, created_at")
+            .in("material_id", ids)
+            .order("created_at", { ascending: true })
         : Promise.resolve({ data: [] as any[] }),
       promptId
         ? context.supabase.from("style_templates").select("name, prompt_body").eq("id", promptId).maybeSingle()
         : Promise.resolve({ data: null as any }),
     ]);
 
+    const fmtPosition = (p: any) =>
+      `  [${p.reaction_type ?? "комментарий"}]${p.timecode ? ` (таймкод ${p.timecode})` : ""}${
+        p.linked_thesis ? ` к тезису «${p.linked_thesis}»` : ""
+      }: ${p.transcript ?? ""}`;
+
     const materialsBlock = (materials ?? []).map(m => {
-      const pos = (positions ?? []).filter(p => p.material_id === m.id)
-        .map(p => `  [${p.reaction_type}] ${p.linked_thesis ? "к тезису: " + p.linked_thesis + " — " : ""}${p.transcript ?? ""}`)
-        .join("\n");
+      const pos = (positions ?? []).filter(p => p.material_id === m.id).map(fmtPosition).join("\n");
       return `Ролик «${m.title}»:\nВыжимка: ${m.summary ?? "нет"}\nТезисы: ${JSON.stringify(m.key_points ?? []).slice(0, 1200)}\nКомментарии экспертов:\n${pos || "(нет)"}`;
     }).join("\n\n");
 
+    const allComments = (positions ?? []).map(fmtPosition).join("\n");
+
     const system = `Ты — редактор экспертного контента компании. Пиши в фирменной тональности.
 ${promptRow?.prompt_body ? `Инструкция «${promptRow.name}» (строго следуй):\n${promptRow.prompt_body}\n` : ""}
-Разделяй факты источников и позицию экспертов. Позиция экспертов — основа, факты — контекст.`;
+Разделяй факты источников и позицию экспертов. Позиция экспертов — основа, факты — контекст.
+Комментарии экспертов обязательны к учёту: их оценки, согласия и возражения должны быть отражены в тексте.`;
 
     const user = `Тема эссе: «${topic.chosen_angle ?? topic.title}».
 Напиши сильное бизнес-эссе на 1–2 страницы по указанной инструкции, опираясь на контекст роликов и комментарии экспертов ниже.
 
 ${materialsBlock.slice(0, 14000)}
 
+${allComments ? `Сводка всех комментариев экспертов по выбранным роликам (обязательно учти каждый):\n${allComments.slice(0, 6000)}\n` : ""}
 Верни готовый текст эссе без вводных фраз.`;
+
 
     const text = await callLLM(system, user);
     const { data: out, error } = await context.supabase

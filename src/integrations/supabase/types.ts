@@ -334,6 +334,7 @@ export type Database = {
           category: string | null
           channel_id: string | null
           channel_title: string | null
+          chapters: Json
           comments_count: number | null
           created_at: string
           drive_file_id: string | null
@@ -366,6 +367,7 @@ export type Database = {
           category?: string | null
           channel_id?: string | null
           channel_title?: string | null
+          chapters?: Json
           comments_count?: number | null
           created_at?: string
           drive_file_id?: string | null
@@ -398,6 +400,7 @@ export type Database = {
           category?: string | null
           channel_id?: string | null
           channel_title?: string | null
+          chapters?: Json
           comments_count?: number | null
           created_at?: string
           drive_file_id?: string | null
@@ -442,6 +445,7 @@ export type Database = {
           kind: string
           name: string
           prompt_body: string | null
+          purpose: string
           rules_json: Json | null
         }
         Insert: {
@@ -450,6 +454,7 @@ export type Database = {
           kind?: string
           name: string
           prompt_body?: string | null
+          purpose?: string
           rules_json?: Json | null
         }
         Update: {
@@ -458,6 +463,7 @@ export type Database = {
           kind?: string
           name?: string
           prompt_body?: string | null
+          purpose?: string
           rules_json?: Json | null
         }
         Relationships: []

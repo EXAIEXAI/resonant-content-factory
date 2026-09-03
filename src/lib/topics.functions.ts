@@ -126,14 +126,14 @@ export const generateTopicEssay = createServerFn({ method: "POST" })
     if (!topic) throw new Error("Тема не найдена");
     const ids: string[] = topic.selected_material_ids ?? [];
 
-    // Промт для эссе берётся по умолчанию: «Мастер-промт: эссе» или первый доступный промт.
+    // Промт для эссе по умолчанию: первый промт с назначением «для эссе».
     let promptId = data.promptId;
     if (!promptId) {
       const { data: defaultPrompt } = await context.supabase
         .from("style_templates")
         .select("id")
         .eq("kind", "prompt")
-        .ilike("name", "%эссе%")
+        .eq("purpose", "essay")
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -144,6 +144,7 @@ export const generateTopicEssay = createServerFn({ method: "POST" })
           .from("style_templates")
           .select("id")
           .eq("kind", "prompt")
+          .ilike("name", "%эссе%")
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();

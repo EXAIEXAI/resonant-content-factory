@@ -13,6 +13,7 @@ import { useState } from "react";
 import { ArrowLeft, MessageSquare, ThumbsUp, ThumbsDown, HelpCircle, Quote, ExternalLink, Trash2 } from "lucide-react";
 import { analyzeMaterial, generateContent } from "@/lib/ai.functions";
 import { generateReview } from "@/lib/review.functions";
+import { generateChapters } from "@/lib/chapters.functions";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { formatTimecode as formatTC } from "@/lib/youtube";
@@ -170,7 +171,7 @@ function MaterialPage() {
         </CardContent>
       </Card>
 
-
+      <ChaptersCard material={m} materialId={id} positions={positions ?? []} />
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Блок А: Источник */}
@@ -413,5 +414,111 @@ function OutputEditor({ output }: { output: any }) {
         </Button>
       </div>
     </div>
+  );
+}
+
+type Chapter = { start: number; title: string; summary: string };
+
+/** Таймкоды ролика: суть каждого блока, ссылка на видео со сдвигом и комментарии эксперта. */
+function ChaptersCard({ material, materialId, positions }: { material: any; materialId: string; positions: any[] }) {
+  const qc = useQueryClient();
+  const genChapters = useServerFn(generateChapters);
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+  const [text, setText] = useState("");
+
+  const chapters: Chapter[] = Array.isArray(material.chapters) ? (material.chapters as Chapter[]) : [];
+  const videoId: string | null =
+    material.external_id && /^[a-zA-Z0-9_-]{11}$/.test(material.external_id) ? material.external_id : null;
+
+  const build = useMutation({
+    mutationFn: async () => genChapters({ data: { materialId } }),
+    onSuccess: () => { toast.success("Таймкоды готовы"); qc.invalidateQueries({ queryKey: ["material", materialId] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const addComment = useMutation({
+    mutationFn: async ({ ch }: { ch: Chapter }) => {
+      const { error } = await supabase.from("expert_positions").insert({
+        material_id: materialId,
+        reaction_type: "comment",
+        transcript: text,
+        linked_thesis: ch.title,
+        timecode: formatTC(ch.start),
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Комментарий добавлен");
+      setText("");
+      setOpenIdx(null);
+      qc.invalidateQueries({ queryKey: ["positions", materialId] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0">
+        <CardTitle className="font-serif">Суть по таймкодам</CardTitle>
+        <Button
+          size="sm"
+          variant={chapters.length ? "outline" : "default"}
+          onClick={() => build.mutate()}
+          disabled={build.isPending}
+        >
+          {build.isPending ? "Собираю…" : chapters.length ? "Пересобрать" : "Построить таймкоды"}
+        </Button>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {chapters.length === 0 && (
+          <p className="text-sm text-muted-foreground">Таймкоды ещё не построены. Нужен транскрипт с временными метками.</p>
+        )}
+        {chapters.map((ch, i) => {
+          const tc = formatTC(ch.start);
+          const chComments = positions.filter(p => p.timecode === tc);
+          return (
+            <div key={i} className="border rounded-md p-3 space-y-2">
+              <div className="flex items-start gap-3">
+                {videoId ? (
+                  <a
+                    href={`https://www.youtube.com/watch?v=${videoId}&t=${Math.floor(ch.start)}s`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs font-mono text-primary hover:underline pt-0.5 shrink-0"
+                  >
+                    {tc}
+                  </a>
+                ) : (
+                  <span className="text-xs font-mono text-muted-foreground pt-0.5 shrink-0">{tc}</span>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium">{ch.title}</div>
+                  {ch.summary && <p className="text-sm text-muted-foreground mt-1">{ch.summary}</p>}
+                </div>
+                <Button size="sm" variant="ghost" onClick={() => setOpenIdx(openIdx === i ? null : i)}>
+                  Комментировать
+                </Button>
+              </div>
+              {chComments.length > 0 && (
+                <ul className="space-y-1 pl-1 border-l-2 border-primary/30">
+                  {chComments.map(c => (
+                    <li key={c.id} className="text-xs text-muted-foreground pl-2">{c.transcript}</li>
+                  ))}
+                </ul>
+              )}
+              {openIdx === i && (
+                <div className="space-y-2">
+                  <Textarea rows={3} value={text} onChange={e => setText(e.target.value)} placeholder="Ваш комментарий к этому блоку…" />
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => addComment.mutate({ ch })} disabled={!text.trim() || addComment.isPending}>Сохранить</Button>
+                    <Button size="sm" variant="outline" onClick={() => setOpenIdx(null)}>Отмена</Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
   );
 }

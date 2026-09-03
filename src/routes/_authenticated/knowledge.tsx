@@ -33,7 +33,21 @@ const kinds: Record<string, string> = {
   prompt: "Промты",
 };
 
-type Item = { id: string; name: string; kind: string; prompt_body: string | null };
+const purposes: Record<string, string> = {
+  essay: "Для эссе",
+  script: "Для сценариев",
+  general: "Общие",
+};
+
+/** Вкладки базы знаний: шаблоны + промты, разделённые по назначению. */
+const tabs: { key: string; label: string; match: (i: Item) => boolean }[] = [
+  { key: "template", label: "Шаблоны контента", match: i => i.kind === "template" },
+  { key: "prompt_essay", label: "Промты для эссе", match: i => i.kind === "prompt" && i.purpose === "essay" },
+  { key: "prompt_script", label: "Промты для сценариев", match: i => i.kind === "prompt" && i.purpose === "script" },
+  { key: "prompt_general", label: "Прочие промты", match: i => i.kind === "prompt" && i.purpose !== "essay" && i.purpose !== "script" },
+];
+
+type Item = { id: string; name: string; kind: string; purpose: string; prompt_body: string | null };
 
 function KnowledgePage() {
   const qc = useQueryClient();
@@ -46,8 +60,9 @@ function KnowledgePage() {
   });
 
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", kind: "template", prompt_body: "" });
+  const [form, setForm] = useState({ name: "", kind: "template", purpose: "general", prompt_body: "" });
   const [uploadKind, setUploadKind] = useState<string>("template");
+  const [uploadPurpose, setUploadPurpose] = useState<string>("general");
   const [editing, setEditing] = useState<Item | null>(null);
 
   const create = useMutation({
@@ -55,14 +70,14 @@ function KnowledgePage() {
       const { error } = await supabase.from("style_templates").insert(form);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Добавлено"); qc.invalidateQueries({ queryKey: ["styles"] }); setOpen(false); setForm({ name: "", kind: "template", prompt_body: "" }); },
+    onSuccess: () => { toast.success("Добавлено"); qc.invalidateQueries({ queryKey: ["styles"] }); setOpen(false); setForm({ name: "", kind: "template", purpose: "general", prompt_body: "" }); },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const update = useMutation({
     mutationFn: async (i: Item) => {
       const { error } = await supabase.from("style_templates")
-        .update({ name: i.name, kind: i.kind, prompt_body: i.prompt_body })
+        .update({ name: i.name, kind: i.kind, purpose: i.purpose ?? "general", prompt_body: i.prompt_body })
         .eq("id", i.id);
       if (error) throw error;
     },
@@ -76,10 +91,17 @@ function KnowledgePage() {
   });
 
   const upload = useMutation({
-    mutationFn: async ({ file, kind }: { file: File; kind: string }) => {
+    mutationFn: async ({ file, kind, purpose }: { file: File; kind: string; purpose: string }) => {
       const text = await extractTextFromFile(file);
       if (!text || text.length < 10) throw new Error("Не удалось извлечь текст из файла");
-      return process({ data: { filename: file.name, text, kind: kind as "template" | "prompt" } });
+      return process({
+        data: {
+          filename: file.name,
+          text,
+          kind: kind as "template" | "prompt",
+          purpose: purpose as "essay" | "script" | "general",
+        },
+      });
     },
     onSuccess: (r) => { toast.success(`Добавлено записей: ${r.inserted}`); qc.invalidateQueries({ queryKey: ["styles"] }); },
     onError: (e: Error) => toast.error(e.message),
@@ -88,7 +110,7 @@ function KnowledgePage() {
   const onPickFiles = async (files: FileList | null) => {
     if (!files?.length) return;
     for (const f of Array.from(files)) {
-      await upload.mutateAsync({ file: f, kind: uploadKind });
+      await upload.mutateAsync({ file: f, kind: uploadKind, purpose: uploadKind === "prompt" ? uploadPurpose : "general" });
     }
     if (fileInput.current) fileInput.current.value = "";
   };
@@ -105,6 +127,12 @@ function KnowledgePage() {
             <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
             <SelectContent>{Object.entries(kinds).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
           </Select>
+          {uploadKind === "prompt" && (
+            <Select value={uploadPurpose} onValueChange={setUploadPurpose}>
+              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectContent>{Object.entries(purposes).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+            </Select>
+          )}
           <input
             ref={fileInput}
             type="file"
@@ -128,6 +156,14 @@ function KnowledgePage() {
                     <SelectContent>{Object.entries(kinds).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
+                {form.kind === "prompt" && (
+                  <div><Label>Назначение промта</Label>
+                    <Select value={form.purpose} onValueChange={v => setForm({ ...form, purpose: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{Object.entries(purposes).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div><Label>Содержание</Label><Textarea rows={6} value={form.prompt_body} onChange={e => setForm({ ...form, prompt_body: e.target.value })} /></div>
               </div>
               <DialogFooter><Button onClick={() => create.mutate()} disabled={create.isPending}>Сохранить</Button></DialogFooter>
@@ -141,26 +177,29 @@ function KnowledgePage() {
       </p>
 
       <Tabs defaultValue="template">
-        <TabsList>{Object.entries(kinds).map(([k, v]) => <TabsTrigger key={k} value={k}>{v}</TabsTrigger>)}</TabsList>
-        {Object.keys(kinds).map(k => (
-          <TabsContent key={k} value={k} className="space-y-3 mt-4">
-            {(items ?? []).filter(i => i.kind === k).map(i => (
-              <Card key={i.id}>
-                <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
-                  <CardTitle className="text-base">{i.name}</CardTitle>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => setEditing(i)} aria-label="Редактировать"><Pencil className="w-4 h-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => remove.mutate(i.id)} aria-label="Удалить"><Trash2 className="w-4 h-4" /></Button>
-                  </div>
-                </CardHeader>
-                <CardContent><p className="text-sm text-muted-foreground whitespace-pre-wrap">{i.prompt_body}</p></CardContent>
-              </Card>
-            ))}
-            {(items ?? []).filter(i => i.kind === k).length === 0 && (
-              <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">Пока пусто</CardContent></Card>
-            )}
-          </TabsContent>
-        ))}
+        <TabsList className="flex-wrap h-auto">{tabs.map(t => <TabsTrigger key={t.key} value={t.key}>{t.label}</TabsTrigger>)}</TabsList>
+        {tabs.map(t => {
+          const list = (items ?? []).filter(t.match);
+          return (
+            <TabsContent key={t.key} value={t.key} className="space-y-3 mt-4">
+              {list.map(i => (
+                <Card key={i.id}>
+                  <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
+                    <CardTitle className="text-base">{i.name}</CardTitle>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => setEditing(i)} aria-label="Редактировать"><Pencil className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => remove.mutate(i.id)} aria-label="Удалить"><Trash2 className="w-4 h-4" /></Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent><p className="text-sm text-muted-foreground whitespace-pre-wrap">{i.prompt_body}</p></CardContent>
+                </Card>
+              ))}
+              {list.length === 0 && (
+                <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">Пока пусто</CardContent></Card>
+              )}
+            </TabsContent>
+          );
+        })}
       </Tabs>
 
       <Dialog open={!!editing} onOpenChange={o => !o && setEditing(null)}>
@@ -175,6 +214,14 @@ function KnowledgePage() {
                   <SelectContent>{Object.entries(kinds).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
+              {editing.kind === "prompt" && (
+                <div><Label>Назначение промта</Label>
+                  <Select value={editing.purpose ?? "general"} onValueChange={v => setEditing({ ...editing, purpose: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{Object.entries(purposes).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              )}
               <div><Label>Содержание</Label><Textarea rows={8} value={editing.prompt_body ?? ""} onChange={e => setEditing({ ...editing, prompt_body: e.target.value })} /></div>
             </div>
           )}

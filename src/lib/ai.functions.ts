@@ -144,6 +144,7 @@ export const processKnowledgeFile = createServerFn({ method: "POST" })
       filename: z.string().min(1).max(200),
       text: z.string().min(10).max(200000),
       kind: z.enum(["template", "prompt"]),
+      purpose: z.enum(["essay", "script", "general"]).optional(),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -168,7 +169,12 @@ ${data.text.slice(0, 60000)}`;
     }
     const rows = (parsed.entries ?? [])
       .filter(e => e.body?.trim())
-      .map(e => ({ name: (e.name || data.filename).slice(0, 200), kind: data.kind, prompt_body: e.body }));
+      .map(e => ({
+        name: (e.name || data.filename).slice(0, 200),
+        kind: data.kind,
+        purpose: data.kind === "prompt" ? (data.purpose ?? "general") : "general",
+        prompt_body: e.body,
+      }));
     if (rows.length === 0) throw new Error("Не удалось извлечь записи из файла");
     const { error } = await context.supabase.from("style_templates").insert(rows);
     if (error) throw new Error(error.message);

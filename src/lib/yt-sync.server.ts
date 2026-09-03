@@ -337,5 +337,18 @@ export async function syncAllSourcesWith(
     results.push(res);
   }
 
+  // Для каждого нового ролика с канала сразу формируем разбор по мастер-промту,
+  // как это делается для роликов из плейлиста.
+  if (addedIds.length) {
+    const { generateReviewById } = await import("./review.server");
+    for (const id of addedIds.slice(0, 25)) {
+      try {
+        await generateReviewById(supabase as never, id);
+      } catch (e) {
+        console.error("channel sync review failed", id, e);
+      }
+    }
+  }
+
   return { results, totalAdded, ranAt: new Date().toISOString() };
 }

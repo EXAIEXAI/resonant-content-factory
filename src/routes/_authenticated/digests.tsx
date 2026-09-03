@@ -159,6 +159,30 @@ function DigestsPage() {
                                 </div>
                                 {m.channel_title && <div className="text-xs text-muted-foreground">{m.channel_title}</div>}
                                 {m.summary && <p className="text-xs text-muted-foreground line-clamp-2">{m.summary}</p>}
+                                {Array.isArray(m.chapters) && m.chapters.length > 0 && (
+                                  <ul className="space-y-1 pt-1">
+                                    {(m.chapters as any[]).map((ch, ci) => {
+                                      const tc = fmtTC(ch.start);
+                                      const ytUrl = m.external_id && /^[a-zA-Z0-9_-]{11}$/.test(m.external_id)
+                                        ? `https://www.youtube.com/watch?v=${m.external_id}&t=${Math.floor(ch.start)}s`
+                                        : null;
+                                      return (
+                                        <li key={ci} className="text-xs flex gap-2">
+                                          {ytUrl ? (
+                                            <span
+                                              role="link"
+                                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(ytUrl, "_blank", "noopener,noreferrer"); }}
+                                              className="font-mono text-primary hover:underline shrink-0"
+                                            >{tc}</span>
+                                          ) : (
+                                            <span className="font-mono text-muted-foreground shrink-0">{tc}</span>
+                                          )}
+                                          <span className="text-muted-foreground"><span className="text-foreground">{ch.title}</span>{ch.summary ? ` — ${ch.summary}` : ""}</span>
+                                        </li>
+                                      );
+                                    })}
+                                  </ul>
+                                )}
                                 <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1">
                                   <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{(m.views ?? 0).toLocaleString("ru")}</span>
                                   <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3" />{(m.reactions ?? 0).toLocaleString("ru")}</span>

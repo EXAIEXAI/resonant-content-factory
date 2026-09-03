@@ -60,7 +60,7 @@ function KnowledgePage() {
   });
 
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", kind: "template", prompt_body: "" });
+  const [form, setForm] = useState({ name: "", kind: "template", purpose: "general", prompt_body: "" });
   const [uploadKind, setUploadKind] = useState<string>("template");
   const [editing, setEditing] = useState<Item | null>(null);
 
@@ -69,14 +69,14 @@ function KnowledgePage() {
       const { error } = await supabase.from("style_templates").insert(form);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Добавлено"); qc.invalidateQueries({ queryKey: ["styles"] }); setOpen(false); setForm({ name: "", kind: "template", prompt_body: "" }); },
+    onSuccess: () => { toast.success("Добавлено"); qc.invalidateQueries({ queryKey: ["styles"] }); setOpen(false); setForm({ name: "", kind: "template", purpose: "general", prompt_body: "" }); },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const update = useMutation({
     mutationFn: async (i: Item) => {
       const { error } = await supabase.from("style_templates")
-        .update({ name: i.name, kind: i.kind, prompt_body: i.prompt_body })
+        .update({ name: i.name, kind: i.kind, purpose: i.purpose ?? "general", prompt_body: i.prompt_body })
         .eq("id", i.id);
       if (error) throw error;
     },

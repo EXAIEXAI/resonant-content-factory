@@ -13,6 +13,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { useState } from "react";
 import { Calendar, Pencil, Trash2, RefreshCw, ExternalLink, Eye, ThumbsUp, MessageSquare } from "lucide-react";
 import { buildWeeklyDigest } from "@/lib/digests.functions";
+import { formatTimecode as fmtTC } from "@/lib/youtube";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/digests")({

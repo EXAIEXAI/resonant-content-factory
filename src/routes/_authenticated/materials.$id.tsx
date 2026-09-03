@@ -13,6 +13,7 @@ import { useState } from "react";
 import { ArrowLeft, MessageSquare, ThumbsUp, ThumbsDown, HelpCircle, Quote, ExternalLink, Trash2 } from "lucide-react";
 import { analyzeMaterial, generateContent } from "@/lib/ai.functions";
 import { generateReview } from "@/lib/review.functions";
+import { generateChapters } from "@/lib/chapters.functions";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { formatTimecode as formatTC } from "@/lib/youtube";

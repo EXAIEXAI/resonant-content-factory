@@ -3,10 +3,21 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ContentCalendar } from "@/components/ContentCalendar";
 import { useEffect, useRef, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/kanban")({
-  head: () => ({ meta: [{ title: "Канбан · Контент-завод" }] }),
+  head: () => ({
+    meta: [
+      { title: "Канбан и календарь · Контент-завод" },
+      { name: "description", content: "Канбан публикаций и контент-план по месяцам с перетаскиванием тем." },
+      { property: "og:title", content: "Канбан и календарь · Контент-завод" },
+      { property: "og:description", content: "Канбан публикаций и контент-план по месяцам с перетаскиванием тем." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: KanbanPage,
 });
 
@@ -56,10 +67,17 @@ function KanbanPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl">Канбан публикаций</h1>
-        <p className="text-muted-foreground mt-1">Жизненный цикл материала — от радара до публикации</p>
+        <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl">Канбан / Календарь</h1>
+        <p className="text-muted-foreground mt-1">Жизненный цикл материала и контент-план публикаций</p>
       </div>
 
+      <Tabs defaultValue="kanban" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="kanban">Канбан</TabsTrigger>
+          <TabsTrigger value="calendar">Календарь</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="kanban" className="space-y-4">
       <div
         ref={topRef}
         onScroll={sync("top")}
@@ -90,6 +108,12 @@ function KanbanPage() {
           );
         })}
       </div>
+        </TabsContent>
+
+        <TabsContent value="calendar">
+          <ContentCalendar />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

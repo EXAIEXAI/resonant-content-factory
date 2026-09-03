@@ -67,10 +67,17 @@ function KanbanPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl">Канбан публикаций</h1>
-        <p className="text-muted-foreground mt-1">Жизненный цикл материала — от радара до публикации</p>
+        <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl">Канбан / Календарь</h1>
+        <p className="text-muted-foreground mt-1">Жизненный цикл материала и контент-план публикаций</p>
       </div>
 
+      <Tabs defaultValue="kanban" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="kanban">Канбан</TabsTrigger>
+          <TabsTrigger value="calendar">Календарь</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="kanban" className="space-y-4">
       <div
         ref={topRef}
         onScroll={sync("top")}

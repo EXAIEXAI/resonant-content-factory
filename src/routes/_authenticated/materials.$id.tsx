@@ -108,18 +108,21 @@ function MaterialPage() {
     onSuccess: () => { toast.success("Разбор готов"); qc.invalidateQueries({ queryKey: ["material", id] }); },
     onError: (e: Error) => toast.error(e.message),
   });
+  // Telegram-посты: только текст поста и комментарии, без разбора и таймкодов.
+  const isTelegram = (m?.source_type ?? "").startsWith("telegram");
   // Разбор по мастер-промту должен быть у каждого ролика, независимо от источника.
   const autoReviewRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!m || m.review_md || autoReviewRef.current === id || runReview.isPending) return;
+    if (!m || isTelegram || m.review_md || autoReviewRef.current === id || runReview.isPending) return;
     autoReviewRef.current = id;
     runReview.mutate(false);
-  }, [m, id, runReview]);
+  }, [m, id, isTelegram, runReview]);
 
   if (!m) return <div className="text-muted-foreground">Загрузка...</div>;
 
   const keyPoints = Array.isArray(m.key_points) ? m.key_points as any[] : [];
   const originalUrl = getOriginalUrl(m);
+
 
   return (
     <div className="space-y-6">

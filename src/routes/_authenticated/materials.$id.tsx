@@ -287,10 +287,13 @@ function MaterialPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label className="text-xs">Таймкод (опц.)</Label>
-                  <input className="h-8 w-full rounded-md border border-input bg-background px-2 text-sm" placeholder="00:12:30" value={pos.timecode} onChange={e => setPos({ ...pos, timecode: e.target.value })} />
-                </div>
+                {!isTelegram && (
+                  <div>
+                    <Label className="text-xs">Таймкод (опц.)</Label>
+                    <input className="h-8 w-full rounded-md border border-input bg-background px-2 text-sm" placeholder="00:12:30" value={pos.timecode} onChange={e => setPos({ ...pos, timecode: e.target.value })} />
+                  </div>
+                )}
+
               </div>
               <div>
                 <Label className="text-xs">К какому тезису</Label>

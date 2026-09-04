@@ -29,7 +29,8 @@ export const Route = createFileRoute("/_authenticated/topics")({
   component: TopicsPage,
 });
 
-export { topicStatusLabels } from "@/lib/ui-labels-topics";
+import { topicStatusLabels } from "@/lib/ui-labels-topics";
+export { topicStatusLabels };
 
 function TopicsPage() {
   const [openTopicId, setOpenTopicId] = useState<string | null>(null);

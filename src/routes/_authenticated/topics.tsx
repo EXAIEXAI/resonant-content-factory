@@ -7,10 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Lightbulb, Search, Trash2 } from "lucide-react";
+import { Lightbulb, Search, Trash2, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
 import { CreateTopicDialog } from "@/components/CreateTopicDialog";
 import { TopicFlow } from "@/components/TopicFlow";
+import { exportTopicsBundle } from "@/lib/topic-export.functions";
+import { downloadTopicsArchive, slugify } from "@/lib/topic-export";
 
 export const Route = createFileRoute("/_authenticated/topics")({
   head: () => ({

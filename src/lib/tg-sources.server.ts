@@ -136,6 +136,7 @@ export async function ingestTelegramChannel(
         source_type: "telegram_channel",
         status: existing ? undefined : "found",
         is_manual: false,
+        promoted_to_radar: true,
       },
       { onConflict: "user_id,external_id" },
     );

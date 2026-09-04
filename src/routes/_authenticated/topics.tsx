@@ -159,6 +159,19 @@ function TopicsPage() {
                   <Button
                     size="icon"
                     variant="ghost"
+                    className="h-8 w-8 text-muted-foreground hover:text-primary"
+                    title="Выгрузить тему архивом (PDF + Markdown + JSON + ссылки)"
+                    disabled={exporting !== null}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      runExport([t.id], `tema-${slugify(t.chosen_angle ?? t.title)}`, t.id);
+                    }}
+                  >
+                    {exporting === t.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
                     className="h-8 w-8 text-muted-foreground hover:text-destructive"
                     title="Удалить тему"
                     onClick={(e) => { e.stopPropagation(); askDelete(t); }}

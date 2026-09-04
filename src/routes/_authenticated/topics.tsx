@@ -7,10 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Lightbulb, Search, Trash2 } from "lucide-react";
+import { Lightbulb, Search, Trash2, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
 import { CreateTopicDialog } from "@/components/CreateTopicDialog";
 import { TopicFlow } from "@/components/TopicFlow";
+import { exportTopicsBundle } from "@/lib/topic-export.functions";
+import { downloadTopicsArchive, slugify } from "@/lib/topic-export";
 
 export const Route = createFileRoute("/_authenticated/topics")({
   head: () => ({
@@ -26,21 +29,32 @@ export const Route = createFileRoute("/_authenticated/topics")({
   component: TopicsPage,
 });
 
-export const topicStatusLabels: Record<string, string> = {
-  draft: "Новая",
-  materials_selected: "Ролики утверждены",
-  angles_ready: "10 тем предложены",
-  angle_chosen: "Тема выбрана",
-  essay_draft: "Эссе на редактуре",
-  essay_ready: "Эссе подтверждено",
-  script_draft: "Сценарий на редактуре",
-  done: "Сценарий готов",
-};
+import { topicStatusLabels } from "@/lib/ui-labels-topics";
+export { topicStatusLabels };
 
 function TopicsPage() {
   const [openTopicId, setOpenTopicId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [exporting, setExporting] = useState<string | null>(null);
+  const exportBundle = useServerFn(exportTopicsBundle);
   const qc = useQueryClient();
+
+  const runExport = async (ids: string[] | null, name: string, key: string) => {
+    setExporting(key);
+    try {
+      const res = await exportBundle({ data: { topicIds: ids } });
+      if (!res.topics.length) {
+        toast.error("Нечего выгружать");
+        return;
+      }
+      await downloadTopicsArchive(res.topics, name);
+      toast.success("Архив собран: PDF + Markdown + JSON + ссылки");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Не удалось собрать архив");
+    } finally {
+      setExporting(null);
+    }
+  };
 
   const { data: topics } = useQuery({
     queryKey: ["topics"],
@@ -93,7 +107,18 @@ function TopicsPage() {
             От идеи до сценария: подбор роликов из дайджеста, эссе по промту, сценарий
           </p>
         </div>
-        <CreateTopicDialog />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            disabled={exporting !== null || !(topics ?? []).length}
+            onClick={() => runExport(null, "vse-temy", "all")}
+            title="Скачать архив по всем темам: PDF, Markdown, JSON и ссылки на ролики"
+          >
+            {exporting === "all" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+            Выгрузить все темы
+          </Button>
+          <CreateTopicDialog />
+        </div>
       </div>
 
       <div className="relative">
@@ -131,6 +156,19 @@ function TopicsPage() {
                   <Badge variant={t.status === "done" ? "default" : "secondary"}>
                     {topicStatusLabels[t.status] ?? t.status}
                   </Badge>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-muted-foreground hover:text-primary"
+                    title="Выгрузить тему архивом (PDF + Markdown + JSON + ссылки)"
+                    disabled={exporting !== null}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      runExport([t.id], `tema-${slugify(t.chosen_angle ?? t.title)}`, t.id);
+                    }}
+                  >
+                    {exporting === t.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  </Button>
                   <Button
                     size="icon"
                     variant="ghost"

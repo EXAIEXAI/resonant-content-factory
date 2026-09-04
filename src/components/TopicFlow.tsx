@@ -11,14 +11,32 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useMemo } from "react";
-import { Sparkles, Check, Plus, X } from "lucide-react";
+import { Sparkles, Check, Plus, X, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { suggestMaterials, saveTopicMaterials, generateAngles, chooseAngle, generateTopicEssay, generateTopicScript } from "@/lib/topics.functions";
-import { topicStatusLabels } from "@/routes/_authenticated/topics";
+import { exportTopicsBundle } from "@/lib/topic-export.functions";
+import { downloadTopicsArchive, slugify } from "@/lib/topic-export";
+import { topicStatusLabels } from "@/lib/ui-labels-topics";
 
 /** Воронка темы: подбор роликов из дайджеста → 10 углов → эссе → сценарий. */
 export function TopicFlow({ id }: { id: string }) {
   const qc = useQueryClient();
+  const [exporting, setExporting] = useState(false);
+  const exportBundle = useServerFn(exportTopicsBundle);
+  const runExport = async () => {
+    setExporting(true);
+    try {
+      const res = await exportBundle({ data: { topicIds: [id] } });
+      if (!res.topics.length) throw new Error("Тема не найдена");
+      const t = res.topics[0]!;
+      await downloadTopicsArchive(res.topics, `tema-${slugify(t.chosen_angle ?? t.title)}`);
+      toast.success("Архив собран: PDF + Markdown + JSON + ссылки");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Не удалось собрать архив");
+    } finally {
+      setExporting(false);
+    }
+  };
   const suggest = useServerFn(suggestMaterials);
   const saveMaterials = useServerFn(saveTopicMaterials);
   const genAngles = useServerFn(generateAngles);
@@ -166,6 +184,10 @@ export function TopicFlow({ id }: { id: string }) {
         </div>
         <h2 className="font-serif text-xl sm:text-2xl">{topic.chosen_angle ?? topic.title}</h2>
         {topic.chosen_angle && <p className="text-sm text-muted-foreground mt-1">Общая тема: {topic.title}</p>}
+        <Button size="sm" variant="outline" className="mt-3" disabled={exporting} onClick={runExport}>
+          {exporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+          Выгрузить тему архивом
+        </Button>
       </div>
 
       {/* Шаг 1 — подбор роликов */}

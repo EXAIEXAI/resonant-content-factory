@@ -107,7 +107,18 @@ function TopicsPage() {
             От идеи до сценария: подбор роликов из дайджеста, эссе по промту, сценарий
           </p>
         </div>
-        <CreateTopicDialog />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            disabled={exporting !== null || !(topics ?? []).length}
+            onClick={() => runExport(null, "vse-temy", "all")}
+            title="Скачать архив по всем темам: PDF, Markdown, JSON и ссылки на ролики"
+          >
+            {exporting === "all" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+            Выгрузить все темы
+          </Button>
+          <CreateTopicDialog />
+        </div>
       </div>
 
       <div className="relative">

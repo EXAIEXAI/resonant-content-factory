@@ -203,67 +203,69 @@ function MaterialPage() {
 
 
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Блок А: Источник */}
-        <Card className="border-l-4 border-l-muted-foreground/30">
-          <CardHeader>
-            <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Блок А — Источник</div>
-            <CardTitle className="font-serif">Факты автора</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {!m.summary && (
-              <Button size="sm" onClick={() => runAnalyze.mutate()} disabled={runAnalyze.isPending}>
-                {runAnalyze.isPending ? "Анализирую..." : "Проанализировать"}
-              </Button>
-            )}
-            {m.summary && (
-              <div>
-                <div className="text-xs text-muted-foreground mb-1">Краткая выжимка</div>
-                <p className="text-sm">{m.summary}</p>
-              </div>
-            )}
-            {keyPoints.length > 0 && (
-              <div>
-                <div className="text-xs text-muted-foreground mb-2">Ключевые тезисы</div>
-                <ul className="space-y-2">
-                  {keyPoints.map((p, i) => (
-                    <li key={i} className="text-sm border-l-2 border-muted pl-3">
-                      {p.timecode && <span className="text-xs text-primary mr-2">{p.timecode}</span>}
-                      <span className="font-medium">{p.thesis}</span>
-                      {p.quote && <div className="text-muted-foreground italic mt-1">«{p.quote}»</div>}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {Array.isArray(m.transcript_segments) && m.transcript_segments.length > 0 && (
-              <details className="text-xs" open>
-                <summary className="cursor-pointer text-muted-foreground">Транскрипт с таймкодами ({m.transcript_segments.length})</summary>
-                <div className="mt-2 max-h-80 overflow-auto space-y-1">
-                  {(m.transcript_segments as any[]).map((s, i) => {
-                    const tc = formatTC(s.start);
-                    const link = m.external_id ? `https://www.youtube.com/watch?v=${m.external_id}&t=${Math.floor(s.start)}s` : null;
-                    return (
-                      <div key={i} className="flex gap-2">
-                        {link ? (
-                          <a href={link} target="_blank" rel="noreferrer" className="font-mono text-primary shrink-0 w-14">{tc}</a>
-                        ) : (
-                          <span className="font-mono text-muted-foreground shrink-0 w-14">{tc}</span>
-                        )}
-                        <span>{s.text}</span>
-                      </div>
-                    );
-                  })}
+        {!isTelegram && (
+          /* Блок А: Источник */
+          <Card className="border-l-4 border-l-muted-foreground/30">
+            <CardHeader>
+              <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Блок А — Источник</div>
+              <CardTitle className="font-serif">Факты автора</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!m.summary && (
+                <Button size="sm" onClick={() => runAnalyze.mutate()} disabled={runAnalyze.isPending}>
+                  {runAnalyze.isPending ? "Анализирую..." : "Проанализировать"}
+                </Button>
+              )}
+              {m.summary && (
+                <div>
+                  <div className="text-xs text-muted-foreground mb-1">Краткая выжимка</div>
+                  <p className="text-sm">{m.summary}</p>
                 </div>
-              </details>
-            )}
-            {m.raw_transcript && (!Array.isArray(m.transcript_segments) || m.transcript_segments.length === 0) && (
-              <details className="text-xs">
-                <summary className="cursor-pointer text-muted-foreground">Полный транскрипт</summary>
-                <div className="mt-2 whitespace-pre-wrap text-muted-foreground max-h-64 overflow-auto">{m.raw_transcript}</div>
-              </details>
-            )}
-          </CardContent>
-        </Card>
+              )}
+              {keyPoints.length > 0 && (
+                <div>
+                  <div className="text-xs text-muted-foreground mb-2">Ключевые тезисы</div>
+                  <ul className="space-y-2">
+                    {keyPoints.map((p, i) => (
+                      <li key={i} className="text-sm border-l-2 border-muted pl-3">
+                        {p.timecode && <span className="text-xs text-primary mr-2">{p.timecode}</span>}
+                        <span className="font-medium">{p.thesis}</span>
+                        {p.quote && <div className="text-muted-foreground italic mt-1">«{p.quote}»</div>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {Array.isArray(m.transcript_segments) && m.transcript_segments.length > 0 && (
+                <details className="text-xs" open>
+                  <summary className="cursor-pointer text-muted-foreground">Транскрипт с таймкодами ({m.transcript_segments.length})</summary>
+                  <div className="mt-2 max-h-80 overflow-auto space-y-1">
+                    {(m.transcript_segments as any[]).map((s, i) => {
+                      const tc = formatTC(s.start);
+                      const link = m.external_id ? `https://www.youtube.com/watch?v=${m.external_id}&t=${Math.floor(s.start)}s` : null;
+                      return (
+                        <div key={i} className="flex gap-2">
+                          {link ? (
+                            <a href={link} target="_blank" rel="noreferrer" className="font-mono text-primary shrink-0 w-14">{tc}</a>
+                          ) : (
+                            <span className="font-mono text-muted-foreground shrink-0 w-14">{tc}</span>
+                          )}
+                          <span>{s.text}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </details>
+              )}
+              {m.raw_transcript && (!Array.isArray(m.transcript_segments) || m.transcript_segments.length === 0) && (
+                <details className="text-xs">
+                  <summary className="cursor-pointer text-muted-foreground">Полный транскрипт</summary>
+                  <div className="mt-2 whitespace-pre-wrap text-muted-foreground max-h-64 overflow-auto">{m.raw_transcript}</div>
+                </details>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Блок Б: Эксперт */}
         <Card className="border-l-4 border-l-accent">

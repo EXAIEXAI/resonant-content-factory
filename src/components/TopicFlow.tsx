@@ -166,6 +166,10 @@ export function TopicFlow({ id }: { id: string }) {
         </div>
         <h2 className="font-serif text-xl sm:text-2xl">{topic.chosen_angle ?? topic.title}</h2>
         {topic.chosen_angle && <p className="text-sm text-muted-foreground mt-1">Общая тема: {topic.title}</p>}
+        <Button size="sm" variant="outline" className="mt-3" disabled={exporting} onClick={runExport}>
+          {exporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+          Выгрузить тему архивом
+        </Button>
       </div>
 
       {/* Шаг 1 — подбор роликов */}

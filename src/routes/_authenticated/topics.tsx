@@ -29,21 +29,31 @@ export const Route = createFileRoute("/_authenticated/topics")({
   component: TopicsPage,
 });
 
-export const topicStatusLabels: Record<string, string> = {
-  draft: "Новая",
-  materials_selected: "Ролики утверждены",
-  angles_ready: "10 тем предложены",
-  angle_chosen: "Тема выбрана",
-  essay_draft: "Эссе на редактуре",
-  essay_ready: "Эссе подтверждено",
-  script_draft: "Сценарий на редактуре",
-  done: "Сценарий готов",
-};
+export { topicStatusLabels } from "@/lib/ui-labels-topics";
 
 function TopicsPage() {
   const [openTopicId, setOpenTopicId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [exporting, setExporting] = useState<string | null>(null);
+  const exportBundle = useServerFn(exportTopicsBundle);
   const qc = useQueryClient();
+
+  const runExport = async (ids: string[] | null, name: string, key: string) => {
+    setExporting(key);
+    try {
+      const res = await exportBundle({ data: { topicIds: ids } });
+      if (!res.topics.length) {
+        toast.error("Нечего выгружать");
+        return;
+      }
+      await downloadTopicsArchive(res.topics, name);
+      toast.success("Архив собран: PDF + Markdown + JSON + ссылки");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Не удалось собрать архив");
+    } finally {
+      setExporting(null);
+    }
+  };
 
   const { data: topics } = useQuery({
     queryKey: ["topics"],

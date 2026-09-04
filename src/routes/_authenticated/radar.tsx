@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState, useMemo } from "react";
 import { Plus } from "lucide-react";
 import { computeScore } from "@/lib/scoring";
@@ -44,9 +45,9 @@ function RadarPage() {
     return map;
   }, [positions]);
 
-  const ranked = useMemo(() => {
+  const { youtubeRanked, telegramRanked } = useMemo(() => {
     const chMap = new Map((channels ?? []).map(c => [c.id, c]));
-    const list = (materials ?? [])
+    const enriched = (materials ?? [])
       .filter(m => m.source_type !== "youtube_saved")
       .map(m => {
         const ch = m.channel_id ? chMap.get(m.channel_id) : null;
@@ -54,7 +55,13 @@ function RadarPage() {
         return { ...m, computedScore: score, factors, breakdown, channel: ch, subscribers: ch?.subscribers ?? 1000, commentCount: commentCounts.get(m.id) ?? 0 };
       })
       .sort((a, b) => b.computedScore - a.computedScore);
-    return list.map((m, i) => ({ ...m, rank: i + 1, total: list.length }));
+    const rank = (list: typeof enriched) => list.map((m, i) => ({ ...m, rank: i + 1, total: list.length }));
+    const isTg = (m: (typeof enriched)[number]) =>
+      m.source_type === "telegram_channel" || m.source_type === "telegram";
+    return {
+      youtubeRanked: rank(enriched.filter(m => !isTg(m))),
+      telegramRanked: rank(enriched.filter(isTg)),
+    };
   }, [channels, materials, commentCounts]);
 
   const [open, setOpen] = useState(false);
@@ -136,10 +143,20 @@ function RadarPage() {
         </div>
       </div>
 
-      <div className="space-y-3">
-        {ranked.map(m => <MaterialCard key={m.id} m={m} showExpertPick />)}
-        {ranked.length === 0 && <EmptyRadar />}
-      </div>
+      <Tabs defaultValue="youtube">
+        <TabsList>
+          <TabsTrigger value="youtube">YouTube ({youtubeRanked.length})</TabsTrigger>
+          <TabsTrigger value="telegram">Telegram ({telegramRanked.length})</TabsTrigger>
+        </TabsList>
+        <TabsContent value="youtube" className="space-y-3 mt-4">
+          {youtubeRanked.map(m => <MaterialCard key={m.id} m={m} showExpertPick />)}
+          {youtubeRanked.length === 0 && <EmptyRadar />}
+        </TabsContent>
+        <TabsContent value="telegram" className="space-y-3 mt-4">
+          {telegramRanked.map(m => <MaterialCard key={m.id} m={m} showExpertPick />)}
+          {telegramRanked.length === 0 && <EmptyRadar />}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

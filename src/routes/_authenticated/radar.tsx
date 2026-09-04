@@ -142,10 +142,20 @@ function RadarPage() {
         </div>
       </div>
 
-      <div className="space-y-3">
-        {ranked.map(m => <MaterialCard key={m.id} m={m} showExpertPick />)}
-        {ranked.length === 0 && <EmptyRadar />}
-      </div>
+      <Tabs defaultValue="youtube">
+        <TabsList>
+          <TabsTrigger value="youtube">YouTube ({youtubeRanked.length})</TabsTrigger>
+          <TabsTrigger value="telegram">Telegram ({telegramRanked.length})</TabsTrigger>
+        </TabsList>
+        <TabsContent value="youtube" className="space-y-3 mt-4">
+          {youtubeRanked.map(m => <MaterialCard key={m.id} m={m} showExpertPick />)}
+          {youtubeRanked.length === 0 && <EmptyRadar />}
+        </TabsContent>
+        <TabsContent value="telegram" className="space-y-3 mt-4">
+          {telegramRanked.map(m => <MaterialCard key={m.id} m={m} showExpertPick />)}
+          {telegramRanked.length === 0 && <EmptyRadar />}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

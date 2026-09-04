@@ -108,18 +108,21 @@ function MaterialPage() {
     onSuccess: () => { toast.success("Разбор готов"); qc.invalidateQueries({ queryKey: ["material", id] }); },
     onError: (e: Error) => toast.error(e.message),
   });
+  // Telegram-посты: только текст поста и комментарии, без разбора и таймкодов.
+  const isTelegram = (m?.source_type ?? "").startsWith("telegram");
   // Разбор по мастер-промту должен быть у каждого ролика, независимо от источника.
   const autoReviewRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!m || m.review_md || autoReviewRef.current === id || runReview.isPending) return;
+    if (!m || isTelegram || m.review_md || autoReviewRef.current === id || runReview.isPending) return;
     autoReviewRef.current = id;
     runReview.mutate(false);
-  }, [m, id, runReview]);
+  }, [m, id, isTelegram, runReview]);
 
   if (!m) return <div className="text-muted-foreground">Загрузка...</div>;
 
   const keyPoints = Array.isArray(m.key_points) ? m.key_points as any[] : [];
   const originalUrl = getOriginalUrl(m);
+
 
   return (
     <div className="space-y-6">
@@ -146,39 +149,58 @@ function MaterialPage() {
         )}
       </div>
 
-      {/* Разбор видео */}
-      <Card>
-        <CardHeader className="flex-row items-start justify-between gap-4 space-y-0">
-          <div>
-            <CardTitle className="font-serif">Разбор видео</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Смысловые блоки, ключевые мысли, цитаты, вывод и экспертное мнение
-            </p>
-          </div>
-          <Button
-            size="sm"
-            variant={m.review_md ? "outline" : "default"}
-            onClick={() => runReview.mutate(Boolean(m.review_md))}
-            disabled={runReview.isPending}
-          >
-            {runReview.isPending ? "Формирую..." : m.review_md ? "Пересобрать" : "Сформировать разбор"}
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {m.review_md ? (
-            <article className="prose-review max-w-none text-sm">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.review_md}</ReactMarkdown>
-            </article>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Разбор ещё не сформирован. Он готовится автоматически для сохранённых роликов и доступен по кнопке
-              «Читать обзор» в Telegram.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+      {isTelegram ? (
+        /* Текст Telegram-поста */
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-serif">Текст поста</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {m.raw_transcript ? (
+              <p className="text-sm whitespace-pre-wrap">{m.raw_transcript}</p>
+            ) : (
+              <p className="text-sm text-muted-foreground">Текст поста недоступен.</p>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {/* Разбор видео */}
+          <Card>
+            <CardHeader className="flex-row items-start justify-between gap-4 space-y-0">
+              <div>
+                <CardTitle className="font-serif">Разбор видео</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Смысловые блоки, ключевые мысли, цитаты, вывод и экспертное мнение
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant={m.review_md ? "outline" : "default"}
+                onClick={() => runReview.mutate(Boolean(m.review_md))}
+                disabled={runReview.isPending}
+              >
+                {runReview.isPending ? "Формирую..." : m.review_md ? "Пересобрать" : "Сформировать разбор"}
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {m.review_md ? (
+                <article className="prose-review max-w-none text-sm">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.review_md}</ReactMarkdown>
+                </article>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Разбор ещё не сформирован. Он готовится автоматически для сохранённых роликов и доступен по кнопке
+                  «Читать обзор» в Telegram.
+                </p>
+              )}
+            </CardContent>
+          </Card>
 
-      <ChaptersCard material={m} materialId={id} positions={positions ?? []} />
+          <ChaptersCard material={m} materialId={id} positions={positions ?? []} />
+        </>
+      )}
+
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Блок А: Источник */}
@@ -265,10 +287,13 @@ function MaterialPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label className="text-xs">Таймкод (опц.)</Label>
-                  <input className="h-8 w-full rounded-md border border-input bg-background px-2 text-sm" placeholder="00:12:30" value={pos.timecode} onChange={e => setPos({ ...pos, timecode: e.target.value })} />
-                </div>
+                {!isTelegram && (
+                  <div>
+                    <Label className="text-xs">Таймкод (опц.)</Label>
+                    <input className="h-8 w-full rounded-md border border-input bg-background px-2 text-sm" placeholder="00:12:30" value={pos.timecode} onChange={e => setPos({ ...pos, timecode: e.target.value })} />
+                  </div>
+                )}
+
               </div>
               <div>
                 <Label className="text-xs">К какому тезису</Label>

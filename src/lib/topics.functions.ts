@@ -22,21 +22,32 @@ export const suggestMaterials = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: topic } = await context.supabase.from("topics").select("*").eq("id", data.topicId).maybeSingle();
     if (!topic) throw new Error("Тема не найдена");
-    // Подбираем ролики из дайджеста; если дайджест пуст — из всех материалов.
-    const selectFields = "id, title, summary, category, channel_title, thumbnail_url, views";
-    let { data: materials } = await context.supabase
-      .from("raw_materials")
-      .select(selectFields)
-      .eq("status", "in_digest")
-      .order("engagement_score", { ascending: false })
-      .limit(200);
-    if (!materials || materials.length === 0) {
+    // Подбираем ролики из дайджеста + посты из Telegram; если пусто — из всех материалов.
+    const selectFields = "id, title, summary, category, channel_title, thumbnail_url, views, source_type";
+    const [digestRes, tgRes] = await Promise.all([
+      context.supabase
+        .from("raw_materials")
+        .select(selectFields)
+        .eq("status", "in_digest")
+        .order("engagement_score", { ascending: false })
+        .limit(200),
+      context.supabase
+        .from("raw_materials")
+        .select(selectFields)
+        .like("source_type", "telegram%")
+        .order("published_at", { ascending: false })
+        .limit(100),
+    ]);
+    let materials = [...(digestRes.data ?? []), ...(tgRes.data ?? [])];
+    const seen = new Set<string>();
+    materials = materials.filter(m => !seen.has(m.id) && seen.add(m.id));
+    if (materials.length === 0) {
       const fallback = await context.supabase
         .from("raw_materials")
         .select(selectFields)
         .order("created_at", { ascending: false })
         .limit(200);
-      materials = fallback.data;
+      materials = fallback.data ?? [];
     }
     const list = materials ?? [];
     if (list.length === 0) return { suggestions: [] as any[] };

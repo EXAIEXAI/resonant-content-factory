@@ -202,7 +202,7 @@ function MaterialPage() {
       )}
 
 
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className={isTelegram ? "grid grid-cols-1 gap-6" : "grid lg:grid-cols-2 gap-6"}>
         {!isTelegram && (
           /* Блок А: Источник */
           <Card className="border-l-4 border-l-muted-foreground/30">

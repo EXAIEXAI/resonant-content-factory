@@ -44,9 +44,9 @@ function RadarPage() {
     return map;
   }, [positions]);
 
-  const ranked = useMemo(() => {
+  const { youtubeRanked, telegramRanked } = useMemo(() => {
     const chMap = new Map((channels ?? []).map(c => [c.id, c]));
-    const list = (materials ?? [])
+    const enriched = (materials ?? [])
       .filter(m => m.source_type !== "youtube_saved")
       .map(m => {
         const ch = m.channel_id ? chMap.get(m.channel_id) : null;
@@ -54,7 +54,13 @@ function RadarPage() {
         return { ...m, computedScore: score, factors, breakdown, channel: ch, subscribers: ch?.subscribers ?? 1000, commentCount: commentCounts.get(m.id) ?? 0 };
       })
       .sort((a, b) => b.computedScore - a.computedScore);
-    return list.map((m, i) => ({ ...m, rank: i + 1, total: list.length }));
+    const rank = (list: typeof enriched) => list.map((m, i) => ({ ...m, rank: i + 1, total: list.length }));
+    const isTg = (m: (typeof enriched)[number]) =>
+      m.source_type === "telegram_channel" || m.source_type === "telegram";
+    return {
+      youtubeRanked: rank(enriched.filter(m => !isTg(m))),
+      telegramRanked: rank(enriched.filter(isTg)),
+    };
   }, [channels, materials, commentCounts]);
 
   const [open, setOpen] = useState(false);

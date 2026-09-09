@@ -537,38 +537,83 @@ function IntegrationsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <ListVideo className="h-4 w-4" /> Плейлист «Смотреть в контент-заводе»
+            <ListVideo className="h-4 w-4" /> Плейлисты YouTube
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm text-muted-foreground space-y-1">
             <p className="text-foreground font-medium">Как добавлять ролики без копирования ссылок</p>
-            <p>1. Создайте на YouTube плейлист (например, «Контент-завод») с доступом «Открытый» или «Доступ по ссылке».</p>
-            <p>2. Под любым видео жмите «Сохранить» → выберите этот плейлист. На телефоне — «Поделиться» → «Сохранить в плейлист».</p>
-            <p>3. Вставьте ссылку на плейлист ниже. Приложение само заберёт ролики (проверка каждый час и по кнопке).</p>
-            <p className="text-xs">Личный список «Смотреть позже» YouTube закрыт для внешних приложений, поэтому используется обычный плейлист.</p>
+            <p>1. Создайте на YouTube один или несколько плейлистов с доступом «Открытый» или «Доступ по ссылке».</p>
+            <p>2. Под любым видео жмите «Сохранить» → выберите нужный плейлист.</p>
+            <p>3. Добавьте плейлисты ниже и задайте каждому тег — он будет виден на карточке ролика.</p>
           </div>
-          <div className="grid gap-2 sm:max-w-xl">
-            <Label htmlFor="playlist">Ссылка на плейлист или его ID</Label>
-            <Input
-              id="playlist"
-              value={playlist}
-              onChange={e => setPlaylist(e.target.value)}
-              placeholder="https://www.youtube.com/playlist?list=PL..."
-            />
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={() => savePlaylistM.mutate()} disabled={savePlaylistM.isPending}>
-              Сохранить плейлист
+
+          <div className="grid gap-3 sm:grid-cols-[1fr_220px_auto] sm:items-end">
+            <div className="grid gap-2">
+              <Label htmlFor="playlist">Ссылка на плейлист или его ID</Label>
+              <Input
+                id="playlist"
+                value={playlist}
+                onChange={e => setPlaylist(e.target.value)}
+                placeholder="https://www.youtube.com/playlist?list=PL..."
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="playlist-label">Тег</Label>
+              <Input
+                id="playlist-label"
+                value={playlistLabel}
+                onChange={e => setPlaylistLabel(e.target.value)}
+                placeholder="Например: Маркетинг"
+              />
+            </div>
+            <Button
+              onClick={() => addPlaylistM.mutate()}
+              disabled={addPlaylistM.isPending || !playlist.trim() || !playlistLabel.trim()}
+            >
+              Добавить
             </Button>
+          </div>
+
+          <div className="space-y-2">
+            {(playlists ?? []).map(p => (
+              <div key={p.id} className="flex flex-wrap items-center gap-2 rounded-lg border p-3">
+                <Badge variant={p.active ? "default" : "secondary"}>{p.label}</Badge>
+                <span className="font-mono text-xs text-muted-foreground break-all">{p.playlist_id}</span>
+                <div className="ml-auto flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => updatePlaylistM.mutate({ id: p.id, active: !p.active })}
+                    disabled={updatePlaylistM.isPending}
+                  >
+                    {p.active ? "Выключить" : "Включить"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => deletePlaylistM.mutate(p.id)}
+                    disabled={deletePlaylistM.isPending}
+                  >
+                    Удалить
+                  </Button>
+                </div>
+              </div>
+            ))}
+            {!(playlists ?? []).length && (
+              <p className="text-sm text-muted-foreground">Плейлисты пока не добавлены.</p>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
             <Button
               variant="outline"
               className="gap-2"
               onClick={() => watchlistM.mutate()}
-              disabled={watchlistM.isPending || !settings?.youtube_playlist_id}
+              disabled={watchlistM.isPending || !(playlists ?? []).length}
             >
               <RefreshCw className={`h-4 w-4 ${watchlistM.isPending ? "animate-spin" : ""}`} />
-              Забрать ролики из плейлиста
+              Забрать ролики из плейлистов
             </Button>
             <span className="text-sm text-muted-foreground">
               Последняя проверка: {fmt(settings?.last_sync_at)}

@@ -44,7 +44,7 @@ function DigestsPage() {
     enabled: allIds.length > 0,
     queryFn: async () => {
       const { data } = await supabase.from("raw_materials")
-        .select("id,title,url,external_id,summary,views,reactions,comments_count,engagement_score,channel_title,thumbnail_url,chapters")
+        .select("id,title,url,external_id,summary,views,reactions,comments_count,engagement_score,channel_title,thumbnail_url,chapters,published_at,created_at")
         .in("id", allIds);
       const map: Record<string, any> = {};
       (data ?? []).forEach((m: any) => { map[m.id] = m; });

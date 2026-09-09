@@ -146,7 +146,7 @@ function DigestsPage() {
               <div>
                 <CardTitle className="font-serif">{d.title}</CardTitle>
                 <div className="flex gap-2 mt-2 flex-wrap items-center">
-                  <Badge variant="outline">{(d.material_ids?.length ?? 0)} мат.</Badge>
+                  <Badge variant="outline">{active ? `${ids.length} из ${d.material_ids?.length ?? 0}` : `${d.material_ids?.length ?? 0} мат.`}</Badge>
                   <span className="text-sm text-muted-foreground flex items-center gap-1">
                     <Calendar className="w-4 h-4" />Создан {new Date(d.created_at).toLocaleString("ru")}
                   </span>
@@ -171,14 +171,14 @@ function DigestsPage() {
                 </AlertDialog>
               </div>
             </CardHeader>
-            {(d.material_ids?.length ?? 0) > 0 && (
+            {ids.length > 0 && (
               <CardContent>
-                <Accordion type="single" collapsible>
+                <Accordion type="single" collapsible defaultValue={active ? "materials" : undefined}>
                   <AccordionItem value="materials" className="border-0">
-                    <AccordionTrigger className="text-sm py-2">Показать материалы ({d.material_ids?.length})</AccordionTrigger>
+                    <AccordionTrigger className="text-sm py-2">Показать материалы ({ids.length})</AccordionTrigger>
                     <AccordionContent>
                       <ol className="space-y-3 mt-2">
-                        {(d.material_ids ?? []).map((mid, idx) => {
+                        {ids.map((mid, idx) => {
                           const m = materialsMap?.[mid];
                           if (!m) return (
                             <li key={mid} className="text-sm text-muted-foreground">#{idx + 1} — материал недоступен</li>

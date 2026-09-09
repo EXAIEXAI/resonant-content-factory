@@ -253,7 +253,7 @@ function DigestsPage() {
             )}
           </Card>
         ))}
-        {digests?.length === 0 && <Card><CardContent className="py-12 text-center text-muted-foreground">Соберите первый дайджест из накопленных материалов.</CardContent></Card>}
+        {visible.length === 0 && <Card><CardContent className="py-12 text-center text-muted-foreground">{active ? "Ничего не найдено по этим условиям." : "Соберите первый дайджест из накопленных материалов."}</CardContent></Card>}
       </div>
 
       <Dialog open={!!editing} onOpenChange={o => !o && setEditing(null)}>

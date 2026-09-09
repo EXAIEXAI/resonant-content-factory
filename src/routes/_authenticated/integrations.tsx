@@ -16,6 +16,10 @@ import {
   syncWatchlist,
   getIntegrationSettings,
   saveIntegrationSettings,
+  listPlaylists,
+  addPlaylist,
+  updatePlaylist,
+  deletePlaylist,
 } from "@/lib/youtube.functions";
 import { checkDrive } from "@/lib/gdrive.functions";
 import { getGoogleStatus, startGoogleConnect, disconnectGoogle } from "@/lib/google.functions";

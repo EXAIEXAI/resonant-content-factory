@@ -52,6 +52,7 @@ export async function syncWatchlistPlaylist(
   supabase: AnyClient,
   userId: string,
   playlistId: string,
+  playlistLabel?: string | null,
 ): Promise<WatchlistSyncResult> {
   const token = await getYoutubeAuth(userId);
   const res: WatchlistSyncResult = { playlistId, apiReturned: 0, skippedDuplicates: 0, added: 0, addedIds: [], errors: [] };

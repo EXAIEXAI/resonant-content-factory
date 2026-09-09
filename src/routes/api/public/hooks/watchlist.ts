@@ -11,18 +11,18 @@ export const Route = createFileRoute("/api/public/hooks/watchlist")({
         const { sendMaterialsNow } = await import("@/lib/telegram.server");
 
         const { data: rows, error } = await supabaseAdmin
-          .from("integration_settings")
-          .select("user_id, youtube_playlist_id")
-          .not("youtube_playlist_id", "is", null)
+          .from("youtube_playlists")
+          .select("user_id, playlist_id, label")
+          .eq("active", true)
           .eq("user_id", WORKSPACE_OWNER_ID);
         if (error) return Response.json({ error: error.message }, { status: 500 });
 
         const results = [];
         for (const s of rows ?? []) {
-          const playlistId = s.youtube_playlist_id?.trim();
+          const playlistId = s.playlist_id?.trim();
           if (!playlistId) continue;
           try {
-            const r = await syncWatchlistPlaylist(supabaseAdmin, s.user_id, playlistId);
+            const r = await syncWatchlistPlaylist(supabaseAdmin, s.user_id, playlistId, s.label);
 
             await supabaseAdmin
               .from("integration_settings")

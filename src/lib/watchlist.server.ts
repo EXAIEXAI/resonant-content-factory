@@ -52,6 +52,7 @@ export async function syncWatchlistPlaylist(
   supabase: AnyClient,
   userId: string,
   playlistId: string,
+  playlistLabel?: string | null,
 ): Promise<WatchlistSyncResult> {
   const token = await getYoutubeAuth(userId);
   const res: WatchlistSyncResult = { playlistId, apiReturned: 0, skippedDuplicates: 0, added: 0, addedIds: [], errors: [] };
@@ -160,6 +161,8 @@ export async function syncWatchlistPlaylist(
             drive_file_id: driveFileId,
             drive_file_url: driveFileUrl,
             is_manual: true,
+            playlist_id: playlistId,
+            playlist_label: playlistLabel ?? null,
             source_type: "youtube_saved",
             status: "found",
             engagement_score: 0,

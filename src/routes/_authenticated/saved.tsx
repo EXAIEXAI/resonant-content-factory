@@ -30,6 +30,7 @@ function SavedPage() {
   const qc = useQueryClient();
   const sync = useServerFn(syncWatchlist);
   const [tag, setTag] = useState<string>("all");
+  const { query, setQuery, range, setRange } = useMaterialFilters();
 
   const { data: materials } = useQuery({
     queryKey: ["materials-saved"],

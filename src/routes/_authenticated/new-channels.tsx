@@ -79,10 +79,10 @@ function NewChannelsPage() {
       })
       .sort((a, b) => b.computedScore - a.computedScore);
     return {
-      ranked: list.map((m, i) => ({ ...m, rank: i + 1, total: list.length })),
+      ranked: filterMaterials(list.map((m, i) => ({ ...m, rank: i + 1, total: list.length })), query, range),
       newChannels: fresh,
     };
-  }, [channels, materials, commentCounts]);
+  }, [channels, materials, commentCounts, query, range]);
 
   return (
     <div className="space-y-6">
@@ -93,6 +93,8 @@ function NewChannelsPage() {
           {newChannels.length > 0 ? ` · каналов: ${newChannels.length}` : ""}
         </p>
       </div>
+
+      <MaterialFilters query={query} setQuery={setQuery} range={range} setRange={setRange} />
 
       <div className="space-y-3">
         {ranked.map(m => (

@@ -52,6 +52,45 @@ function DigestsPage() {
     },
   });
 
+  const { query, setQuery, range, setRange } = useMaterialFilters();
+  const active = !!query.trim() || !!range?.from;
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const from = range?.from ? new Date(range.from).setHours(0, 0, 0, 0) : null;
+    const to = range?.to
+      ? new Date(range.to).setHours(23, 59, 59, 999)
+      : range?.from ? new Date(range.from).setHours(23, 59, 59, 999) : null;
+
+    return (digests ?? [])
+      .map(d => {
+        const ids = (d.material_ids ?? []).filter(mid => {
+          const m = materialsMap?.[mid];
+          if (!q && !from && !to) return true;
+          if (q) {
+            const hay = [d.title, m?.title, m?.summary, m?.channel_title].filter(Boolean).join(" ").toLowerCase();
+            if (!hay.includes(q)) return false;
+          }
+          if (from || to) {
+            const t = new Date(m?.published_at ?? m?.created_at ?? d.created_at).getTime();
+            if (from && t < from) return false;
+            if (to && t > to) return false;
+          }
+          return true;
+        });
+        return { d, ids };
+      })
+      .filter(({ d, ids }) => {
+        if (!active) return true;
+        if (ids.length > 0) return true;
+        // Keep digests matched by their own title / creation date.
+        const titleHit = q ? d.title.toLowerCase().includes(q) : true;
+        const t = new Date(d.created_at).getTime();
+        const dateHit = (!from || t >= from) && (!to || t <= to);
+        return titleHit && dateHit && (d.material_ids?.length ?? 0) === 0;
+      });
+  }, [digests, materialsMap, query, range, active]);
+
   const [editing, setEditing] = useState<Digest | null>(null);
   const buildWeekly = useServerFn(buildWeeklyDigest);
 

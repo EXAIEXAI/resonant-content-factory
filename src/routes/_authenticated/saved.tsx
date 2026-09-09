@@ -8,7 +8,8 @@ import { MaterialCard } from "@/components/MaterialCard";
 import { computeScore } from "@/lib/scoring";
 import { syncWatchlist } from "@/lib/youtube.functions";
 import { toast } from "sonner";
-import { useMemo } from "react";
+import { Badge } from "@/components/ui/badge";
+import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/saved")({
   head: () => ({

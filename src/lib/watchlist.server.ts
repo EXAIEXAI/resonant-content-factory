@@ -161,6 +161,8 @@ export async function syncWatchlistPlaylist(
             drive_file_id: driveFileId,
             drive_file_url: driveFileUrl,
             is_manual: true,
+            playlist_id: playlistId,
+            playlist_label: playlistLabel ?? null,
             source_type: "youtube_saved",
             status: "found",
             engagement_score: 0,

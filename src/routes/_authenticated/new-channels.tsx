@@ -8,6 +8,7 @@ import { Send } from "lucide-react";
 import { toast } from "sonner";
 import { computeScore } from "@/lib/scoring";
 import { MaterialCard } from "@/components/MaterialCard";
+import { MaterialFilters, useMaterialFilters, filterMaterials } from "@/components/MaterialFilters";
 
 export const Route = createFileRoute("/_authenticated/new-channels")({
   head: () => ({
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/new-channels")({
 function NewChannelsPage() {
   const qc = useQueryClient();
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const { query, setQuery, range, setRange } = useMaterialFilters();
 
   const { data: channels } = useQuery({
     queryKey: ["channels"],
@@ -77,10 +79,10 @@ function NewChannelsPage() {
       })
       .sort((a, b) => b.computedScore - a.computedScore);
     return {
-      ranked: list.map((m, i) => ({ ...m, rank: i + 1, total: list.length })),
+      ranked: filterMaterials(list.map((m, i) => ({ ...m, rank: i + 1, total: list.length })), query, range),
       newChannels: fresh,
     };
-  }, [channels, materials, commentCounts]);
+  }, [channels, materials, commentCounts, query, range]);
 
   return (
     <div className="space-y-6">
@@ -91,6 +93,8 @@ function NewChannelsPage() {
           {newChannels.length > 0 ? ` · каналов: ${newChannels.length}` : ""}
         </p>
       </div>
+
+      <MaterialFilters query={query} setQuery={setQuery} range={range} setRange={setRange} />
 
       <div className="space-y-3">
         {ranked.map(m => (

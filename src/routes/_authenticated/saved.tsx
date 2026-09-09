@@ -10,6 +10,7 @@ import { syncWatchlist } from "@/lib/youtube.functions";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { useMemo, useState } from "react";
+import { MaterialFilters, useMaterialFilters, filterMaterials } from "@/components/MaterialFilters";
 
 export const Route = createFileRoute("/_authenticated/saved")({
   head: () => ({
@@ -29,6 +30,7 @@ function SavedPage() {
   const qc = useQueryClient();
   const sync = useServerFn(syncWatchlist);
   const [tag, setTag] = useState<string>("all");
+  const { query, setQuery, range, setRange } = useMaterialFilters();
 
   const { data: materials } = useQuery({
     queryKey: ["materials-saved"],
@@ -50,13 +52,15 @@ function SavedPage() {
 
   const list = useMemo(
     () =>
-      (materials ?? [])
-        .filter(m => tag === "all" || m.playlist_label === tag)
-        .map(m => {
-          const { score, factors } = computeScore({ ...m, subscribers: 1000 });
-          return { ...m, computedScore: score, factors };
-        }),
-    [materials, tag],
+      filterMaterials(
+        (materials ?? []).filter(m => tag === "all" || m.playlist_label === tag),
+        query,
+        range,
+      ).map(m => {
+        const { score, factors } = computeScore({ ...m, subscribers: 1000 });
+        return { ...m, computedScore: score, factors };
+      }),
+    [materials, tag, query, range],
   );
 
   const pull = useMutation({
@@ -81,6 +85,8 @@ function SavedPage() {
           {pull.isPending ? "Забираю..." : "Забрать из плейлиста"}
         </Button>
       </div>
+
+      <MaterialFilters query={query} setQuery={setQuery} range={range} setRange={setRange} />
 
       {tags.length > 0 && (
         <div className="flex flex-wrap gap-2">

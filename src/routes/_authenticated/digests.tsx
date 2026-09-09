@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { MaterialFilters, useMaterialFilters } from "@/components/MaterialFilters";
 import { Calendar, Pencil, Trash2, RefreshCw, ExternalLink, Eye, ThumbsUp, MessageSquare } from "lucide-react";
 import { buildWeeklyDigest } from "@/lib/digests.functions";
 import { formatTimecode as fmtTC } from "@/lib/youtube";
@@ -43,13 +44,52 @@ function DigestsPage() {
     enabled: allIds.length > 0,
     queryFn: async () => {
       const { data } = await supabase.from("raw_materials")
-        .select("id,title,url,external_id,summary,views,reactions,comments_count,engagement_score,channel_title,thumbnail_url,chapters")
+        .select("id,title,url,external_id,summary,views,reactions,comments_count,engagement_score,channel_title,thumbnail_url,chapters,published_at,created_at")
         .in("id", allIds);
       const map: Record<string, any> = {};
       (data ?? []).forEach((m: any) => { map[m.id] = m; });
       return map;
     },
   });
+
+  const { query, setQuery, range, setRange } = useMaterialFilters();
+  const active = !!query.trim() || !!range?.from;
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const from = range?.from ? new Date(range.from).setHours(0, 0, 0, 0) : null;
+    const to = range?.to
+      ? new Date(range.to).setHours(23, 59, 59, 999)
+      : range?.from ? new Date(range.from).setHours(23, 59, 59, 999) : null;
+
+    return (digests ?? [])
+      .map(d => {
+        const ids = (d.material_ids ?? []).filter(mid => {
+          const m = materialsMap?.[mid];
+          if (!q && !from && !to) return true;
+          if (q) {
+            const hay = [d.title, m?.title, m?.summary, m?.channel_title].filter(Boolean).join(" ").toLowerCase();
+            if (!hay.includes(q)) return false;
+          }
+          if (from || to) {
+            const t = new Date(m?.published_at ?? m?.created_at ?? d.created_at).getTime();
+            if (from && t < from) return false;
+            if (to && t > to) return false;
+          }
+          return true;
+        });
+        return { d, ids };
+      })
+      .filter(({ d, ids }) => {
+        if (!active) return true;
+        if (ids.length > 0) return true;
+        // Keep digests matched by their own title / creation date.
+        const titleHit = q ? d.title.toLowerCase().includes(q) : true;
+        const t = new Date(d.created_at).getTime();
+        const dateHit = (!from || t >= from) && (!to || t <= to);
+        return titleHit && dateHit && (d.material_ids?.length ?? 0) === 0;
+      });
+  }, [digests, materialsMap, query, range, active]);
 
   const [editing, setEditing] = useState<Digest | null>(null);
   const buildWeekly = useServerFn(buildWeeklyDigest);
@@ -97,14 +137,16 @@ function DigestsPage() {
         </Button>
       </div>
 
+      <MaterialFilters query={query} setQuery={setQuery} range={range} setRange={setRange} />
+
       <div className="grid gap-4">
-        {(digests ?? []).map(d => (
+        {visible.map(({ d, ids }) => (
           <Card key={d.id}>
             <CardHeader className="flex flex-row items-start justify-between space-y-0">
               <div>
                 <CardTitle className="font-serif">{d.title}</CardTitle>
                 <div className="flex gap-2 mt-2 flex-wrap items-center">
-                  <Badge variant="outline">{(d.material_ids?.length ?? 0)} мат.</Badge>
+                  <Badge variant="outline">{active ? `${ids.length} из ${d.material_ids?.length ?? 0}` : `${d.material_ids?.length ?? 0} мат.`}</Badge>
                   <span className="text-sm text-muted-foreground flex items-center gap-1">
                     <Calendar className="w-4 h-4" />Создан {new Date(d.created_at).toLocaleString("ru")}
                   </span>
@@ -129,14 +171,14 @@ function DigestsPage() {
                 </AlertDialog>
               </div>
             </CardHeader>
-            {(d.material_ids?.length ?? 0) > 0 && (
+            {ids.length > 0 && (
               <CardContent>
-                <Accordion type="single" collapsible>
+                <Accordion type="single" collapsible defaultValue={active ? "materials" : undefined}>
                   <AccordionItem value="materials" className="border-0">
-                    <AccordionTrigger className="text-sm py-2">Показать материалы ({d.material_ids?.length})</AccordionTrigger>
+                    <AccordionTrigger className="text-sm py-2">Показать материалы ({ids.length})</AccordionTrigger>
                     <AccordionContent>
                       <ol className="space-y-3 mt-2">
-                        {(d.material_ids ?? []).map((mid, idx) => {
+                        {ids.map((mid, idx) => {
                           const m = materialsMap?.[mid];
                           if (!m) return (
                             <li key={mid} className="text-sm text-muted-foreground">#{idx + 1} — материал недоступен</li>
@@ -211,7 +253,7 @@ function DigestsPage() {
             )}
           </Card>
         ))}
-        {digests?.length === 0 && <Card><CardContent className="py-12 text-center text-muted-foreground">Соберите первый дайджест из накопленных материалов.</CardContent></Card>}
+        {visible.length === 0 && <Card><CardContent className="py-12 text-center text-muted-foreground">{active ? "Ничего не найдено по этим условиям." : "Соберите первый дайджест из накопленных материалов."}</CardContent></Card>}
       </div>
 
       <Dialog open={!!editing} onOpenChange={o => !o && setEditing(null)}>

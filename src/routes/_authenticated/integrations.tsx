@@ -170,23 +170,13 @@ function IntegrationsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const savePlaylistM = useMutation({
-    mutationFn: () => saveSettings({ data: { playlist_id: playlist.trim() || null } }),
-    onSuccess: () => {
-      toast.success("Плейлист сохранён");
-      addLog(`Плейлист сохранён: ${playlist.trim() || "—"}`);
-      qc.invalidateQueries({ queryKey: ["integration_settings"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
   const watchlistM = useMutation({
     mutationFn: () => runWatchlist(),
     onSuccess: r => {
-      addLog(
-        `Плейлист: вернул API ${r.apiReturned}, дублей ${r.skippedDuplicates}, добавлено ${r.added}${r.errors.length ? `, ошибок ${r.errors.length}` : ""}`,
+      r.results.forEach(x =>
+        addLog(`• ${x.label}: вернул API ${x.apiReturned}, дублей ${x.skippedDuplicates}, добавлено ${x.added}${x.errors.length ? `, ошибок ${x.errors.length}` : ""}`),
       );
-      toast.success(`Из плейлиста добавлено: ${r.added}`);
+      toast.success(`Из плейлистов добавлено: ${r.added}`);
       qc.invalidateQueries({ queryKey: ["recent_materials"] });
     },
     onError: (e: Error) => {

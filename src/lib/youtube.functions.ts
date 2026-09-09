@@ -255,27 +255,114 @@ export const syncAllSources = createServerFn({ method: "POST" })
     return await syncAllSourcesWith(context.supabase, WORKSPACE_OWNER_ID, data?.sinceDays ?? null);
   });
 
-/** Забирает ролики из личного плейлиста YouTube («Сохранить» → плейлист) в материалы. */
+/** Список подключённых плейлистов. */
+export const listPlaylists = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("youtube_playlists")
+      .select("*")
+      .eq("user_id", WORKSPACE_OWNER_ID)
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+/** Добавить плейлист с тегом. */
+export const addPlaylist = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { url: string; label: string }) =>
+    z.object({ url: z.string().min(3).max(500), label: z.string().min(1).max(100) }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const playlistId = extractPlaylistId(data.url) ?? data.url.trim();
+    if (!playlistId) throw new Error("Не удалось распознать плейлист");
+    const { data: row, error } = await context.supabase
+      .from("youtube_playlists")
+      .upsert(
+        { user_id: WORKSPACE_OWNER_ID, playlist_id: playlistId, label: data.label.trim(), active: true },
+        { onConflict: "user_id,playlist_id" },
+      )
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
+/** Изменить тег/активность плейлиста. */
+export const updatePlaylist = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { id: string; label?: string; active?: boolean }) =>
+    z.object({ id: z.string().uuid(), label: z.string().min(1).max(100).optional(), active: z.boolean().optional() }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const patch: Record<string, unknown> = {};
+    if (data.label !== undefined) patch.label = data.label.trim();
+    if (data.active !== undefined) patch.active = data.active;
+    const { error } = await context.supabase.from("youtube_playlists").update(patch as never).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Удалить плейлист (материалы остаются). */
+export const deletePlaylist = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { id: string }) => z.object({ id: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.from("youtube_playlists").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Забирает ролики из всех подключённых плейлистов YouTube в материалы. */
 export const syncWatchlist = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context;
     const userId = WORKSPACE_OWNER_ID;
-    const { data: settings } = await supabase
-      .from("integration_settings")
-      .select("youtube_playlist_id")
+    const { data: playlists } = await supabase
+      .from("youtube_playlists")
+      .select("playlist_id, label, active")
       .eq("user_id", userId)
-      .maybeSingle();
-    const playlistId = settings?.youtube_playlist_id?.trim();
-    if (!playlistId) throw new Error("Плейлист не указан — сохраните ссылку на плейлист в настройках интеграций");
+      .eq("active", true);
+
+    const list = (playlists ?? []).map(p => ({ id: p.playlist_id, label: p.label }));
+    if (!list.length) throw new Error("Плейлисты не добавлены — добавьте хотя бы один в настройках интеграций");
+
     const { syncWatchlistPlaylist } = await import("./watchlist.server");
-    const result = await syncWatchlistPlaylist(supabase, userId, playlistId);
+    const results = [] as Array<Awaited<ReturnType<typeof syncWatchlistPlaylist>> & { label: string }>;
+    for (const p of list) {
+      try {
+        const r = await syncWatchlistPlaylist(supabase, userId, p.id, p.label);
+        results.push({ ...r, label: p.label });
+      } catch (e) {
+        results.push({
+          playlistId: p.id,
+          label: p.label,
+          apiReturned: 0,
+          skippedDuplicates: 0,
+          added: 0,
+          addedIds: [],
+          errors: [e instanceof Error ? e.message : String(e)],
+        });
+      }
+    }
+
+    const total = results.reduce(
+      (acc, r) => ({
+        apiReturned: acc.apiReturned + r.apiReturned,
+        skippedDuplicates: acc.skippedDuplicates + r.skippedDuplicates,
+        added: acc.added + r.added,
+        errors: [...acc.errors, ...r.errors],
+      }),
+      { apiReturned: 0, skippedDuplicates: 0, added: 0, errors: [] as string[] },
+    );
 
     await supabase
       .from("integration_settings")
-      .update({ last_sync_at: new Date().toISOString(), last_sync_count: result.added })
+      .update({ last_sync_at: new Date().toISOString(), last_sync_count: total.added })
       .eq("user_id", userId);
-    return result;
+    return { ...total, results };
   });
 
 

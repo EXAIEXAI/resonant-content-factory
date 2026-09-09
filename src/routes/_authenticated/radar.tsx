@@ -14,6 +14,7 @@ import { computeScore } from "@/lib/scoring";
 import { MaterialCard } from "@/components/MaterialCard";
 import { ingestUrl, refreshAllMaterials } from "@/lib/youtube.functions";
 import { CreateTopicDialog } from "@/components/CreateTopicDialog";
+import { MaterialFilters, useMaterialFilters, filterMaterials } from "@/components/MaterialFilters";
 import { toast } from "sonner";
 
 
@@ -45,6 +46,8 @@ function RadarPage() {
     return map;
   }, [positions]);
 
+  const { query, setQuery, range, setRange } = useMaterialFilters();
+
   const { youtubeRanked, telegramRanked } = useMemo(() => {
     const chMap = new Map((channels ?? []).map(c => [c.id, c]));
     const enriched = (materials ?? [])
@@ -59,10 +62,10 @@ function RadarPage() {
     const isTg = (m: (typeof enriched)[number]) =>
       m.source_type === "telegram_channel" || m.source_type === "telegram";
     return {
-      youtubeRanked: rank(enriched.filter(m => !isTg(m))),
-      telegramRanked: rank(enriched.filter(isTg)),
+      youtubeRanked: filterMaterials(rank(enriched.filter(m => !isTg(m))), query, range),
+      telegramRanked: filterMaterials(rank(enriched.filter(isTg)), query, range),
     };
-  }, [channels, materials, commentCounts]);
+  }, [channels, materials, commentCounts, query, range]);
 
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState("");

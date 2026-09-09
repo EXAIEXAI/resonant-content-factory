@@ -108,9 +108,40 @@ function IntegrationsPage() {
   const { data: settings } = useQuery({ queryKey: ["integration_settings"], queryFn: () => loadSettings() });
 
   const [playlist, setPlaylist] = useState("");
-  useEffect(() => {
-    if (settings?.youtube_playlist_id) setPlaylist(settings.youtube_playlist_id);
-  }, [settings?.youtube_playlist_id]);
+  const [playlistLabel, setPlaylistLabel] = useState("");
+
+  const loadPlaylists = useServerFn(listPlaylists);
+  const addPl = useServerFn(addPlaylist);
+  const updPl = useServerFn(updatePlaylist);
+  const delPl = useServerFn(deletePlaylist);
+  const { data: playlists } = useQuery({ queryKey: ["yt_playlists"], queryFn: () => loadPlaylists() });
+
+  const addPlaylistM = useMutation({
+    mutationFn: () => addPl({ data: { url: playlist.trim(), label: playlistLabel.trim() } }),
+    onSuccess: () => {
+      toast.success("Плейлист добавлен");
+      addLog(`Плейлист добавлен: ${playlistLabel.trim()}`);
+      setPlaylist("");
+      setPlaylistLabel("");
+      qc.invalidateQueries({ queryKey: ["yt_playlists"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const updatePlaylistM = useMutation({
+    mutationFn: (v: { id: string; label?: string; active?: boolean }) => updPl({ data: v }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["yt_playlists"] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deletePlaylistM = useMutation({
+    mutationFn: (id: string) => delPl({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Плейлист удалён");
+      qc.invalidateQueries({ queryKey: ["yt_playlists"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const [ytKey, setYtKey] = useState("");
   const [driveFolder, setDriveFolder] = useState("");

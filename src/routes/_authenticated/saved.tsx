@@ -81,8 +81,37 @@ function SavedPage() {
         </Button>
       </div>
 
+      {tags.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          <Badge
+            variant={tag === "all" ? "default" : "secondary"}
+            className="cursor-pointer"
+            onClick={() => setTag("all")}
+          >
+            Все
+          </Badge>
+          {tags.map(t => (
+            <Badge
+              key={t}
+              variant={tag === t ? "default" : "secondary"}
+              className="cursor-pointer"
+              onClick={() => setTag(t)}
+            >
+              {t}
+            </Badge>
+          ))}
+        </div>
+      )}
+
       <div className="space-y-3">
-        {list.map(m => <MaterialCard key={m.id} m={m} />)}
+        {list.map(m => (
+          <div key={m.id} className="space-y-1">
+            {m.playlist_label && (
+              <Badge variant="outline" className="text-xs">{m.playlist_label}</Badge>
+            )}
+            <MaterialCard m={m} />
+          </div>
+        ))}
         {list.length === 0 && (
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground text-sm">

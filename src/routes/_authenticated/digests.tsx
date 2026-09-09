@@ -137,8 +137,10 @@ function DigestsPage() {
         </Button>
       </div>
 
+      <MaterialFilters query={query} setQuery={setQuery} range={range} setRange={setRange} />
+
       <div className="grid gap-4">
-        {(digests ?? []).map(d => (
+        {visible.map(({ d, ids }) => (
           <Card key={d.id}>
             <CardHeader className="flex flex-row items-start justify-between space-y-0">
               <div>

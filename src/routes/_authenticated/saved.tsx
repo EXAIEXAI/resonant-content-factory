@@ -86,6 +86,8 @@ function SavedPage() {
         </Button>
       </div>
 
+      <MaterialFilters query={query} setQuery={setQuery} range={range} setRange={setRange} />
+
       {tags.length > 0 && (
         <div className="flex flex-wrap gap-2">
           <Badge

@@ -27,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/new-channels")({
 function NewChannelsPage() {
   const qc = useQueryClient();
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const { query, setQuery, range, setRange } = useMaterialFilters();
 
   const { data: channels } = useQuery({
     queryKey: ["channels"],

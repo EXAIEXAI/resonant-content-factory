@@ -384,6 +384,8 @@ export type Database = {
           id: string
           is_manual: boolean
           key_points: Json | null
+          playlist_id: string | null
+          playlist_label: string | null
           promoted_to_radar: boolean
           published_at: string | null
           raw_transcript: string | null
@@ -417,6 +419,8 @@ export type Database = {
           id?: string
           is_manual?: boolean
           key_points?: Json | null
+          playlist_id?: string | null
+          playlist_label?: string | null
           promoted_to_radar?: boolean
           published_at?: string | null
           raw_transcript?: string | null
@@ -450,6 +454,8 @@ export type Database = {
           id?: string
           is_manual?: boolean
           key_points?: Json | null
+          playlist_id?: string | null
+          playlist_label?: string | null
           promoted_to_radar?: boolean
           published_at?: string | null
           raw_transcript?: string | null
@@ -556,6 +562,33 @@ export type Database = {
         Update: {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      youtube_playlists: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          label: string
+          playlist_id: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          label: string
+          playlist_id: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          label?: string
+          playlist_id?: string
           user_id?: string
         }
         Relationships: []

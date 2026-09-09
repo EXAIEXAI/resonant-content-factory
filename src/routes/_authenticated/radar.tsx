@@ -146,6 +146,8 @@ function RadarPage() {
         </div>
       </div>
 
+      <MaterialFilters query={query} setQuery={setQuery} range={range} setRange={setRange} />
+
       <Tabs defaultValue="youtube">
         <TabsList>
           <TabsTrigger value="youtube">YouTube ({youtubeRanked.length})</TabsTrigger>

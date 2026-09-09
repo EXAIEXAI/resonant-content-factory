@@ -10,6 +10,7 @@ import { syncWatchlist } from "@/lib/youtube.functions";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { useMemo, useState } from "react";
+import { MaterialFilters, useMaterialFilters, filterMaterials } from "@/components/MaterialFilters";
 
 export const Route = createFileRoute("/_authenticated/saved")({
   head: () => ({
@@ -50,13 +51,15 @@ function SavedPage() {
 
   const list = useMemo(
     () =>
-      (materials ?? [])
-        .filter(m => tag === "all" || m.playlist_label === tag)
-        .map(m => {
-          const { score, factors } = computeScore({ ...m, subscribers: 1000 });
-          return { ...m, computedScore: score, factors };
-        }),
-    [materials, tag],
+      filterMaterials(
+        (materials ?? []).filter(m => tag === "all" || m.playlist_label === tag),
+        query,
+        range,
+      ).map(m => {
+        const { score, factors } = computeScore({ ...m, subscribers: 1000 });
+        return { ...m, computedScore: score, factors };
+      }),
+    [materials, tag, query, range],
   );
 
   const pull = useMutation({

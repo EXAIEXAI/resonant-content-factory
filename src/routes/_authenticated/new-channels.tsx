@@ -8,6 +8,7 @@ import { Send } from "lucide-react";
 import { toast } from "sonner";
 import { computeScore } from "@/lib/scoring";
 import { MaterialCard } from "@/components/MaterialCard";
+import { MaterialFilters, useMaterialFilters, filterMaterials } from "@/components/MaterialFilters";
 
 export const Route = createFileRoute("/_authenticated/new-channels")({
   head: () => ({

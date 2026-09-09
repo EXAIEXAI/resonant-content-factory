@@ -113,6 +113,8 @@ function IntegrationsPage() {
 
   const [playlist, setPlaylist] = useState("");
   const [playlistLabel, setPlaylistLabel] = useState("");
+  const [editingPlaylistId, setEditingPlaylistId] = useState<string | null>(null);
+  const [editingPlaylistLabel, setEditingPlaylistLabel] = useState("");
 
   const loadPlaylists = useServerFn(listPlaylists);
   const addPl = useServerFn(addPlaylist);
@@ -603,7 +605,45 @@ function IntegrationsPage() {
           <div className="space-y-2">
             {(playlists ?? []).map(p => (
               <div key={p.id} className="flex flex-wrap items-center gap-2 rounded-lg border p-3">
-                <Badge variant={p.active ? "default" : "secondary"}>{p.label}</Badge>
+                {editingPlaylistId === p.id ? (
+                  <div className="flex flex-1 items-center gap-2">
+                    <Input
+                      value={editingPlaylistLabel}
+                      onChange={e => setEditingPlaylistLabel(e.target.value)}
+                      className="h-8 max-w-xs"
+                      autoFocus
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        const label = editingPlaylistLabel.trim();
+                        if (!label) return;
+                        updatePlaylistM.mutate({ id: p.id, label });
+                        setEditingPlaylistId(null);
+                      }}
+                      disabled={updatePlaylistM.isPending || !editingPlaylistLabel.trim()}
+                    >
+                      Сохранить
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setEditingPlaylistId(null)}>
+                      Отмена
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <Badge variant={p.active ? "default" : "secondary"}>{p.label}</Badge>
+                    <button
+                      type="button"
+                      className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+                      onClick={() => {
+                        setEditingPlaylistId(p.id);
+                        setEditingPlaylistLabel(p.label);
+                      }}
+                    >
+                      Переименовать
+                    </button>
+                  </>
+                )}
                 <span className="font-mono text-xs text-muted-foreground break-all">{p.playlist_id}</span>
                 <div className="ml-auto flex gap-2">
                   <Button

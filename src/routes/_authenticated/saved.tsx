@@ -27,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/saved")({
 function SavedPage() {
   const qc = useQueryClient();
   const sync = useServerFn(syncWatchlist);
+  const [tag, setTag] = useState<string>("all");
 
   const { data: materials } = useQuery({
     queryKey: ["materials-saved"],
@@ -38,13 +39,23 @@ function SavedPage() {
         .order("created_at", { ascending: false })).data ?? [],
   });
 
+  const tags = useMemo(() => {
+    const s = new Set<string>();
+    (materials ?? []).forEach(m => {
+      if (m.playlist_label) s.add(m.playlist_label);
+    });
+    return Array.from(s).sort();
+  }, [materials]);
+
   const list = useMemo(
     () =>
-      (materials ?? []).map(m => {
-        const { score, factors } = computeScore({ ...m, subscribers: 1000 });
-        return { ...m, computedScore: score, factors };
-      }),
-    [materials],
+      (materials ?? [])
+        .filter(m => tag === "all" || m.playlist_label === tag)
+        .map(m => {
+          const { score, factors } = computeScore({ ...m, subscribers: 1000 });
+          return { ...m, computedScore: score, factors };
+        }),
+    [materials, tag],
   );
 
   const pull = useMutation({

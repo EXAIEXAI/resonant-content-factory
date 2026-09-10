@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Sparkles, Check, Plus, X, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { suggestMaterials, saveTopicMaterials, generateAngles, chooseAngle, generateTopicEssay, generateTopicScript } from "@/lib/topics.functions";

@@ -259,15 +259,23 @@ export function TopicFlow({ id }: { id: string }) {
               <div className="border rounded-md p-3 space-y-2 bg-muted/20">
                 <Label className="text-xs">Добавить ролик вручную (поиск по названию)</Label>
                 <div className="flex gap-2">
-                  <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Начните вводить название..." onKeyDown={e => { if (e.key === "Enter") runSearch(); }} />
-                  <Button variant="outline" onClick={runSearch}>Найти</Button>
+                  <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Начните вводить название..." onKeyDown={e => { if (e.key === "Enter") void runSearch(); }} />
+                  <Button variant="outline" onClick={() => void runSearch()} disabled={searching}>
+                    {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : "Найти"}
+                  </Button>
                 </div>
                 {searchResults.map(m => (
                   <div key={m.id} className="flex items-center justify-between gap-2 text-sm border-t pt-2">
-                    <span className="truncate">{m.title}</span>
+                    <div className="min-w-0">
+                      <div className="truncate">{m.title}</div>
+                      {m.channel_title && <div className="text-xs text-muted-foreground truncate">{m.channel_title}</div>}
+                    </div>
                     <Button size="sm" variant="ghost" className="shrink-0" onClick={() => addManual(m)}><Plus className="w-4 h-4" /></Button>
                   </div>
                 ))}
+                {searched && !searching && searchResults.length === 0 && (
+                  <p className="text-xs text-muted-foreground border-t pt-2">Ничего не найдено по запросу «{search.trim()}».</p>
+                )}
               </div>
               {(suggested !== null || manual.length > 0) && (
                 <Button onClick={() => approve.mutate()} disabled={checked.size === 0 || approve.isPending}>

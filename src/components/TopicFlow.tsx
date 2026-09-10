@@ -90,15 +90,40 @@ export function TopicFlow({ id }: { id: string }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const runSearch = async () => {
-    if (search.trim().length < 2) return;
-    const { data } = await supabase
+  const [searching, setSearching] = useState(false);
+  const [searched, setSearched] = useState(false);
+
+  const runSearch = async (raw?: string) => {
+    const term = (raw ?? search).trim();
+    if (term.length < 2) {
+      setSearchResults([]);
+      setSearched(false);
+      return;
+    }
+    const safe = term.replace(/[%,()]/g, " ").trim();
+    if (!safe) return;
+    setSearching(true);
+    const { data, error } = await supabase
       .from("raw_materials")
-      .select("id, title, channel_title")
-      .ilike("title", `%${search.trim()}%`)
-      .limit(10);
+      .select("id, title, channel_title, summary")
+      .or(`title.ilike.%${safe}%,channel_title.ilike.%${safe}%,summary.ilike.%${safe}%`)
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .limit(20);
+    setSearching(false);
+    setSearched(true);
+    if (error) {
+      toast.error("Не удалось выполнить поиск: " + error.message);
+      return;
+    }
     setSearchResults(data ?? []);
   };
+
+  // Живой поиск с задержкой, чтобы не нужно было жать кнопку
+  useEffect(() => {
+    const t = setTimeout(() => { void runSearch(search); }, 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   const addManual = (m: any) => {
     if (manual.some(x => x.id === m.id) || checked.has(m.id)) return;

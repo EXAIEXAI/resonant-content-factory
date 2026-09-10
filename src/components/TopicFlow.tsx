@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Sparkles, Check, Plus, X, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { suggestMaterials, saveTopicMaterials, generateAngles, chooseAngle, generateTopicEssay, generateTopicScript } from "@/lib/topics.functions";
@@ -90,15 +90,40 @@ export function TopicFlow({ id }: { id: string }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const runSearch = async () => {
-    if (search.trim().length < 2) return;
-    const { data } = await supabase
+  const [searching, setSearching] = useState(false);
+  const [searched, setSearched] = useState(false);
+
+  const runSearch = async (raw?: string) => {
+    const term = (raw ?? search).trim();
+    if (term.length < 2) {
+      setSearchResults([]);
+      setSearched(false);
+      return;
+    }
+    const safe = term.replace(/[%,()]/g, " ").trim();
+    if (!safe) return;
+    setSearching(true);
+    const { data, error } = await supabase
       .from("raw_materials")
-      .select("id, title, channel_title")
-      .ilike("title", `%${search.trim()}%`)
-      .limit(10);
+      .select("id, title, channel_title, summary")
+      .or(`title.ilike.%${safe}%,channel_title.ilike.%${safe}%,summary.ilike.%${safe}%`)
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .limit(20);
+    setSearching(false);
+    setSearched(true);
+    if (error) {
+      toast.error("Не удалось выполнить поиск: " + error.message);
+      return;
+    }
     setSearchResults(data ?? []);
   };
+
+  // Живой поиск с задержкой, чтобы не нужно было жать кнопку
+  useEffect(() => {
+    const t = setTimeout(() => { void runSearch(search); }, 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   const addManual = (m: any) => {
     if (manual.some(x => x.id === m.id) || checked.has(m.id)) return;
@@ -234,15 +259,23 @@ export function TopicFlow({ id }: { id: string }) {
               <div className="border rounded-md p-3 space-y-2 bg-muted/20">
                 <Label className="text-xs">Добавить ролик вручную (поиск по названию)</Label>
                 <div className="flex gap-2">
-                  <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Начните вводить название..." onKeyDown={e => { if (e.key === "Enter") runSearch(); }} />
-                  <Button variant="outline" onClick={runSearch}>Найти</Button>
+                  <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Начните вводить название..." onKeyDown={e => { if (e.key === "Enter") void runSearch(); }} />
+                  <Button variant="outline" onClick={() => void runSearch()} disabled={searching}>
+                    {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : "Найти"}
+                  </Button>
                 </div>
                 {searchResults.map(m => (
                   <div key={m.id} className="flex items-center justify-between gap-2 text-sm border-t pt-2">
-                    <span className="truncate">{m.title}</span>
+                    <div className="min-w-0">
+                      <div className="truncate">{m.title}</div>
+                      {m.channel_title && <div className="text-xs text-muted-foreground truncate">{m.channel_title}</div>}
+                    </div>
                     <Button size="sm" variant="ghost" className="shrink-0" onClick={() => addManual(m)}><Plus className="w-4 h-4" /></Button>
                   </div>
                 ))}
+                {searched && !searching && searchResults.length === 0 && (
+                  <p className="text-xs text-muted-foreground border-t pt-2">Ничего не найдено по запросу «{search.trim()}».</p>
+                )}
               </div>
               {(suggested !== null || manual.length > 0) && (
                 <Button onClick={() => approve.mutate()} disabled={checked.size === 0 || approve.isPending}>

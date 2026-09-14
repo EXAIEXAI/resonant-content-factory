@@ -247,8 +247,9 @@ export async function downloadTopicsArchive(topics: ExportedTopic[], archiveName
     zip.file(`${dir}topic.md`, topicToMarkdown(t));
     zip.file(`${dir}topic.json`, JSON.stringify(t, null, 2));
     zip.file(`${dir}youtube-links.txt`, (t.youtube_links.length ? t.youtube_links : ["(ссылок нет)"]).join("\n"));
-    const pdf = await renderPdf(topicToBlocks(t));
-    zip.file(`${dir}topic.pdf`, pdf);
+    const blocks = topicToBlocks(t);
+    zip.file(`${dir}topic.pdf`, await renderPdf(blocks));
+    zip.file(`${dir}topic.docx`, await renderDocx(blocks));
   }
 
   if (topics.length > 1) {

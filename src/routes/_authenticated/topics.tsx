@@ -48,7 +48,7 @@ function TopicsPage() {
         return;
       }
       await downloadTopicsArchive(res.topics, name);
-      toast.success("Архив собран: PDF + Markdown + JSON + ссылки");
+      toast.success("Архив собран: PDF + Word + Markdown + JSON + ссылки");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Не удалось собрать архив");
     } finally {
@@ -160,7 +160,7 @@ function TopicsPage() {
                     size="icon"
                     variant="ghost"
                     className="h-8 w-8 text-muted-foreground hover:text-primary"
-                    title="Выгрузить тему архивом (PDF + Markdown + JSON + ссылки)"
+                    title="Выгрузить тему архивом (PDF + Word + Markdown + JSON + ссылки)"
                     disabled={exporting !== null}
                     onClick={(e) => {
                       e.stopPropagation();

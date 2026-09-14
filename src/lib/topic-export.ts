@@ -261,6 +261,7 @@ export async function downloadTopicsArchive(topics: ExportedTopic[], archiveName
       allBlocks.push(...topicToBlocks(t));
     });
     zip.file("all-topics.pdf", await renderPdf(allBlocks));
+    zip.file("all-topics.docx", await renderDocx(allBlocks));
     zip.file(
       "all-youtube-links.txt",
       topics

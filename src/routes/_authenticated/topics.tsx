@@ -112,7 +112,7 @@ function TopicsPage() {
             variant="outline"
             disabled={exporting !== null || !(topics ?? []).length}
             onClick={() => runExport(null, "vse-temy", "all")}
-            title="Скачать архив по всем темам: PDF, Markdown, JSON и ссылки на ролики"
+            title="Скачать архив по всем темам: PDF, Word, Markdown, JSON и ссылки на ролики"
           >
             {exporting === "all" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
             Выгрузить все темы

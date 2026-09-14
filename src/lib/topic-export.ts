@@ -202,6 +202,27 @@ async function renderPdf(blocks: PdfBlock[]): Promise<Uint8Array> {
   return doc.save();
 }
 
+/** Собирает .docx (Word) из тех же блоков, что и PDF. */
+async function renderDocx(blocks: PdfBlock[]): Promise<Blob> {
+  const { Document, Packer, Paragraph, TextRun } = await import("docx");
+  const doc = new Document({
+    styles: { default: { document: { run: { font: "Calibri", size: 22 } } } },
+    sections: [
+      {
+        properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1134, right: 1134, bottom: 1134, left: 1134 } } },
+        children: blocks.map(
+          b =>
+            new Paragraph({
+              spacing: { after: Math.round((b.gap ?? 4) * 20), before: b.size >= 13 ? 120 : 0 },
+              children: [new TextRun({ text: b.text, bold: b.bold, size: Math.round(b.size * 2) })],
+            }),
+        ),
+      },
+    ],
+  });
+  return Packer.toBlob(doc);
+}
+
 function download(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

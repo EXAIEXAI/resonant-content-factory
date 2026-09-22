@@ -24,6 +24,7 @@ import { Route as AuthenticatedDigestsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedCommentsRouteImport } from './routes/_authenticated/comments'
 import { Route as AuthenticatedChannelsRouteImport } from './routes/_authenticated/channels'
 import { Route as AuthenticatedTopicsIdRouteImport } from './routes/_authenticated/topics.$id'
+import { Route as AuthenticatedSavedIdRouteImport } from './routes/_authenticated/saved.$id'
 import { Route as AuthenticatedMaterialsIdRouteImport } from './routes/_authenticated/materials.$id'
 import { Route as ApiPublicSyncYoutubeRouteImport } from './routes/api/public/sync/youtube'
 import { Route as ApiPublicReviewIdRouteImport } from './routes/api/public/review/$id'
@@ -111,6 +112,11 @@ const AuthenticatedTopicsIdRoute = AuthenticatedTopicsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AuthenticatedTopicsRoute,
 } as any)
+const AuthenticatedSavedIdRoute = AuthenticatedSavedIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedSavedRoute,
+} as any)
 const AuthenticatedMaterialsIdRoute =
   AuthenticatedMaterialsIdRouteImport.update({
     id: '/materials/$id',
@@ -180,9 +186,10 @@ export interface FileRoutesByFullPath {
   '/new-channels': typeof AuthenticatedNewChannelsRoute
   '/radar': typeof AuthenticatedRadarRoute
   '/roles': typeof AuthenticatedRolesRoute
-  '/saved': typeof AuthenticatedSavedRoute
+  '/saved': typeof AuthenticatedSavedRouteWithChildren
   '/topics': typeof AuthenticatedTopicsRouteWithChildren
   '/materials/$id': typeof AuthenticatedMaterialsIdRoute
+  '/saved/$id': typeof AuthenticatedSavedIdRoute
   '/topics/$id': typeof AuthenticatedTopicsIdRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
   '/api/public/hooks/daily-refresh': typeof ApiPublicHooksDailyRefreshRoute
@@ -205,10 +212,11 @@ export interface FileRoutesByTo {
   '/new-channels': typeof AuthenticatedNewChannelsRoute
   '/radar': typeof AuthenticatedRadarRoute
   '/roles': typeof AuthenticatedRolesRoute
-  '/saved': typeof AuthenticatedSavedRoute
+  '/saved': typeof AuthenticatedSavedRouteWithChildren
   '/topics': typeof AuthenticatedTopicsRouteWithChildren
   '/': typeof AuthenticatedIndexRoute
   '/materials/$id': typeof AuthenticatedMaterialsIdRoute
+  '/saved/$id': typeof AuthenticatedSavedIdRoute
   '/topics/$id': typeof AuthenticatedTopicsIdRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
   '/api/public/hooks/daily-refresh': typeof ApiPublicHooksDailyRefreshRoute
@@ -233,10 +241,11 @@ export interface FileRoutesById {
   '/_authenticated/new-channels': typeof AuthenticatedNewChannelsRoute
   '/_authenticated/radar': typeof AuthenticatedRadarRoute
   '/_authenticated/roles': typeof AuthenticatedRolesRoute
-  '/_authenticated/saved': typeof AuthenticatedSavedRoute
+  '/_authenticated/saved': typeof AuthenticatedSavedRouteWithChildren
   '/_authenticated/topics': typeof AuthenticatedTopicsRouteWithChildren
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/materials/$id': typeof AuthenticatedMaterialsIdRoute
+  '/_authenticated/saved/$id': typeof AuthenticatedSavedIdRoute
   '/_authenticated/topics/$id': typeof AuthenticatedTopicsIdRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
   '/api/public/hooks/daily-refresh': typeof ApiPublicHooksDailyRefreshRoute
@@ -265,6 +274,7 @@ export interface FileRouteTypes {
     | '/saved'
     | '/topics'
     | '/materials/$id'
+    | '/saved/$id'
     | '/topics/$id'
     | '/api/public/google/callback'
     | '/api/public/hooks/daily-refresh'
@@ -291,6 +301,7 @@ export interface FileRouteTypes {
     | '/topics'
     | '/'
     | '/materials/$id'
+    | '/saved/$id'
     | '/topics/$id'
     | '/api/public/google/callback'
     | '/api/public/hooks/daily-refresh'
@@ -318,6 +329,7 @@ export interface FileRouteTypes {
     | '/_authenticated/topics'
     | '/_authenticated/'
     | '/_authenticated/materials/$id'
+    | '/_authenticated/saved/$id'
     | '/_authenticated/topics/$id'
     | '/api/public/google/callback'
     | '/api/public/hooks/daily-refresh'
@@ -451,6 +463,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTopicsIdRouteImport
       parentRoute: typeof AuthenticatedTopicsRoute
     }
+    '/_authenticated/saved/$id': {
+      id: '/_authenticated/saved/$id'
+      path: '/$id'
+      fullPath: '/saved/$id'
+      preLoaderRoute: typeof AuthenticatedSavedIdRouteImport
+      parentRoute: typeof AuthenticatedSavedRoute
+    }
     '/_authenticated/materials/$id': {
       id: '/_authenticated/materials/$id'
       path: '/materials/$id'
@@ -524,6 +543,17 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedSavedRouteChildren {
+  AuthenticatedSavedIdRoute: typeof AuthenticatedSavedIdRoute
+}
+
+const AuthenticatedSavedRouteChildren: AuthenticatedSavedRouteChildren = {
+  AuthenticatedSavedIdRoute: AuthenticatedSavedIdRoute,
+}
+
+const AuthenticatedSavedRouteWithChildren =
+  AuthenticatedSavedRoute._addFileChildren(AuthenticatedSavedRouteChildren)
+
 interface AuthenticatedTopicsRouteChildren {
   AuthenticatedTopicsIdRoute: typeof AuthenticatedTopicsIdRoute
 }
@@ -545,7 +575,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedNewChannelsRoute: typeof AuthenticatedNewChannelsRoute
   AuthenticatedRadarRoute: typeof AuthenticatedRadarRoute
   AuthenticatedRolesRoute: typeof AuthenticatedRolesRoute
-  AuthenticatedSavedRoute: typeof AuthenticatedSavedRoute
+  AuthenticatedSavedRoute: typeof AuthenticatedSavedRouteWithChildren
   AuthenticatedTopicsRoute: typeof AuthenticatedTopicsRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedMaterialsIdRoute: typeof AuthenticatedMaterialsIdRoute
@@ -561,7 +591,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedNewChannelsRoute: AuthenticatedNewChannelsRoute,
   AuthenticatedRadarRoute: AuthenticatedRadarRoute,
   AuthenticatedRolesRoute: AuthenticatedRolesRoute,
-  AuthenticatedSavedRoute: AuthenticatedSavedRoute,
+  AuthenticatedSavedRoute: AuthenticatedSavedRouteWithChildren,
   AuthenticatedTopicsRoute: AuthenticatedTopicsRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedMaterialsIdRoute: AuthenticatedMaterialsIdRoute,

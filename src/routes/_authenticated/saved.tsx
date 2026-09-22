@@ -116,7 +116,14 @@ function SavedPage() {
             {m.playlist_label && (
               <Badge variant="outline" className="text-xs">{m.playlist_label}</Badge>
             )}
-            <MaterialCard m={m} />
+            <MaterialCard
+              m={m}
+              actions={
+                <Button size="sm" asChild>
+                  <Link to="/saved/$id" params={{ id: m.id }}>Разобрать</Link>
+                </Button>
+              }
+            />
           </div>
         ))}
         {list.length === 0 && (

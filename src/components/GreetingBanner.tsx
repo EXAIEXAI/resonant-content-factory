@@ -1,6 +1,4 @@
 import { Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { ChevronRight, Bookmark } from "lucide-react";
 
 function moscowGreeting(): string {
@@ -18,22 +16,6 @@ function moscowGreeting(): string {
 }
 
 export function GreetingBanner() {
-  const { data: name } = useQuery({
-    queryKey: ["greeting-name"],
-    queryFn: async () => {
-      const { data: auth } = await supabase.auth.getUser();
-      if (!auth.user) return "Фарид";
-      const { data } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", auth.user.id)
-        .maybeSingle();
-      const full = (data?.full_name ?? "").trim();
-      return full ? full.split(" ")[0] : "Фарид";
-    },
-    staleTime: 10 * 60 * 1000,
-  });
-
   return (
     <Link
       to="/briefing"
@@ -44,7 +26,7 @@ export function GreetingBanner() {
       </div>
       <div className="min-w-0 flex-1">
         <div className="font-serif text-lg sm:text-xl truncate">
-          {moscowGreeting()}, {name ?? "Фарид"}!
+          {moscowGreeting()}, Фарид!
         </div>
         <div className="text-sm text-muted-foreground truncate">
           Посмотрите, что вы сохранили недавно.

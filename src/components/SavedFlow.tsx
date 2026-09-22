@@ -17,6 +17,36 @@ import {
 import { downloadTextAsDocx } from "@/lib/docx-download";
 import { getOriginalUrl } from "@/components/MaterialCard";
 
+function encodeWav(chunks: readonly Float32Array[], sampleRate: number): Blob {
+  const length = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+  const bytes = new ArrayBuffer(44 + length * 2);
+  const view = new DataView(bytes);
+  const tag = (offset: number, value: string) => {
+    for (let i = 0; i < value.length; i++) view.setUint8(offset + i, value.charCodeAt(i));
+  };
+  tag(0, "RIFF");
+  view.setUint32(4, 36 + length * 2, true);
+  tag(8, "WAVE");
+  tag(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  tag(36, "data");
+  view.setUint32(40, length * 2, true);
+  let offset = 44;
+  for (const chunk of chunks)
+    for (const value of chunk) {
+      const sample = Math.max(-1, Math.min(1, value));
+      view.setInt16(offset, sample * (sample < 0 ? 32768 : 32767), true);
+      offset += 2;
+    }
+  return new Blob([bytes], { type: "audio/wav" });
+}
+
 function VoiceComment({
   value,
   onChange,
@@ -27,47 +57,85 @@ function VoiceComment({
   placeholder: string;
 }) {
   const [listening, setListening] = useState(false);
-  const recRef = useRef<any>(null);
+  const [working, setWorking] = useState(false);
+  const recRef = useRef<{
+    stream: MediaStream;
+    context: AudioContext;
+    source: MediaStreamAudioSourceNode;
+    node: ScriptProcessorNode;
+    chunks: Float32Array[];
+  } | null>(null);
   const valueRef = useRef(value);
   useEffect(() => {
     valueRef.current = value;
   }, [value]);
 
-  useEffect(() => () => recRef.current?.stop?.(), []);
-
-  const toggle = () => {
-    const W = window as any;
-    const SR = W.SpeechRecognition || W.webkitSpeechRecognition;
-    if (!SR) {
-      toast.error("Голосовой ввод не поддерживается этим браузером — напишите текстом");
-      return;
-    }
-    if (listening) {
-      recRef.current?.stop?.();
-      setListening(false);
-      return;
-    }
-    const rec = new SR();
-    rec.lang = "ru-RU";
-    rec.continuous = true;
-    rec.interimResults = false;
-    rec.onresult = (e: any) => {
-      let add = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) add += e.results[i][0].transcript;
-      if (add.trim()) {
-        const next = (valueRef.current ? valueRef.current + " " : "") + add.trim();
-        valueRef.current = next;
-        onChange(next);
+  useEffect(
+    () => () => {
+      const rec = recRef.current;
+      if (rec) {
+        rec.stream.getTracks().forEach(t => t.stop());
+        rec.node.disconnect();
+        rec.source.disconnect();
+        void rec.context.close();
+        recRef.current = null;
       }
-    };
-    rec.onerror = () => {
-      setListening(false);
+    },
+    [],
+  );
+
+  const start = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const context = new AudioContext();
+      await context.resume();
+      const source = context.createMediaStreamSource(stream);
+      const node = context.createScriptProcessor(4096, 1, 1);
+      const chunks: Float32Array[] = [];
+      node.onaudioprocess = e => chunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+      source.connect(node);
+      node.connect(context.destination);
+      recRef.current = { stream, context, source, node, chunks };
+      setListening(true);
+    } catch {
+      toast.error("Нет доступа к микрофону — разрешите запись в браузере");
+    }
+  };
+
+  const stop = async () => {
+    const rec = recRef.current;
+    recRef.current = null;
+    setListening(false);
+    if (!rec) return;
+    rec.stream.getTracks().forEach(t => t.stop());
+    rec.node.onaudioprocess = null;
+    rec.node.disconnect();
+    rec.source.disconnect();
+    const blob = encodeWav(rec.chunks, rec.context.sampleRate);
+    await rec.context.close();
+    if (blob.size < 2048) {
+      toast.error("Запись пустая — попробуйте ещё раз");
+      return;
+    }
+    setWorking(true);
+    try {
+      const form = new FormData();
+      form.append("file", new File([blob], "recording.wav", { type: "audio/wav" }));
+      const res = await fetch("/api/transcribe", { method: "POST", body: form });
+      const data = (await res.json()) as { text?: string; error?: string };
+      if (!res.ok || !data.text) {
+        toast.error(data.error || "Не удалось распознать речь");
+        return;
+      }
+      const next = (valueRef.current ? valueRef.current.trim() + " " : "") + data.text;
+      valueRef.current = next;
+      onChange(next);
+      toast.success("Текст распознан");
+    } catch {
       toast.error("Не удалось распознать речь");
-    };
-    rec.onend = () => setListening(false);
-    recRef.current = rec;
-    rec.start();
-    setListening(true);
+    } finally {
+      setWorking(false);
+    }
   };
 
   return (
@@ -78,13 +146,29 @@ function VoiceComment({
         placeholder={placeholder}
         rows={5}
       />
-      <Button type="button" variant="outline" size="sm" onClick={toggle}>
-        {listening ? <MicOff className="w-4 h-4 mr-2" /> : <Mic className="w-4 h-4 mr-2" />}
-        {listening ? "Остановить запись" : "Надиктовать голосом"}
-      </Button>
+      <div className="flex items-center gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={working}
+          onClick={() => (listening ? void stop() : void start())}
+        >
+          {working ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : listening ? (
+            <MicOff className="w-4 h-4 mr-2" />
+          ) : (
+            <Mic className="w-4 h-4 mr-2" />
+          )}
+          {working ? "Распознаю…" : listening ? "Остановить запись" : "Надиктовать голосом"}
+        </Button>
+        {listening && <span className="text-xs text-muted-foreground">Идёт запись…</span>}
+      </div>
     </div>
   );
 }
+
 
 function TextBlock({ title, text, fileName }: { title: string; text: string; fileName: string }) {
   return (

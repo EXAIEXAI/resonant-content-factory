@@ -263,16 +263,6 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
               <Button onClick={() => scriptMut.mutate()} disabled={scriptMut.isPending}>
                 {scriptMut.isPending ? "Пишу сценарий..." : "Написать сценарий"}
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setScriptComment("");
-                  scriptMut.mutate();
-                }}
-                disabled={scriptMut.isPending}
-              >
-                Без комментария
-              </Button>
             </div>
           </CardContent>
         </Card>

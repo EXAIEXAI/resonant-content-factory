@@ -18,13 +18,17 @@ export const ensureMaterialSummary = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!m) throw new Error("Ролик не найден");
     const hasSummary = (m.summary ?? "").trim().length > 10;
-    if (!hasSummary) await analyzeMaterialById(context.supabase as never, data.materialId);
+    let error: string | undefined;
+    if (!hasSummary) {
+      const res = await analyzeMaterialById(context.supabase as never, data.materialId);
+      if (!res.ok) error = res.error;
+    }
     const { data: fresh } = await context.supabase
       .from("raw_materials")
       .select("summary, key_points")
       .eq("id", data.materialId)
       .maybeSingle();
-    return { summary: fresh?.summary ?? "", key_points: fresh?.key_points ?? [] };
+    return { summary: fresh?.summary ?? "", key_points: fresh?.key_points ?? [], error: error ?? null };
   });
 
 async function loadPrompt(supabase: any, purpose: "essay" | "script", promptId?: string | null) {

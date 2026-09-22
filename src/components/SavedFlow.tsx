@@ -226,16 +226,6 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
               <Button onClick={() => essayMut.mutate()} disabled={essayMut.isPending}>
                 {essayMut.isPending ? "Пишу эссе..." : "Написать эссе"}
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setEssayComment("");
-                  essayMut.mutate();
-                }}
-                disabled={essayMut.isPending}
-              >
-                Без комментария
-              </Button>
             </div>
           </CardContent>
         </Card>
@@ -272,16 +262,6 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
             <div className="flex flex-wrap gap-2">
               <Button onClick={() => scriptMut.mutate()} disabled={scriptMut.isPending}>
                 {scriptMut.isPending ? "Пишу сценарий..." : "Написать сценарий"}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setScriptComment("");
-                  scriptMut.mutate();
-                }}
-                disabled={scriptMut.isPending}
-              >
-                Без комментария
               </Button>
             </div>
           </CardContent>

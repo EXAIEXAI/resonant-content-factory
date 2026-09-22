@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState, type ReactNode } from "react";
 import logoAsset from "@/assets/logo.png.asset.json";
+import { GreetingBanner } from "@/components/GreetingBanner";
 
 const nav = [
   { to: "/", label: "Дашборд", icon: LayoutDashboard },
@@ -131,7 +132,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="font-serif text-base truncate">Контент-завод</div>
           </div>
         </div>
-        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">{children}</div>
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+          {!pathname.startsWith("/integrations") && <GreetingBanner />}
+          {children}
+        </div>
       </main>
     </div>
   );

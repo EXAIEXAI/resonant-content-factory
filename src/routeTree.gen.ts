@@ -23,9 +23,11 @@ import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authent
 import { Route as AuthenticatedDigestsRouteImport } from './routes/_authenticated/digests'
 import { Route as AuthenticatedCommentsRouteImport } from './routes/_authenticated/comments'
 import { Route as AuthenticatedChannelsRouteImport } from './routes/_authenticated/channels'
+import { Route as AuthenticatedBriefingRouteImport } from './routes/_authenticated/briefing'
 import { Route as AuthenticatedTopicsIdRouteImport } from './routes/_authenticated/topics.$id'
 import { Route as AuthenticatedSavedIdRouteImport } from './routes/_authenticated/saved.$id'
 import { Route as AuthenticatedMaterialsIdRouteImport } from './routes/_authenticated/materials.$id'
+import { Route as AuthenticatedBriefingIdRouteImport } from './routes/_authenticated/briefing.$id'
 import { Route as ApiPublicSyncYoutubeRouteImport } from './routes/api/public/sync/youtube'
 import { Route as ApiPublicReviewIdRouteImport } from './routes/api/public/review/$id'
 import { Route as ApiPublicHooksYoutubePlaylistRouteImport } from './routes/api/public/hooks/youtube-playlist'
@@ -107,6 +109,11 @@ const AuthenticatedChannelsRoute = AuthenticatedChannelsRouteImport.update({
   path: '/channels',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedBriefingRoute = AuthenticatedBriefingRouteImport.update({
+  id: '/briefing',
+  path: '/briefing',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedTopicsIdRoute = AuthenticatedTopicsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -123,6 +130,11 @@ const AuthenticatedMaterialsIdRoute =
     path: '/materials/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedBriefingIdRoute = AuthenticatedBriefingIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedBriefingRoute,
+} as any)
 const ApiPublicSyncYoutubeRoute = ApiPublicSyncYoutubeRouteImport.update({
   id: '/api/public/sync/youtube',
   path: '/api/public/sync/youtube',
@@ -177,6 +189,7 @@ const ApiPublicGoogleCallbackRoute = ApiPublicGoogleCallbackRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
+  '/briefing': typeof AuthenticatedBriefingRouteWithChildren
   '/channels': typeof AuthenticatedChannelsRoute
   '/comments': typeof AuthenticatedCommentsRoute
   '/digests': typeof AuthenticatedDigestsRoute
@@ -188,6 +201,7 @@ export interface FileRoutesByFullPath {
   '/roles': typeof AuthenticatedRolesRoute
   '/saved': typeof AuthenticatedSavedRouteWithChildren
   '/topics': typeof AuthenticatedTopicsRouteWithChildren
+  '/briefing/$id': typeof AuthenticatedBriefingIdRoute
   '/materials/$id': typeof AuthenticatedMaterialsIdRoute
   '/saved/$id': typeof AuthenticatedSavedIdRoute
   '/topics/$id': typeof AuthenticatedTopicsIdRoute
@@ -203,6 +217,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
+  '/briefing': typeof AuthenticatedBriefingRouteWithChildren
   '/channels': typeof AuthenticatedChannelsRoute
   '/comments': typeof AuthenticatedCommentsRoute
   '/digests': typeof AuthenticatedDigestsRoute
@@ -215,6 +230,7 @@ export interface FileRoutesByTo {
   '/saved': typeof AuthenticatedSavedRouteWithChildren
   '/topics': typeof AuthenticatedTopicsRouteWithChildren
   '/': typeof AuthenticatedIndexRoute
+  '/briefing/$id': typeof AuthenticatedBriefingIdRoute
   '/materials/$id': typeof AuthenticatedMaterialsIdRoute
   '/saved/$id': typeof AuthenticatedSavedIdRoute
   '/topics/$id': typeof AuthenticatedTopicsIdRoute
@@ -232,6 +248,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/briefing': typeof AuthenticatedBriefingRouteWithChildren
   '/_authenticated/channels': typeof AuthenticatedChannelsRoute
   '/_authenticated/comments': typeof AuthenticatedCommentsRoute
   '/_authenticated/digests': typeof AuthenticatedDigestsRoute
@@ -244,6 +261,7 @@ export interface FileRoutesById {
   '/_authenticated/saved': typeof AuthenticatedSavedRouteWithChildren
   '/_authenticated/topics': typeof AuthenticatedTopicsRouteWithChildren
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/briefing/$id': typeof AuthenticatedBriefingIdRoute
   '/_authenticated/materials/$id': typeof AuthenticatedMaterialsIdRoute
   '/_authenticated/saved/$id': typeof AuthenticatedSavedIdRoute
   '/_authenticated/topics/$id': typeof AuthenticatedTopicsIdRoute
@@ -262,6 +280,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/briefing'
     | '/channels'
     | '/comments'
     | '/digests'
@@ -273,6 +292,7 @@ export interface FileRouteTypes {
     | '/roles'
     | '/saved'
     | '/topics'
+    | '/briefing/$id'
     | '/materials/$id'
     | '/saved/$id'
     | '/topics/$id'
@@ -288,6 +308,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
+    | '/briefing'
     | '/channels'
     | '/comments'
     | '/digests'
@@ -300,6 +321,7 @@ export interface FileRouteTypes {
     | '/saved'
     | '/topics'
     | '/'
+    | '/briefing/$id'
     | '/materials/$id'
     | '/saved/$id'
     | '/topics/$id'
@@ -316,6 +338,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/briefing'
     | '/_authenticated/channels'
     | '/_authenticated/comments'
     | '/_authenticated/digests'
@@ -328,6 +351,7 @@ export interface FileRouteTypes {
     | '/_authenticated/saved'
     | '/_authenticated/topics'
     | '/_authenticated/'
+    | '/_authenticated/briefing/$id'
     | '/_authenticated/materials/$id'
     | '/_authenticated/saved/$id'
     | '/_authenticated/topics/$id'
@@ -456,6 +480,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChannelsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/briefing': {
+      id: '/_authenticated/briefing'
+      path: '/briefing'
+      fullPath: '/briefing'
+      preLoaderRoute: typeof AuthenticatedBriefingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/topics/$id': {
       id: '/_authenticated/topics/$id'
       path: '/$id'
@@ -476,6 +507,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/materials/$id'
       preLoaderRoute: typeof AuthenticatedMaterialsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/briefing/$id': {
+      id: '/_authenticated/briefing/$id'
+      path: '/$id'
+      fullPath: '/briefing/$id'
+      preLoaderRoute: typeof AuthenticatedBriefingIdRouteImport
+      parentRoute: typeof AuthenticatedBriefingRoute
     }
     '/api/public/sync/youtube': {
       id: '/api/public/sync/youtube'
@@ -543,6 +581,19 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedBriefingRouteChildren {
+  AuthenticatedBriefingIdRoute: typeof AuthenticatedBriefingIdRoute
+}
+
+const AuthenticatedBriefingRouteChildren: AuthenticatedBriefingRouteChildren = {
+  AuthenticatedBriefingIdRoute: AuthenticatedBriefingIdRoute,
+}
+
+const AuthenticatedBriefingRouteWithChildren =
+  AuthenticatedBriefingRoute._addFileChildren(
+    AuthenticatedBriefingRouteChildren,
+  )
+
 interface AuthenticatedSavedRouteChildren {
   AuthenticatedSavedIdRoute: typeof AuthenticatedSavedIdRoute
 }
@@ -566,6 +617,7 @@ const AuthenticatedTopicsRouteWithChildren =
   AuthenticatedTopicsRoute._addFileChildren(AuthenticatedTopicsRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedBriefingRoute: typeof AuthenticatedBriefingRouteWithChildren
   AuthenticatedChannelsRoute: typeof AuthenticatedChannelsRoute
   AuthenticatedCommentsRoute: typeof AuthenticatedCommentsRoute
   AuthenticatedDigestsRoute: typeof AuthenticatedDigestsRoute
@@ -582,6 +634,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedBriefingRoute: AuthenticatedBriefingRouteWithChildren,
   AuthenticatedChannelsRoute: AuthenticatedChannelsRoute,
   AuthenticatedCommentsRoute: AuthenticatedCommentsRoute,
   AuthenticatedDigestsRoute: AuthenticatedDigestsRoute,

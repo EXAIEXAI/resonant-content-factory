@@ -7,6 +7,7 @@ import { MaterialCard } from "@/components/MaterialCard";
 import { computeScore } from "@/lib/scoring";
 import { Badge } from "@/components/ui/badge";
 import { useMemo } from "react";
+import { BRIEFING_PLAYLIST_ID } from "@/lib/workspace";
 
 export const Route = createFileRoute("/_authenticated/briefing/")({
   head: () => ({
@@ -24,12 +25,13 @@ export const Route = createFileRoute("/_authenticated/briefing/")({
 
 function BriefingPage() {
   const { data: materials } = useQuery({
-    queryKey: ["materials-saved"],
+    queryKey: ["materials-briefing", BRIEFING_PLAYLIST_ID],
     queryFn: async () =>
       (await supabase
         .from("raw_materials")
         .select("*")
         .eq("source_type", "youtube_saved")
+        .eq("playlist_id", BRIEFING_PLAYLIST_ID)
         .order("created_at", { ascending: false })).data ?? [],
   });
 

@@ -105,7 +105,7 @@ ${comments ? `Ранее оставленные комментарии эксп�
         material_id: data.materialId,
         reaction_type: "комментарий",
         transcript: userComment,
-        created_by: context.userId,
+        expert_id: context.userId,
       });
     }
     const { data: out, error } = await context.supabase
@@ -155,7 +155,7 @@ ${comments ? `Комментарии экспертов:\n${comments.slice(0, 40
         material_id: data.materialId,
         reaction_type: "комментарий",
         transcript: userComment,
-        created_by: context.userId,
+        expert_id: context.userId,
       });
     }
     const { data: out, error } = await context.supabase

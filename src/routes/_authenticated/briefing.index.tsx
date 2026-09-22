@@ -49,7 +49,7 @@ function BriefingPage() {
       <div className="min-w-0">
         <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl">Недавно сохранённое</h1>
         <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-          Ролики из ваших YouTube-плейлистов. Нажмите «Разобрать» — получите описание, затем эссе и сценарий.
+          Ролики из плейлиста «Контент-Завод». Нажмите «Разобрать» — получите описание, затем эссе и сценарий.
         </p>
       </div>
 
@@ -72,9 +72,7 @@ function BriefingPage() {
         {list.length === 0 && (
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground text-sm">
-              Пока пусто. Укажите плейлист в разделе{" "}
-              <Link to="/integrations" className="text-primary hover:underline">«Интеграции»</Link>{" "}
-              и сохраняйте в него ролики на YouTube — они появятся здесь автоматически.
+              Пока пусто. Сохраняйте ролики в YouTube-плейлист «Контент-Завод» — они появятся здесь автоматически.
             </CardContent>
           </Card>
         )}

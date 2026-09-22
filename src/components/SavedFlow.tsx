@@ -28,6 +28,10 @@ function VoiceComment({
 }) {
   const [listening, setListening] = useState(false);
   const recRef = useRef<any>(null);
+  const valueRef = useRef(value);
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
 
   useEffect(() => () => recRef.current?.stop?.(), []);
 
@@ -50,7 +54,11 @@ function VoiceComment({
     rec.onresult = (e: any) => {
       let add = "";
       for (let i = e.resultIndex; i < e.results.length; i++) add += e.results[i][0].transcript;
-      if (add.trim()) onChange((value ? value + " " : "") + add.trim());
+      if (add.trim()) {
+        const next = (valueRef.current ? valueRef.current + " " : "") + add.trim();
+        valueRef.current = next;
+        onChange(next);
+      }
     };
     rec.onerror = () => {
       setListening(false);

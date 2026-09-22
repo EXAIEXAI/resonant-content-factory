@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
 import { Route as AuthenticatedTopicsRouteImport } from './routes/_authenticated/topics'
 import { Route as AuthenticatedSavedRouteImport } from './routes/_authenticated/saved'
 import { Route as AuthenticatedRolesRouteImport } from './routes/_authenticated/roles'
@@ -52,6 +53,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ApiTranscribeRoute = ApiTranscribeRouteImport.update({
+  id: '/api/transcribe',
+  path: '/api/transcribe',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedTopicsRoute = AuthenticatedTopicsRouteImport.update({
   id: '/topics',
@@ -208,6 +214,7 @@ export interface FileRoutesByFullPath {
   '/roles': typeof AuthenticatedRolesRoute
   '/saved': typeof AuthenticatedSavedRouteWithChildren
   '/topics': typeof AuthenticatedTopicsRouteWithChildren
+  '/api/transcribe': typeof ApiTranscribeRoute
   '/briefing/$id': typeof AuthenticatedBriefingIdRoute
   '/materials/$id': typeof AuthenticatedMaterialsIdRoute
   '/saved/$id': typeof AuthenticatedSavedIdRoute
@@ -236,6 +243,7 @@ export interface FileRoutesByTo {
   '/roles': typeof AuthenticatedRolesRoute
   '/saved': typeof AuthenticatedSavedRouteWithChildren
   '/topics': typeof AuthenticatedTopicsRouteWithChildren
+  '/api/transcribe': typeof ApiTranscribeRoute
   '/': typeof AuthenticatedIndexRoute
   '/briefing/$id': typeof AuthenticatedBriefingIdRoute
   '/materials/$id': typeof AuthenticatedMaterialsIdRoute
@@ -268,6 +276,7 @@ export interface FileRoutesById {
   '/_authenticated/roles': typeof AuthenticatedRolesRoute
   '/_authenticated/saved': typeof AuthenticatedSavedRouteWithChildren
   '/_authenticated/topics': typeof AuthenticatedTopicsRouteWithChildren
+  '/api/transcribe': typeof ApiTranscribeRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/briefing/$id': typeof AuthenticatedBriefingIdRoute
   '/_authenticated/materials/$id': typeof AuthenticatedMaterialsIdRoute
@@ -301,6 +310,7 @@ export interface FileRouteTypes {
     | '/roles'
     | '/saved'
     | '/topics'
+    | '/api/transcribe'
     | '/briefing/$id'
     | '/materials/$id'
     | '/saved/$id'
@@ -329,6 +339,7 @@ export interface FileRouteTypes {
     | '/roles'
     | '/saved'
     | '/topics'
+    | '/api/transcribe'
     | '/'
     | '/briefing/$id'
     | '/materials/$id'
@@ -360,6 +371,7 @@ export interface FileRouteTypes {
     | '/_authenticated/roles'
     | '/_authenticated/saved'
     | '/_authenticated/topics'
+    | '/api/transcribe'
     | '/_authenticated/'
     | '/_authenticated/briefing/$id'
     | '/_authenticated/materials/$id'
@@ -380,6 +392,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiTranscribeRoute: typeof ApiTranscribeRoute
   ApiPublicGoogleCallbackRoute: typeof ApiPublicGoogleCallbackRoute
   ApiPublicHooksDailyRefreshRoute: typeof ApiPublicHooksDailyRefreshRoute
   ApiPublicHooksTelegramDigestRoute: typeof ApiPublicHooksTelegramDigestRoute
@@ -413,6 +426,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/transcribe': {
+      id: '/api/transcribe'
+      path: '/api/transcribe'
+      fullPath: '/api/transcribe'
+      preLoaderRoute: typeof ApiTranscribeRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/topics': {
       id: '/_authenticated/topics'
@@ -676,6 +696,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiTranscribeRoute: ApiTranscribeRoute,
   ApiPublicGoogleCallbackRoute: ApiPublicGoogleCallbackRoute,
   ApiPublicHooksDailyRefreshRoute: ApiPublicHooksDailyRefreshRoute,
   ApiPublicHooksTelegramDigestRoute: ApiPublicHooksTelegramDigestRoute,

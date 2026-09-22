@@ -97,13 +97,18 @@ export async function analyzeMaterialById(
 
   const summary = String(parsed.summary ?? "").trim();
   if (!summary) return { ok: false, error: "Модель не вернула описание" };
-  await supabase
+  const { data: saved, error: upErr } = await supabase
     .from("raw_materials")
     .update({
       summary,
       key_points: (Array.isArray(parsed.key_points) ? parsed.key_points : []) as never,
       status: "analyzed",
     })
-    .eq("id", materialId);
+    .eq("id", materialId)
+    .select("id");
+  if (upErr || !saved?.length) {
+    console.error("analyze save failed", materialId, upErr, saved);
+    return { ok: false, error: upErr?.message ?? "Не удалось сохранить описание" };
+  }
   return { ok: true };
 }

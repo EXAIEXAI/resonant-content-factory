@@ -24,6 +24,7 @@ import { Route as AuthenticatedDigestsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedCommentsRouteImport } from './routes/_authenticated/comments'
 import { Route as AuthenticatedChannelsRouteImport } from './routes/_authenticated/channels'
 import { Route as AuthenticatedBriefingRouteImport } from './routes/_authenticated/briefing'
+import { Route as AuthenticatedBriefingIndexRouteImport } from './routes/_authenticated/briefing.index'
 import { Route as AuthenticatedTopicsIdRouteImport } from './routes/_authenticated/topics.$id'
 import { Route as AuthenticatedSavedIdRouteImport } from './routes/_authenticated/saved.$id'
 import { Route as AuthenticatedMaterialsIdRouteImport } from './routes/_authenticated/materials.$id'
@@ -114,6 +115,12 @@ const AuthenticatedBriefingRoute = AuthenticatedBriefingRouteImport.update({
   path: '/briefing',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedBriefingIndexRoute =
+  AuthenticatedBriefingIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedBriefingRoute,
+  } as any)
 const AuthenticatedTopicsIdRoute = AuthenticatedTopicsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -205,6 +212,7 @@ export interface FileRoutesByFullPath {
   '/materials/$id': typeof AuthenticatedMaterialsIdRoute
   '/saved/$id': typeof AuthenticatedSavedIdRoute
   '/topics/$id': typeof AuthenticatedTopicsIdRoute
+  '/briefing/': typeof AuthenticatedBriefingIndexRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
   '/api/public/hooks/daily-refresh': typeof ApiPublicHooksDailyRefreshRoute
   '/api/public/hooks/telegram-digest': typeof ApiPublicHooksTelegramDigestRoute
@@ -217,7 +225,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
-  '/briefing': typeof AuthenticatedBriefingRouteWithChildren
   '/channels': typeof AuthenticatedChannelsRoute
   '/comments': typeof AuthenticatedCommentsRoute
   '/digests': typeof AuthenticatedDigestsRoute
@@ -234,6 +241,7 @@ export interface FileRoutesByTo {
   '/materials/$id': typeof AuthenticatedMaterialsIdRoute
   '/saved/$id': typeof AuthenticatedSavedIdRoute
   '/topics/$id': typeof AuthenticatedTopicsIdRoute
+  '/briefing': typeof AuthenticatedBriefingIndexRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
   '/api/public/hooks/daily-refresh': typeof ApiPublicHooksDailyRefreshRoute
   '/api/public/hooks/telegram-digest': typeof ApiPublicHooksTelegramDigestRoute
@@ -265,6 +273,7 @@ export interface FileRoutesById {
   '/_authenticated/materials/$id': typeof AuthenticatedMaterialsIdRoute
   '/_authenticated/saved/$id': typeof AuthenticatedSavedIdRoute
   '/_authenticated/topics/$id': typeof AuthenticatedTopicsIdRoute
+  '/_authenticated/briefing/': typeof AuthenticatedBriefingIndexRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
   '/api/public/hooks/daily-refresh': typeof ApiPublicHooksDailyRefreshRoute
   '/api/public/hooks/telegram-digest': typeof ApiPublicHooksTelegramDigestRoute
@@ -296,6 +305,7 @@ export interface FileRouteTypes {
     | '/materials/$id'
     | '/saved/$id'
     | '/topics/$id'
+    | '/briefing/'
     | '/api/public/google/callback'
     | '/api/public/hooks/daily-refresh'
     | '/api/public/hooks/telegram-digest'
@@ -308,7 +318,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
-    | '/briefing'
     | '/channels'
     | '/comments'
     | '/digests'
@@ -325,6 +334,7 @@ export interface FileRouteTypes {
     | '/materials/$id'
     | '/saved/$id'
     | '/topics/$id'
+    | '/briefing'
     | '/api/public/google/callback'
     | '/api/public/hooks/daily-refresh'
     | '/api/public/hooks/telegram-digest'
@@ -355,6 +365,7 @@ export interface FileRouteTypes {
     | '/_authenticated/materials/$id'
     | '/_authenticated/saved/$id'
     | '/_authenticated/topics/$id'
+    | '/_authenticated/briefing/'
     | '/api/public/google/callback'
     | '/api/public/hooks/daily-refresh'
     | '/api/public/hooks/telegram-digest'
@@ -487,6 +498,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBriefingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/briefing/': {
+      id: '/_authenticated/briefing/'
+      path: '/'
+      fullPath: '/briefing/'
+      preLoaderRoute: typeof AuthenticatedBriefingIndexRouteImport
+      parentRoute: typeof AuthenticatedBriefingRoute
+    }
     '/_authenticated/topics/$id': {
       id: '/_authenticated/topics/$id'
       path: '/$id'
@@ -583,10 +601,12 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedBriefingRouteChildren {
   AuthenticatedBriefingIdRoute: typeof AuthenticatedBriefingIdRoute
+  AuthenticatedBriefingIndexRoute: typeof AuthenticatedBriefingIndexRoute
 }
 
 const AuthenticatedBriefingRouteChildren: AuthenticatedBriefingRouteChildren = {
   AuthenticatedBriefingIdRoute: AuthenticatedBriefingIdRoute,
+  AuthenticatedBriefingIndexRoute: AuthenticatedBriefingIndexRoute,
 }
 
 const AuthenticatedBriefingRouteWithChildren =

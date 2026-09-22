@@ -74,12 +74,12 @@ export async function analyzeMaterialById(
   const hasTranscript = transcript.length >= 40;
   const source = hasTranscript
     ? `Заголовок: ${m.title}\nКанал: ${m.channel_title ?? ""}\n\nТранскрипт:\n${transcript}`
-    : `Заголовок: ${m.title}\nКанал: ${m.channel_title ?? ""}\nURL: ${m.url ?? ""}\nОписание: ${(m.description ?? "").slice(0, 3000)}`;
+    : `Заголовок: ${m.title}\nКанал: ${m.channel_title ?? ""}\nURL: ${m.url ?? ""}`;
   const prompt = hasTranscript
     ? `Проанализируй материал и верни строго JSON вида:
 {"summary":"3-5 ключевых мыслей в 1 абзаце — о чём материал и что в нём содержится","key_points":[{"thesis":"тезис","timecode":"HH:MM:SS или null","quote":"короткая цитата"}]}
 Материал:\n${source.slice(0, 12000)}`
-    : `Расшифровки нет. По заголовку, каналу и описанию сформулируй, о чём этот ролик, какая от него польза зрителю и какие мысли автор, скорее всего, раскрывает. Верни строго JSON:
+    : `Расшифровки нет. По заголовку и каналу сформулируй, о чём этот ролик, какая от него польза зрителю и какие мысли автор, скорее всего, раскрывает. Верни строго JSON:
 {"summary":"2-4 предложения","key_points":[{"thesis":"предполагаемый тезис","timecode":null,"quote":""}]}
 Материал:\n${source}`;
 

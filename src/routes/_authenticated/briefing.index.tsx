@@ -7,6 +7,7 @@ import { MaterialCard } from "@/components/MaterialCard";
 import { computeScore } from "@/lib/scoring";
 import { Badge } from "@/components/ui/badge";
 import { useMemo } from "react";
+import { BRIEFING_PLAYLIST_ID } from "@/lib/workspace";
 
 export const Route = createFileRoute("/_authenticated/briefing/")({
   head: () => ({
@@ -24,12 +25,13 @@ export const Route = createFileRoute("/_authenticated/briefing/")({
 
 function BriefingPage() {
   const { data: materials } = useQuery({
-    queryKey: ["materials-saved"],
+    queryKey: ["materials-briefing", BRIEFING_PLAYLIST_ID],
     queryFn: async () =>
       (await supabase
         .from("raw_materials")
         .select("*")
         .eq("source_type", "youtube_saved")
+        .eq("playlist_id", BRIEFING_PLAYLIST_ID)
         .order("created_at", { ascending: false })).data ?? [],
   });
 
@@ -47,7 +49,7 @@ function BriefingPage() {
       <div className="min-w-0">
         <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl">Недавно сохранённое</h1>
         <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-          Ролики из ваших YouTube-плейлистов. Нажмите «Разобрать» — получите описание, затем эссе и сценарий.
+          Ролики из плейлиста «Контент-Завод». Нажмите «Разобрать» — получите описание, затем эссе и сценарий.
         </p>
       </div>
 
@@ -70,9 +72,7 @@ function BriefingPage() {
         {list.length === 0 && (
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground text-sm">
-              Пока пусто. Укажите плейлист в разделе{" "}
-              <Link to="/integrations" className="text-primary hover:underline">«Интеграции»</Link>{" "}
-              и сохраняйте в него ролики на YouTube — они появятся здесь автоматически.
+              Пока пусто. Сохраняйте ролики в YouTube-плейлист «Контент-Завод» — они появятся здесь автоматически.
             </CardContent>
           </Card>
         )}

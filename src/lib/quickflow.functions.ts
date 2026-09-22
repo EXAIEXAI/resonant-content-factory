@@ -21,6 +21,7 @@ export const ensureMaterialSummary = createServerFn({ method: "POST" })
     let error: string | undefined;
     if (!hasSummary) {
       const res = await analyzeMaterialById(context.supabase as never, data.materialId);
+      console.log("ensureSummary analyze result", data.materialId, JSON.stringify(res));
       if (!res.ok) error = res.error;
     }
     const { data: fresh } = await context.supabase

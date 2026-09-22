@@ -102,7 +102,6 @@ export async function analyzeMaterialById(
     .update({
       summary,
       key_points: (Array.isArray(parsed.key_points) ? parsed.key_points : []) as never,
-      status: "analyzed",
     })
     .eq("id", materialId)
     .select("id");

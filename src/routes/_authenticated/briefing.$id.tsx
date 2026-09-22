@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SavedFlow } from "@/components/SavedFlow";
 
-export const Route = createFileRoute("/_authenticated/saved/$id")({
+export const Route = createFileRoute("/_authenticated/briefing/$id")({
   head: () => ({
     meta: [
       { title: "Разбор сохранённого ролика · Контент-завод" },
@@ -12,10 +12,10 @@ export const Route = createFileRoute("/_authenticated/saved/$id")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: SavedFlowPage,
+  component: BriefingFlowPage,
 });
 
-function SavedFlowPage() {
+function BriefingFlowPage() {
   const { id } = Route.useParams();
-  return <SavedFlow id={id} backTo="/saved" />;
+  return <SavedFlow id={id} backTo="/briefing" />;
 }

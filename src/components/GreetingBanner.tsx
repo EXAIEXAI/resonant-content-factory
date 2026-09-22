@@ -36,7 +36,7 @@ export function GreetingBanner() {
 
   return (
     <Link
-      to="/saved"
+      to="/briefing"
       className="mb-6 flex items-center gap-4 rounded-xl border border-border bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-4 py-4 sm:px-6 transition-colors hover:border-primary/40 hover:from-primary/15"
     >
       <div className="hidden sm:flex w-10 h-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">

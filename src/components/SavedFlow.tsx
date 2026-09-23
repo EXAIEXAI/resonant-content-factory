@@ -172,6 +172,34 @@ function VoiceComment({
 }
 
 
+function ProgressBar({ active, label }: { active: boolean; label: string }) {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    if (!active) {
+      setValue(0);
+      return;
+    }
+    setValue(6);
+    const t = setInterval(() => {
+      setValue(v => (v >= 95 ? 95 : v + Math.max(0.6, (95 - v) / 22)));
+    }, 500);
+    return () => clearInterval(t);
+  }, [active]);
+  if (!active) return null;
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span className="flex items-center">
+          <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> {label}
+        </span>
+        <span>{Math.round(value)}%</span>
+      </div>
+      <Progress value={value} className="h-2" />
+      <p className="text-xs text-muted-foreground">Обычно занимает 30–90 секунд, не закрывайте страницу.</p>
+    </div>
+  );
+}
+
 function TextBlock({ title, text, fileName }: { title: string; text: string; fileName: string }) {
   return (
     <Card>

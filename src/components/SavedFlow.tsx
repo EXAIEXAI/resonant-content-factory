@@ -423,16 +423,37 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
               {keyPoints.length > 0 && (
                 <div className="space-y-3">
                   <div className="text-sm font-medium">Основные мысли автора</div>
+                  <p className="text-xs text-muted-foreground">
+                    Нажмите на мысль, чтобы написать эссе именно по ней.
+                  </p>
                   <ul className="space-y-3">
-                    {keyPoints.map((p: any, i: number) => (
-                      <li key={i} className="text-sm flex gap-2 leading-relaxed">
-                        <Badge variant="secondary" className="shrink-0">{i + 1}</Badge>
-                        <span className="whitespace-pre-wrap">
-                          {p?.thesis ?? String(p)}
-                          {p?.quote ? <span className="text-muted-foreground"> — «{p.quote}»</span> : null}
-                        </span>
-                      </li>
-                    ))}
+                    {keyPoints.map((p: any, i: number) => {
+                      const text = String(p?.thesis ?? p ?? "");
+                      const selected = focusIndex === i;
+                      return (
+                        <li key={i}>
+                          <button
+                            type="button"
+                            onClick={() => setFocusIndex(selected ? null : i)}
+                            className={`w-full text-left text-sm flex gap-2 leading-relaxed rounded-md border p-3 transition-colors ${
+                              selected
+                                ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                : "border-transparent hover:bg-muted/50"
+                            }`}
+                          >
+                            <Badge variant={selected ? "default" : "secondary"} className="shrink-0">
+                              {i + 1}
+                            </Badge>
+                            <span className="whitespace-pre-wrap">
+                              {text}
+                              {p?.quote ? (
+                                <span className="text-muted-foreground"> — «{p.quote}»</span>
+                              ) : null}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
                   </ul>
                   <Button size="sm" variant="ghost" onClick={retryAnalysis}>
                     Пересобрать описание

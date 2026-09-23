@@ -383,6 +383,8 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
 
   const originalUrl = material ? getOriginalUrl(material) : null;
   const keyPoints: any[] = Array.isArray(analysis?.key_points) ? analysis.key_points : [];
+  const focusPoint = focusIndex !== null ? keyPoints[focusIndex] : null;
+  const focusText = focusPoint ? String(focusPoint?.thesis ?? focusPoint ?? "") : "";
 
   return (
     <div className="space-y-6">

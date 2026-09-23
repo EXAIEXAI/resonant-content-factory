@@ -17,34 +17,17 @@ import {
 import { downloadTextAsDocx } from "@/lib/docx-download";
 import { getOriginalUrl } from "@/components/MaterialCard";
 
-function encodeWav(chunks: readonly Float32Array[], sampleRate: number): Blob {
-  const length = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-  const bytes = new ArrayBuffer(44 + length * 2);
-  const view = new DataView(bytes);
-  const tag = (offset: number, value: string) => {
-    for (let i = 0; i < value.length; i++) view.setUint8(offset + i, value.charCodeAt(i));
-  };
-  tag(0, "RIFF");
-  view.setUint32(4, 36 + length * 2, true);
-  tag(8, "WAVE");
-  tag(12, "fmt ");
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true);
-  view.setUint16(22, 1, true);
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * 2, true);
-  view.setUint16(32, 2, true);
-  view.setUint16(34, 16, true);
-  tag(36, "data");
-  view.setUint32(40, length * 2, true);
-  let offset = 44;
-  for (const chunk of chunks)
-    for (const value of chunk) {
-      const sample = Math.max(-1, Math.min(1, value));
-      view.setInt16(offset, sample * (sample < 0 ? 32768 : 32767), true);
-      offset += 2;
-    }
-  return new Blob([bytes], { type: "audio/wav" });
+function pickMimeType(): string {
+  const candidates = [
+    "audio/webm;codecs=opus",
+    "audio/webm",
+    "audio/ogg;codecs=opus",
+    "audio/mp4",
+  ];
+  for (const type of candidates) {
+    if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(type)) return type;
+  }
+  return "";
 }
 
 function VoiceComment({
@@ -58,13 +41,9 @@ function VoiceComment({
 }) {
   const [listening, setListening] = useState(false);
   const [working, setWorking] = useState(false);
-  const recRef = useRef<{
-    stream: MediaStream;
-    context: AudioContext;
-    source: MediaStreamAudioSourceNode;
-    node: ScriptProcessorNode;
-    chunks: Float32Array[];
-  } | null>(null);
+  const recRef = useRef<{ stream: MediaStream; recorder: MediaRecorder; chunks: Blob[] } | null>(
+    null,
+  );
   const valueRef = useRef(value);
   useEffect(() => {
     valueRef.current = value;
@@ -74,60 +53,40 @@ function VoiceComment({
     () => () => {
       const rec = recRef.current;
       if (rec) {
+        try {
+          if (rec.recorder.state !== "inactive") rec.recorder.stop();
+        } catch {
+          /* ignore */
+        }
         rec.stream.getTracks().forEach(t => t.stop());
-        rec.node.disconnect();
-        rec.source.disconnect();
-        void rec.context.close();
         recRef.current = null;
       }
     },
     [],
   );
 
-  const start = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const context = new AudioContext();
-      await context.resume();
-      const source = context.createMediaStreamSource(stream);
-      const node = context.createScriptProcessor(4096, 1, 1);
-      const chunks: Float32Array[] = [];
-      node.onaudioprocess = e => chunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
-      source.connect(node);
-      node.connect(context.destination);
-      recRef.current = { stream, context, source, node, chunks };
-      setListening(true);
-    } catch {
-      toast.error("Нет доступа к микрофону — разрешите запись в браузере");
-    }
-  };
-
-  const stop = async () => {
-    const rec = recRef.current;
-    recRef.current = null;
-    setListening(false);
-    if (!rec) return;
-    rec.stream.getTracks().forEach(t => t.stop());
-    rec.node.onaudioprocess = null;
-    rec.node.disconnect();
-    rec.source.disconnect();
-    const blob = encodeWav(rec.chunks, rec.context.sampleRate);
-    await rec.context.close();
+  const transcribe = async (blob: Blob, ext: string) => {
     if (blob.size < 2048) {
       toast.error("Запись пустая — попробуйте ещё раз");
       return;
     }
     setWorking(true);
     try {
+      const mime = blob.type && blob.type.startsWith("audio/") ? blob.type : "audio/webm";
       const form = new FormData();
-      form.append("file", new File([blob], "recording.wav", { type: "audio/wav" }));
+      form.append("file", new File([blob], `recording.${ext}`, { type: mime }));
       const res = await fetch("/api/transcribe", { method: "POST", body: form });
-      const data = (await res.json()) as { text?: string; error?: string };
-      if (!res.ok || !data.text) {
+      const data = (await res.json().catch(() => ({}))) as { text?: string; error?: string };
+      if (!res.ok) {
         toast.error(data.error || "Не удалось распознать речь");
         return;
       }
-      const next = (valueRef.current ? valueRef.current.trim() + " " : "") + data.text;
+      const text = (data.text ?? "").trim();
+      if (!text) {
+        toast.error("Речь не распознана — говорите чуть громче и ближе к микрофону");
+        return;
+      }
+      const next = (valueRef.current ? valueRef.current.trim() + " " : "") + text;
       valueRef.current = next;
       onChange(next);
       toast.success("Текст распознан");
@@ -137,6 +96,48 @@ function VoiceComment({
       setWorking(false);
     }
   };
+
+  const start = async () => {
+    if (typeof MediaRecorder === "undefined") {
+      toast.error("Браузер не поддерживает запись звука");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = pickMimeType();
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      const chunks: Blob[] = [];
+      recorder.ondataavailable = e => {
+        if (e.data && e.data.size > 0) chunks.push(e.data);
+      };
+      recorder.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        const type = (mimeType || "audio/webm").split(";")[0];
+        const ext = type.includes("ogg") ? "ogg" : type.includes("mp4") ? "m4a" : "webm";
+        void transcribe(new Blob(chunks, { type }), ext);
+      };
+      recorder.onerror = () => toast.error("Ошибка записи звука");
+      recorder.start(1000);
+      recRef.current = { stream, recorder, chunks };
+      setListening(true);
+    } catch {
+      toast.error("Нет доступа к микрофону — разрешите запись в браузере");
+    }
+  };
+
+  const stop = () => {
+    const rec = recRef.current;
+    recRef.current = null;
+    setListening(false);
+    if (!rec) return;
+    try {
+      if (rec.recorder.state !== "inactive") rec.recorder.stop();
+      else rec.stream.getTracks().forEach(t => t.stop());
+    } catch {
+      rec.stream.getTracks().forEach(t => t.stop());
+    }
+  };
+
 
   return (
     <div className="space-y-2">

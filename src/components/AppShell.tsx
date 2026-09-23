@@ -29,10 +29,6 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   useEffect(() => { setOpen(false); }, [pathname]);
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    navigate({ to: "/auth" });
-  };
 
   const SidebarContent = (
     <>

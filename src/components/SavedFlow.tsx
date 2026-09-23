@@ -8,11 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ArrowLeft, Download, ExternalLink, Mic, MicOff, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, ExternalLink, FileText, Mic, MicOff, Loader2 } from "lucide-react";
 import {
   ensureMaterialSummary,
   generateMaterialEssay,
   generateMaterialScript,
+  saveMaterialTranscript,
 } from "@/lib/quickflow.functions";
 import { downloadTextAsDocx } from "@/lib/docx-download";
 import { getOriginalUrl } from "@/components/MaterialCard";
@@ -297,7 +298,7 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
   const [essay, setEssay] = useState<{ id: string; text: string } | null>(null);
   const [script, setScript] = useState<string | null>(null);
 
-  const { data: material } = useQuery({
+  const { data: material, refetch: refetchMaterial } = useQuery({
     queryKey: ["saved-material", id],
     queryFn: async () =>
       (await supabase.from("raw_materials").select("*").eq("id", id).maybeSingle()).data,

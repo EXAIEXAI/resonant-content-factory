@@ -15,7 +15,7 @@ export async function callLLMRaw(
       "Content-Type": "application/json",
       Authorization: `Bearer ${key}`,
       "HTTP-Referer": "https://resonant-content-factory.lovable.app",
-      "X-Title": "Контент-завод",
+      "X-Title": "Content Factory",
     },
     body: JSON.stringify({
       model: MODEL,

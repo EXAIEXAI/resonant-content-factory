@@ -18,9 +18,13 @@ export const ensureMaterialSummary = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!m) throw new Error("Ролик не найден");
     const hasSummary = (m.summary ?? "").trim().length > 10;
-    const hasPoints = Array.isArray(m.key_points) && m.key_points.length > 0;
+    const points = Array.isArray(m.key_points) ? (m.key_points as any[]) : [];
+    // Если тезисы сохранены слишком кратко (одно предложение вместо абзаца) — пересобираем.
+    const thesesDetailed =
+      points.length > 0 &&
+      points.every((p) => String(p?.thesis ?? "").trim().length >= 200);
     let error: string | undefined;
-    if (data.force || !hasSummary || !hasPoints) {
+    if (data.force || !hasSummary || !thesesDetailed) {
       const res = await analyzeMaterialById(context.supabase as never, data.materialId);
       if (!res.ok) error = res.error;
     }

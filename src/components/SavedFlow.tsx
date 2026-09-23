@@ -206,11 +206,23 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
       (await supabase.from("raw_materials").select("*").eq("id", id).maybeSingle()).data,
   });
 
-  const { data: analysis, isFetching: analyzing } = useQuery({
-    queryKey: ["saved-material-summary", id],
-    queryFn: async () => (await ensure({ data: { materialId: id } } as any)) as any,
+  const [forceKey, setForceKey] = useState(0);
+  const {
+    data: analysis,
+    isFetching: analyzing,
+    refetch: refetchAnalysis,
+  } = useQuery({
+    queryKey: ["saved-material-summary", id, forceKey],
+    queryFn: async () =>
+      (await ensure({ data: { materialId: id, force: forceKey > 0 } } as any)) as any,
     staleTime: Infinity,
+    retry: 1,
   });
+
+  const retryAnalysis = () => {
+    setForceKey(k => k + 1);
+    void refetchAnalysis();
+  };
 
   const essayMut = useMutation({
     mutationFn: async () =>

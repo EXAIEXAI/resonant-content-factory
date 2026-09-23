@@ -329,6 +329,16 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
   const ensure = useServerFn(ensureMaterialSummary);
   const genEssay = useServerFn(generateMaterialEssay);
   const genScript = useServerFn(generateMaterialScript);
+  const loadPrompts = useServerFn(listGenerationPrompts);
+
+  const [essayPromptId, setEssayPromptId] = useState<string>("default");
+  const [scriptPromptId, setScriptPromptId] = useState<string>("default");
+
+  const { data: prompts } = useQuery({
+    queryKey: ["generation-prompts"],
+    queryFn: async () => (await loadPrompts({} as any)) as any,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const [stage, setStage] = useState<Stage>("summary");
   const [essayComment, setEssayComment] = useState("");

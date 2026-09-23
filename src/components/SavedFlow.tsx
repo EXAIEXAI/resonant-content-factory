@@ -377,6 +377,7 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
         data: {
           materialId: id,
           comment: essayComment || null,
+          promptId: essayPromptId === "default" ? null : essayPromptId,
           focusThesis: focusIndex !== null ? focusText : null,
         },
       } as any)) as any,

@@ -86,9 +86,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           <Plug className="w-4 h-4 shrink-0" /> <span className="truncate">Интеграции</span>
         </Link>
-        <Button variant="ghost" size="sm" className="w-full justify-start text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground" onClick={signOut}>
-          <LogOut className="w-4 h-4 mr-2" /> Выйти
-        </Button>
       </div>
     </>
   );

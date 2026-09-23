@@ -4,7 +4,7 @@ import { z } from "zod";
 import { callLLM } from "@/lib/llm.server";
 import { analyzeMaterialById } from "@/lib/analyze.server";
 
-const IdInput = z.object({ materialId: z.string().uuid() });
+const IdInput = z.object({ materialId: z.string().uuid(), force: z.boolean().optional() });
 
 /** Гарантирует, что у ролика есть краткое описание и основные мысли. */
 export const ensureMaterialSummary = createServerFn({ method: "POST" })

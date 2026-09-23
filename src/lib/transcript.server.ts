@@ -162,20 +162,24 @@ export async function fetchTranscriptSegments(videoId: string): Promise<Transcri
       return ai - bi;
     });
     for (const t of tracks) {
-      for (const fmt of ["&fmt=json3", ""]) {
-        try {
-          const r = await fetch(t.baseUrl + fmt, { headers: { "User-Agent": UA } });
-          if (!r.ok) continue;
-          const body = await r.text();
-          if (!body.trim()) continue;
-          const segs = fmt ? parseTimedTextJson3(body) : parseTimedTextXml(body);
-          if (segs.length) return segs;
-        } catch {
-          continue;
-        }
-      }
+      const segs = await downloadTrack(t.baseUrl);
+      if (segs.length) return segs;
     }
   }
+
+  // Запасной путь: внутренний плеерный API (работает, когда страница ролика заблокирована).
+  const itTracks = await fetchTracksViaInnerTube(videoId);
+  const order = ["ru", "en"];
+  itTracks.sort((a, b) => {
+    const ai = order.indexOf(a.lang) === -1 ? 9 : order.indexOf(a.lang);
+    const bi = order.indexOf(b.lang) === -1 ? 9 : order.indexOf(b.lang);
+    return ai - bi;
+  });
+  for (const t of itTracks) {
+    const segs = await downloadTrack(t.baseUrl);
+    if (segs.length) return segs;
+  }
+
 
   // Устаревший запасной путь.
   for (const lang of ["ru", "en"]) {

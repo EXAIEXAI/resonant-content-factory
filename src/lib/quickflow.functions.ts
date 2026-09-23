@@ -97,6 +97,7 @@ export const generateMaterialEssay = createServerFn({ method: "POST" })
     const { material, block, comments } = await materialContext(context.supabase, data.materialId);
     const prompt = await loadPrompt(context.supabase, "essay", data.promptId);
     const userComment = (data.comment ?? "").trim();
+    const focus = (data.focusThesis ?? "").trim();
 
     const system = `Ты — редактор экспертного контента компании. Пиши по-русски, в фирменной тональности.
 ${prompt?.prompt_body ? `Инструкция «${prompt.name}» (строго следуй):\n${prompt.prompt_body}\n` : ""}
@@ -106,6 +107,10 @@ ${block}
 
 ${comments ? `Ранее оставленные комментарии экспертов:\n${comments.slice(0, 4000)}\n` : ""}${
       userComment ? `Комментарий продюсера (обязательно учти):\n${userComment}\n` : ""
+    }${
+      focus
+        ? `\nГЛАВНОЕ: эссе пишется строго вокруг одной выбранной мысли автора. Раскрой именно её, остальные мысли ролика используй только как контекст и подкрепление.\nВыбранная мысль:\n${focus}\n`
+        : ""
     }
 Напиши готовое эссе по этому ролику. Без вводных фраз и пояснений.`;
 

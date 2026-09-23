@@ -153,7 +153,7 @@ function VoiceComment({
           variant="outline"
           size="sm"
           disabled={working}
-          onClick={() => (listening ? void stop() : void start())}
+          onClick={() => (listening ? stop() : void start())}
         >
           {working ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />

@@ -529,15 +529,6 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
         </CardContent>
       </Card>
 
-      <TranscriptCard
-        id={id}
-        transcript={String((material as any)?.raw_transcript ?? "")}
-        onSaved={() => {
-          void refetchMaterial();
-          retryAnalysis();
-        }}
-      />
-
       {stage === "summary" && (
         <Card>
           <CardContent className="py-6 flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">

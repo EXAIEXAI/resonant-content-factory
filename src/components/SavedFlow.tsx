@@ -581,6 +581,12 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
             <CardTitle className="font-serif text-xl">Комментарий к сценарию</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <PromptPicker
+              label="Промт для сценария"
+              value={scriptPromptId}
+              onChange={setScriptPromptId}
+              options={[...(prompts?.script ?? []), ...(prompts?.general ?? [])]}
+            />
             <VoiceComment
               value={scriptComment}
               onChange={setScriptComment}

@@ -9,12 +9,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { ArrowLeft, Download, ExternalLink, FileText, Mic, MicOff, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, ExternalLink, Mic, MicOff, Loader2 } from "lucide-react";
 import {
   ensureMaterialSummary,
   generateMaterialEssay,
   generateMaterialScript,
-  saveMaterialTranscript,
   listGenerationPrompts,
 } from "@/lib/quickflow.functions";
 import {
@@ -225,104 +224,6 @@ function TextBlock({ title, text, fileName }: { title: string; text: string; fil
   );
 }
 
-function TranscriptCard({
-  id,
-  transcript,
-  onSaved,
-}: {
-  id: string;
-  transcript: string;
-  onSaved: () => void;
-}) {
-  const save = useServerFn(saveMaterialTranscript);
-  const [open, setOpen] = useState(false);
-  const [text, setText] = useState("");
-  const has = transcript.trim().length > 50;
-
-  const mut = useMutation({
-    mutationFn: async () => (await save({ data: { materialId: id, text } } as any)) as any,
-    onSuccess: (r: any) => {
-      setOpen(false);
-      setText("");
-      if (r?.error) toast.error(`Расшифровка сохранена, но разбор не удался: ${r.error}`);
-      else toast.success("Расшифровка сохранена, разбор пересобран");
-      onSaved();
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const onFile = async (file: File) => {
-    const content = await file.text();
-    setText(content);
-  };
-
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
-        <CardTitle className="font-serif text-xl">Расшифровка ролика</CardTitle>
-        <Button size="sm" variant="outline" onClick={() => setOpen(o => !o)}>
-          <FileText className="w-4 h-4 mr-2" />
-          {open ? "Свернуть" : has ? "Заменить расшифровку" : "Вставить расшифровку"}
-        </Button>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {has ? (
-          <details className="text-sm">
-            <summary className="cursor-pointer text-muted-foreground">
-              Расшифровка загружена ({transcript.trim().length.toLocaleString("ru-RU")} символов) — показать текст
-            </summary>
-            <div className="mt-3 max-h-80 overflow-y-auto whitespace-pre-wrap leading-relaxed">
-              {transcript}
-            </div>
-          </details>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            YouTube не отдаёт субтитры этого ролика роботам, поэтому описание строится только по названию.
-            Откройте ролик на YouTube → «Ещё» → «Показать расшифровку видео», скопируйте текст и вставьте
-            его сюда — описание и мысли будут по реальным словам автора.
-          </p>
-        )}
-
-        {open && (
-          <div className="space-y-3">
-            <Textarea
-              value={text}
-              onChange={e => setText(e.target.value)}
-              rows={8}
-              placeholder="Вставьте текст расшифровки (таймкоды можно не убирать)…"
-            />
-            <div className="flex flex-wrap items-center gap-3">
-              <input
-                type="file"
-                accept=".txt,.srt,.vtt,.md"
-                className="text-sm"
-                onChange={e => {
-                  const f = e.target.files?.[0];
-                  if (f) void onFile(f);
-                }}
-              />
-              <Button
-                size="sm"
-                disabled={mut.isPending || text.trim().length < 50}
-                onClick={() => mut.mutate()}
-              >
-                {mut.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Сохраняю и разбираю…
-                  </>
-                ) : (
-                  "Сохранить и пересобрать разбор"
-                )}
-              </Button>
-            </div>
-            <ProgressBar active={mut.isPending} label="Сохраняю расшифровку и пересобираю разбор…" />
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
 function PromptPicker({
   label,
   value,
@@ -378,7 +279,7 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
   const [focusIndex, setFocusIndex] = useState<number | null>(null);
   const [script, setScript] = useState<string | null>(null);
 
-  const { data: material, refetch: refetchMaterial } = useQuery({
+  const { data: material } = useQuery({
     queryKey: ["saved-material", id],
     queryFn: async () =>
       (await supabase.from("raw_materials").select("*").eq("id", id).maybeSingle()).data,
@@ -528,15 +429,6 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
           )}
         </CardContent>
       </Card>
-
-      <TranscriptCard
-        id={id}
-        transcript={String((material as any)?.raw_transcript ?? "")}
-        onSaved={() => {
-          void refetchMaterial();
-          retryAnalysis();
-        }}
-      />
 
       {stage === "summary" && (
         <Card>

@@ -274,27 +274,43 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
           <CardTitle className="font-serif text-xl">О чём этот ролик</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {analyzing && !analysis ? (
+          {analyzing ? (
             <div className="flex items-center text-sm text-muted-foreground">
               <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Готовлю краткое описание...
             </div>
           ) : (
             <>
-              <p className="text-sm leading-relaxed">{analysis?.summary || "Описание пока недоступно"}</p>
+              {analysis?.summary ? (
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">{analysis.summary}</p>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    {analysis?.error
+                      ? `Описание пока не готово: ${analysis.error}`
+                      : "Описание пока не готово."}
+                  </p>
+                  <Button size="sm" variant="outline" onClick={retryAnalysis}>
+                    Сформировать описание заново
+                  </Button>
+                </div>
+              )}
               {keyPoints.length > 0 && (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="text-sm font-medium">Основные мысли автора</div>
-                  <ul className="space-y-2">
+                  <ul className="space-y-3">
                     {keyPoints.map((p: any, i: number) => (
-                      <li key={i} className="text-sm flex gap-2">
+                      <li key={i} className="text-sm flex gap-2 leading-relaxed">
                         <Badge variant="secondary" className="shrink-0">{i + 1}</Badge>
-                        <span>
+                        <span className="whitespace-pre-wrap">
                           {p?.thesis ?? String(p)}
                           {p?.quote ? <span className="text-muted-foreground"> — «{p.quote}»</span> : null}
                         </span>
                       </li>
                     ))}
                   </ul>
+                  <Button size="sm" variant="ghost" onClick={retryAnalysis}>
+                    Пересобрать описание
+                  </Button>
                 </div>
               )}
             </>

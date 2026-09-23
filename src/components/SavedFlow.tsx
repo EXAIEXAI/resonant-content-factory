@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { ArrowLeft, Download, ExternalLink, FileText, Mic, MicOff, Loader2 } from "lucide-react";
 import {
@@ -172,6 +173,34 @@ function VoiceComment({
 }
 
 
+function ProgressBar({ active, label }: { active: boolean; label: string }) {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    if (!active) {
+      setValue(0);
+      return;
+    }
+    setValue(6);
+    const t = setInterval(() => {
+      setValue(v => (v >= 95 ? 95 : v + Math.max(0.6, (95 - v) / 22)));
+    }, 500);
+    return () => clearInterval(t);
+  }, [active]);
+  if (!active) return null;
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span className="flex items-center">
+          <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> {label}
+        </span>
+        <span>{Math.round(value)}%</span>
+      </div>
+      <Progress value={value} className="h-2" />
+      <p className="text-xs text-muted-foreground">Обычно занимает 30–90 секунд, не закрывайте страницу.</p>
+    </div>
+  );
+}
+
 function TextBlock({ title, text, fileName }: { title: string; text: string; fileName: string }) {
   return (
     <Card>
@@ -278,6 +307,7 @@ function TranscriptCard({
                 )}
               </Button>
             </div>
+            <ProgressBar active={mut.isPending} label="Сохраняю расшифровку и пересобираю разбор…" />
           </div>
         )}
       </CardContent>
@@ -373,9 +403,7 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
         </CardHeader>
         <CardContent className="space-y-4">
           {analyzing ? (
-            <div className="flex items-center text-sm text-muted-foreground">
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Готовлю краткое описание...
-            </div>
+            <ProgressBar active label="Готовлю описание и основные мысли…" />
           ) : (
             <>
               {analysis?.summary ? (
@@ -455,6 +483,7 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
                 {essayMut.isPending ? "Пишу эссе..." : "Написать эссе"}
               </Button>
             </div>
+            <ProgressBar active={essayMut.isPending} label="Пишу эссе…" />
           </CardContent>
         </Card>
       )}
@@ -492,6 +521,7 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
                 {scriptMut.isPending ? "Пишу сценарий..." : "Написать сценарий"}
               </Button>
             </div>
+            <ProgressBar active={scriptMut.isPending} label="Пишу сценарий…" />
           </CardContent>
         </Card>
       )}

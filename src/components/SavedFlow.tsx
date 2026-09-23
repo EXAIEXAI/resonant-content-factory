@@ -326,6 +326,7 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
   const [essayComment, setEssayComment] = useState("");
   const [scriptComment, setScriptComment] = useState("");
   const [essay, setEssay] = useState<{ id: string; text: string } | null>(null);
+  const [focusIndex, setFocusIndex] = useState<number | null>(null);
   const [script, setScript] = useState<string | null>(null);
 
   const { data: material, refetch: refetchMaterial } = useQuery({
@@ -354,7 +355,13 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
 
   const essayMut = useMutation({
     mutationFn: async () =>
-      (await genEssay({ data: { materialId: id, comment: essayComment || null } } as any)) as any,
+      (await genEssay({
+        data: {
+          materialId: id,
+          comment: essayComment || null,
+          focusThesis: focusIndex !== null ? focusText : null,
+        },
+      } as any)) as any,
     onSuccess: (r: any) => {
       setEssay({ id: r.id, text: r.generated_text ?? "" });
       setStage("essay");
@@ -376,6 +383,8 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
 
   const originalUrl = material ? getOriginalUrl(material) : null;
   const keyPoints: any[] = Array.isArray(analysis?.key_points) ? analysis.key_points : [];
+  const focusPoint = focusIndex !== null ? keyPoints[focusIndex] : null;
+  const focusText = focusPoint ? String(focusPoint?.thesis ?? focusPoint ?? "") : "";
 
   return (
     <div className="space-y-6">
@@ -423,16 +432,37 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
               {keyPoints.length > 0 && (
                 <div className="space-y-3">
                   <div className="text-sm font-medium">Основные мысли автора</div>
+                  <p className="text-xs text-muted-foreground">
+                    Нажмите на мысль, чтобы написать эссе именно по ней.
+                  </p>
                   <ul className="space-y-3">
-                    {keyPoints.map((p: any, i: number) => (
-                      <li key={i} className="text-sm flex gap-2 leading-relaxed">
-                        <Badge variant="secondary" className="shrink-0">{i + 1}</Badge>
-                        <span className="whitespace-pre-wrap">
-                          {p?.thesis ?? String(p)}
-                          {p?.quote ? <span className="text-muted-foreground"> — «{p.quote}»</span> : null}
-                        </span>
-                      </li>
-                    ))}
+                    {keyPoints.map((p: any, i: number) => {
+                      const text = String(p?.thesis ?? p ?? "");
+                      const selected = focusIndex === i;
+                      return (
+                        <li key={i}>
+                          <button
+                            type="button"
+                            onClick={() => setFocusIndex(selected ? null : i)}
+                            className={`w-full text-left text-sm flex gap-2 leading-relaxed rounded-md border p-3 transition-colors ${
+                              selected
+                                ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                : "border-transparent hover:bg-muted/50"
+                            }`}
+                          >
+                            <Badge variant={selected ? "default" : "secondary"} className="shrink-0">
+                              {i + 1}
+                            </Badge>
+                            <span className="whitespace-pre-wrap">
+                              {text}
+                              {p?.quote ? (
+                                <span className="text-muted-foreground"> — «{p.quote}»</span>
+                              ) : null}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
                   </ul>
                   <Button size="sm" variant="ghost" onClick={retryAnalysis}>
                     Пересобрать описание
@@ -456,7 +486,11 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
       {stage === "summary" && (
         <Card>
           <CardContent className="py-6 flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
-            <div className="text-sm">Понравилось? Сформируем по этому ролику эссе.</div>
+            <div className="text-sm">
+              {focusText
+                ? `Эссе будет написано по выбранной мысли №${(focusIndex ?? 0) + 1}.`
+                : "Понравилось? Сформируем по этому ролику эссе. Можно выбрать одну мысль выше."}
+            </div>
             <div className="flex gap-2">
               <Button onClick={() => setStage("essay_comment")}>Да, написать эссе</Button>
             </div>
@@ -470,6 +504,12 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
             <CardTitle className="font-serif text-xl">Ваш комментарий к ролику</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {focusText && (
+              <div className="rounded-md border border-primary bg-primary/5 p-3 text-sm">
+                <div className="font-medium mb-1">Эссе по выбранной мысли №{(focusIndex ?? 0) + 1}</div>
+                <div className="whitespace-pre-wrap leading-relaxed">{focusText}</div>
+              </div>
+            )}
             <p className="text-sm text-muted-foreground">
               Комментарий учтётся вместе с промтом для эссе. Можно пропустить — тогда будет использован только промт.
             </p>

@@ -537,6 +537,12 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
             <p className="text-sm text-muted-foreground">
               Комментарий учтётся вместе с промтом для эссе. Можно пропустить — тогда будет использован только промт.
             </p>
+            <PromptPicker
+              label="Промт для эссе"
+              value={essayPromptId}
+              onChange={setEssayPromptId}
+              options={[...(prompts?.essay ?? []), ...(prompts?.general ?? [])]}
+            />
             <VoiceComment
               value={essayComment}
               onChange={setEssayComment}

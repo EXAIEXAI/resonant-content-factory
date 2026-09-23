@@ -70,6 +70,29 @@ function BriefingPage() {
         </p>
       </div>
 
+      <Card>
+        <CardContent className="py-5 space-y-2">
+          <div className="text-sm font-medium">Добавить ролик по ссылке YouTube</div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              value={url}
+              onChange={e => setUrl(e.target.value)}
+              placeholder="https://www.youtube.com/watch?v=..."
+              onKeyDown={e => {
+                if (e.key === "Enter" && url.trim() && !addMut.isPending) addMut.mutate();
+              }}
+            />
+            <Button disabled={addMut.isPending || url.trim().length < 5} onClick={() => addMut.mutate()}>
+              {addMut.isPending ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Добавляю…</>
+              ) : (
+                <><Plus className="w-4 h-4 mr-2" /> Добавить</>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="space-y-3">
         {list.map(m => (
           <div key={m.id} className="space-y-1">

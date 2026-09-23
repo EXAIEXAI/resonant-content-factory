@@ -69,6 +69,88 @@ function extractCaptionTracks(html: string): { baseUrl: string; lang: string; ki
 }
 
 /** Пытается получить субтитры с таймкодами для ролика YouTube. */
+/** Разбор формата timedtext format=3 (<p t="" d="">текст</p>). */
+function parseTimedTextFormat3(xml: string): TranscriptSegment[] {
+  const out: TranscriptSegment[] = [];
+  const re = /<p[^>]*\st="(\d+)"[^>]*?(?:\sd="(\d+)")?[^>]*>([\s\S]*?)<\/p>/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(xml))) {
+    const text = decode(m[3]);
+    if (!text) continue;
+    out.push({ start: parseInt(m[1], 10) / 1000, dur: parseInt(m[2] ?? "0", 10) / 1000, text });
+  }
+  return out;
+}
+
+const INNERTUBE_KEY = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
+
+const INNERTUBE_CLIENTS: { client: Record<string, unknown>; ua: string; name: string }[] = [
+  {
+    name: "1",
+    client: { clientName: "IOS", clientVersion: "20.10.4", deviceModel: "iPhone16,2", hl: "ru" },
+    ua: "com.google.ios.youtube/20.10.4 (iPhone16,2; U; CPU iOS 18_3_2 like Mac OS X)",
+  },
+  {
+    name: "3",
+    client: { clientName: "ANDROID", clientVersion: "20.10.38", androidSdkVersion: 34, hl: "ru" },
+    ua: "com.google.android.youtube/20.10.38 (Linux; U; Android 14) gzip",
+  },
+  {
+    name: "28",
+    client: { clientName: "ANDROID_VR", clientVersion: "1.60.19", deviceModel: "Quest 3", androidSdkVersion: 32, hl: "ru" },
+    ua: "com.google.android.apps.youtube.vr.oculus/1.60.19 (Linux; U; Android 12) gzip",
+  },
+];
+
+/** Запасной путь: внутренний плеерный API YouTube (обходит блокировку страницы). */
+async function fetchTracksViaInnerTube(videoId: string): Promise<{ baseUrl: string; lang: string; kind?: string }[]> {
+  for (const c of INNERTUBE_CLIENTS) {
+    try {
+      const r = await fetch(`https://www.youtube.com/youtubei/v1/player?key=${INNERTUBE_KEY}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": c.ua,
+          "X-YouTube-Client-Name": c.name,
+          "X-YouTube-Client-Version": String((c.client as any).clientVersion),
+        },
+        body: JSON.stringify({ context: { client: c.client }, videoId }),
+      });
+      if (!r.ok) continue;
+      const j: any = await r.json();
+      const tracks = j?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+      if (Array.isArray(tracks) && tracks.length) {
+        return tracks
+          .map((t: any) => ({ baseUrl: String(t.baseUrl ?? ""), lang: String(t.languageCode ?? ""), kind: t.kind }))
+          .filter(t => t.baseUrl);
+      }
+    } catch {
+      continue;
+    }
+  }
+  return [];
+}
+
+async function downloadTrack(baseUrl: string): Promise<TranscriptSegment[]> {
+  for (const fmt of ["&fmt=json3", ""]) {
+    try {
+      const r = await fetch(baseUrl + fmt, { headers: { "User-Agent": UA } });
+      if (!r.ok) continue;
+      const body = await r.text();
+      if (!body.trim()) continue;
+      const segs = body.trimStart().startsWith("{")
+        ? parseTimedTextJson3(body)
+        : body.includes("<p ")
+          ? parseTimedTextFormat3(body)
+          : parseTimedTextXml(body);
+      if (segs.length) return segs;
+    } catch {
+      continue;
+    }
+  }
+  return [];
+}
+
 export async function fetchTranscriptSegments(videoId: string): Promise<TranscriptSegment[]> {
   const html = await fetchWatchHtml(videoId);
   if (html) {

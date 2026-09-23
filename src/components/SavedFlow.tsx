@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { ArrowLeft, Download, ExternalLink, FileText, Mic, MicOff, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, ExternalLink, Mic, MicOff, Loader2 } from "lucide-react";
 import {
   ensureMaterialSummary,
   generateMaterialEssay,
@@ -279,7 +279,7 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
   const [focusIndex, setFocusIndex] = useState<number | null>(null);
   const [script, setScript] = useState<string | null>(null);
 
-  const { data: material, refetch: refetchMaterial } = useQuery({
+  const { data: material } = useQuery({
     queryKey: ["saved-material", id],
     queryFn: async () =>
       (await supabase.from("raw_materials").select("*").eq("id", id).maybeSingle()).data,

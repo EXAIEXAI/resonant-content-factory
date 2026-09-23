@@ -1,34 +1,9 @@
 // Server-only: формирование развёрнутого разбора видео («Читать обзор»).
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const MODEL = "google/gemini-3.6-flash";
+import { callLLM } from "@/lib/llm.server";
 
 type AnyClient = SupabaseClient<any, any, any>;
-
-async function callLLM(system: string, user: string): Promise<string> {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("LOVABLE_API_KEY отсутствует");
-  const r = await fetch(GATEWAY, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-    }),
-  });
-  if (!r.ok) {
-    const txt = await r.text();
-    if (r.status === 429) throw new Error("Превышен лимит запросов к ИИ. Попробуйте позже.");
-    if (r.status === 402) throw new Error("Закончились кредиты Lovable AI. Пополните в настройках.");
-    throw new Error(`Ошибка ИИ (${r.status}): ${txt.slice(0, 200)}`);
-  }
-  const data = await r.json();
-  return (data.choices?.[0]?.message?.content ?? "").trim();
-}
 
 const SYSTEM = `Ты — аналитик экспертного контента. Готовишь письменные разборы видео на русском языке.
 Пиши содержательно, без воды и без вводных фраз вроде «Конечно» или «Вот разбор».

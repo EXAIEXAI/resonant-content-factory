@@ -57,12 +57,16 @@ export async function analyzeMaterialById(
   const source = hasTranscript
     ? `Заголовок: ${m.title}\nКанал: ${m.channel_title ?? ""}\n\nТранскрипт:\n${transcript}`
     : `Заголовок: ${m.title}\nКанал: ${m.channel_title ?? ""}\nURL: ${m.url ?? ""}`;
+  const detail = `Требования к key_points: 5–7 пунктов. Поле "thesis" — это НЕ одно предложение, а развёрнутый абзац из 3–6 предложений: сформулируй мысль автора, поясни аргументацию и контекст, приведи пример или вывод. Пиши живым содержательным языком, без воды и без повторов.
+Поле "summary" — один связный абзац из 4–6 предложений о том, чему посвящён материал и что зритель из него вынесет.`;
   const prompt = hasTranscript
     ? `Проанализируй материал и верни строго JSON вида:
-{"summary":"3-5 ключевых мыслей в 1 абзаце — о чём материал и что в нём содержится","key_points":[{"thesis":"тезис","timecode":"HH:MM:SS или null","quote":"короткая цитата"}]}
+{"summary":"абзац","key_points":[{"thesis":"развёрнутый абзац","timecode":"HH:MM:SS или null","quote":"короткая цитата"}]}
+${detail}
 Материал:\n${source.slice(0, 12000)}`
     : `Расшифровки нет. По заголовку и каналу сформулируй, о чём этот ролик, какая от него польза зрителю и какие мысли автор, скорее всего, раскрывает. Верни строго JSON:
-{"summary":"2-4 предложения","key_points":[{"thesis":"предполагаемый тезис","timecode":null,"quote":""}]}
+{"summary":"абзац","key_points":[{"thesis":"развёрнутый предполагаемый тезис абзацем","timecode":null,"quote":""}]}
+${detail}
 Материал:\n${source}`;
 
   let parsed: { summary?: string; key_points?: unknown[] };

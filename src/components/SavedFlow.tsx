@@ -486,7 +486,11 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
       {stage === "summary" && (
         <Card>
           <CardContent className="py-6 flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
-            <div className="text-sm">Понравилось? Сформируем по этому ролику эссе.</div>
+            <div className="text-sm">
+              {focusText
+                ? `Эссе будет написано по выбранной мысли №${(focusIndex ?? 0) + 1}.`
+                : "Понравилось? Сформируем по этому ролику эссе. Можно выбрать одну мысль выше."}
+            </div>
             <div className="flex gap-2">
               <Button onClick={() => setStage("essay_comment")}>Да, написать эссе</Button>
             </div>

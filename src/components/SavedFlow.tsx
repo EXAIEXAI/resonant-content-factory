@@ -326,6 +326,7 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
   const [essayComment, setEssayComment] = useState("");
   const [scriptComment, setScriptComment] = useState("");
   const [essay, setEssay] = useState<{ id: string; text: string } | null>(null);
+  const [focusIndex, setFocusIndex] = useState<number | null>(null);
   const [script, setScript] = useState<string | null>(null);
 
   const { data: material, refetch: refetchMaterial } = useQuery({

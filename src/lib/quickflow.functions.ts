@@ -181,3 +181,43 @@ ${comments ? `Комментарии экспертов:\n${comments.slice(0, 40
     if (error) throw new Error(error.message);
     return out;
   });
+
+const TranscriptInput = z.object({
+  materialId: z.string().uuid(),
+  text: z.string().min(50).max(400_000),
+});
+
+/** Сохраняет расшифровку, вставленную вручную, и сразу пересобирает разбор. */
+export const saveMaterialTranscript = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => TranscriptInput.parse(d))
+  .handler(async ({ data, context }) => {
+    // Убираем таймкоды и номера строк формата SRT/VTT — оставляем связный текст.
+    const cleaned = data.text
+      .replace(/^WEBVTT.*$/gim, "")
+      .replace(/^\s*\d+\s*$/gm, "")
+      .replace(/^\s*\d{1,2}:\d{2}(:\d{2})?([.,]\d{1,3})?\s*-->.*$/gm, "")
+      .replace(/^\s*\(?\d{1,2}:\d{2}(:\d{2})?\)?\s*/gm, "")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+    if (cleaned.length < 50) throw new Error("Слишком короткая расшифровка");
+
+    const { error } = await context.supabase
+      .from("raw_materials")
+      .update({ raw_transcript: cleaned })
+      .eq("id", data.materialId);
+    if (error) throw new Error(error.message);
+
+    const res = await analyzeMaterialById(context.supabase as never, data.materialId);
+    const { data: fresh } = await context.supabase
+      .from("raw_materials")
+      .select("summary, key_points")
+      .eq("id", data.materialId)
+      .maybeSingle();
+    return {
+      ok: res.ok,
+      error: res.ok ? null : res.error,
+      summary: fresh?.summary ?? "",
+      key_points: fresh?.key_points ?? [],
+    };
+  });

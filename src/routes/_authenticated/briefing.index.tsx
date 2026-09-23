@@ -42,6 +42,16 @@ function BriefingPage() {
         .order("created_at", { ascending: false })).data ?? [],
   });
 
+  const addMut = useMutation({
+    mutationFn: async () => (await addVideo({ data: { url: url.trim() } } as any)) as any,
+    onSuccess: (r: any) => {
+      setUrl("");
+      toast.success(`Ролик добавлен: ${r?.title ?? ""}`.trim());
+      void refetch();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const list = useMemo(
     () =>
       (materials ?? []).map(m => {

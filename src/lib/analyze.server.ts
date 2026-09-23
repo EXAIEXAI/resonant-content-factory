@@ -1,26 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-
-const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const MODEL = "google/gemini-3.6-flash";
+import { callLLMRaw } from "@/lib/llm.server";
 
 async function callLLM(system: string, user: string): Promise<string> {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("Ключ ИИ недоступен");
-  const r = await fetch(GATEWAY, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-    body: JSON.stringify({
-      model: MODEL,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-    }),
-  });
-  if (!r.ok) throw new Error(`AI ${r.status}: ${(await r.text()).slice(0, 200)}`);
-  const data = await r.json();
-  return data.choices?.[0]?.message?.content ?? "";
+  return callLLMRaw(system, user, { json: true });
 }
 
 function parseJsonLoose(raw: string): any {

@@ -87,6 +87,7 @@ const GenInput = z.object({
   materialId: z.string().uuid(),
   comment: z.string().max(8000).optional().nullable(),
   promptId: z.string().uuid().optional().nullable(),
+  focusThesis: z.string().max(4000).optional().nullable(),
 });
 
 export const generateMaterialEssay = createServerFn({ method: "POST" })

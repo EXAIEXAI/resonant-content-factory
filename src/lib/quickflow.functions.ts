@@ -3,6 +3,74 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { callLLM } from "@/lib/llm.server";
 import { analyzeMaterialById } from "@/lib/analyze.server";
+import { extractYoutubeId } from "@/lib/youtube";
+import { BRIEFING_PLAYLIST_ID, WORKSPACE_OWNER_ID } from "@/lib/workspace";
+
+/** Список промтов из базы знаний для выбора при генерации. */
+export const listGenerationPrompts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("style_templates")
+      .select("id, name, purpose, created_at")
+      .eq("kind", "prompt")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    const rows = data ?? [];
+    const pick = (purpose: string) => rows.filter(r => r.purpose === purpose);
+    return {
+      essay: pick("essay"),
+      script: pick("script"),
+      general: pick("general"),
+    };
+  });
+
+/** Добавляет ролик в раздел «Недавно сохранённое» по прямой ссылке YouTube. */
+export const addBriefingVideo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ url: z.string().min(5).max(1000) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const videoId = extractYoutubeId(data.url);
+    if (!videoId) throw new Error("Не удалось распознать ссылку на ролик YouTube");
+    const canonicalUrl = `https://www.youtube.com/watch?v=${videoId}`;
+
+    let meta: { title: string; author: string; thumbnail: string } | null = null;
+    try {
+      const r = await fetch(
+        `https://www.youtube.com/oembed?url=${encodeURIComponent(canonicalUrl)}&format=json`,
+      );
+      if (r.ok) {
+        const j: any = await r.json();
+        meta = { title: j.title ?? "", author: j.author_name ?? "", thumbnail: j.thumbnail_url ?? "" };
+      }
+    } catch {
+      /* без метаданных — сохраняем ссылку */
+    }
+
+    const { data: row, error } = await context.supabase
+      .from("raw_materials")
+      .upsert(
+        {
+          user_id: WORKSPACE_OWNER_ID,
+          added_by: WORKSPACE_OWNER_ID,
+          external_id: videoId,
+          title: meta?.title || canonicalUrl,
+          channel_title: meta?.author ?? null,
+          url: canonicalUrl,
+          thumbnail_url: meta?.thumbnail ?? null,
+          is_manual: true,
+          source_type: "youtube_saved",
+          playlist_id: BRIEFING_PLAYLIST_ID,
+          playlist_label: "Контент-Завод",
+          status: "found",
+        },
+        { onConflict: "user_id,external_id" },
+      )
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return { id: row.id, title: row.title };
+  });
 
 const IdInput = z.object({ materialId: z.string().uuid(), force: z.boolean().optional() });
 

@@ -15,7 +15,15 @@ import {
   generateMaterialEssay,
   generateMaterialScript,
   saveMaterialTranscript,
+  listGenerationPrompts,
 } from "@/lib/quickflow.functions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { downloadTextAsDocx } from "@/lib/docx-download";
 import { getOriginalUrl } from "@/components/MaterialCard";
 
@@ -315,12 +323,53 @@ function TranscriptCard({
   );
 }
 
+function PromptPicker({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: Array<{ id: string; name: string }>;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="text-sm font-medium">{label}</div>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="sm:max-w-md">
+          <SelectValue placeholder="По умолчанию" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="default">По умолчанию</SelectItem>
+          {options.map(o => (
+            <SelectItem key={o.id} value={o.id}>
+              {o.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
 type Stage = "summary" | "essay_comment" | "essay" | "script_comment" | "script";
 
 export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
   const ensure = useServerFn(ensureMaterialSummary);
   const genEssay = useServerFn(generateMaterialEssay);
   const genScript = useServerFn(generateMaterialScript);
+  const loadPrompts = useServerFn(listGenerationPrompts);
+
+  const [essayPromptId, setEssayPromptId] = useState<string>("default");
+  const [scriptPromptId, setScriptPromptId] = useState<string>("default");
+
+  const { data: prompts } = useQuery({
+    queryKey: ["generation-prompts"],
+    queryFn: async () => (await loadPrompts({} as any)) as any,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const [stage, setStage] = useState<Stage>("summary");
   const [essayComment, setEssayComment] = useState("");
@@ -359,6 +408,7 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
         data: {
           materialId: id,
           comment: essayComment || null,
+          promptId: essayPromptId === "default" ? null : essayPromptId,
           focusThesis: focusIndex !== null ? focusText : null,
         },
       } as any)) as any,
@@ -372,7 +422,12 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
   const scriptMut = useMutation({
     mutationFn: async () =>
       (await genScript({
-        data: { materialId: id, essayId: essay!.id, comment: scriptComment || null },
+        data: {
+          materialId: id,
+          essayId: essay!.id,
+          comment: scriptComment || null,
+          promptId: scriptPromptId === "default" ? null : scriptPromptId,
+        },
       } as any)) as any,
     onSuccess: (r: any) => {
       setScript(r.generated_text ?? "");
@@ -513,6 +568,12 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
             <p className="text-sm text-muted-foreground">
               Комментарий учтётся вместе с промтом для эссе. Можно пропустить — тогда будет использован только промт.
             </p>
+            <PromptPicker
+              label="Промт для эссе"
+              value={essayPromptId}
+              onChange={setEssayPromptId}
+              options={[...(prompts?.essay ?? []), ...(prompts?.general ?? [])]}
+            />
             <VoiceComment
               value={essayComment}
               onChange={setEssayComment}
@@ -551,6 +612,12 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
             <CardTitle className="font-serif text-xl">Комментарий к сценарию</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <PromptPicker
+              label="Промт для сценария"
+              value={scriptPromptId}
+              onChange={setScriptPromptId}
+              options={[...(prompts?.script ?? []), ...(prompts?.general ?? [])]}
+            />
             <VoiceComment
               value={scriptComment}
               onChange={setScriptComment}

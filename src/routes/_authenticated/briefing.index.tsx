@@ -1,12 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { MaterialCard } from "@/components/MaterialCard";
 import { computeScore } from "@/lib/scoring";
 import { Badge } from "@/components/ui/badge";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+import { Loader2, Plus } from "lucide-react";
+import { addBriefingVideo } from "@/lib/quickflow.functions";
 import { BRIEFING_PLAYLIST_ID } from "@/lib/workspace";
 
 export const Route = createFileRoute("/_authenticated/briefing/")({
@@ -24,7 +29,9 @@ export const Route = createFileRoute("/_authenticated/briefing/")({
 });
 
 function BriefingPage() {
-  const { data: materials } = useQuery({
+  const addVideo = useServerFn(addBriefingVideo);
+  const [url, setUrl] = useState("");
+  const { data: materials, refetch } = useQuery({
     queryKey: ["materials-briefing", BRIEFING_PLAYLIST_ID],
     queryFn: async () =>
       (await supabase
@@ -33,6 +40,16 @@ function BriefingPage() {
         .eq("source_type", "youtube_saved")
         .eq("playlist_id", BRIEFING_PLAYLIST_ID)
         .order("created_at", { ascending: false })).data ?? [],
+  });
+
+  const addMut = useMutation({
+    mutationFn: async () => (await addVideo({ data: { url: url.trim() } } as any)) as any,
+    onSuccess: (r: any) => {
+      setUrl("");
+      toast.success(`Ролик добавлен: ${r?.title ?? ""}`.trim());
+      void refetch();
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const list = useMemo(
@@ -52,6 +69,29 @@ function BriefingPage() {
           Ролики из плейлиста «Контент-Завод». Нажмите «Разобрать» — получите описание, затем эссе и сценарий.
         </p>
       </div>
+
+      <Card>
+        <CardContent className="py-5 space-y-2">
+          <div className="text-sm font-medium">Добавить ролик по ссылке YouTube</div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              value={url}
+              onChange={e => setUrl(e.target.value)}
+              placeholder="https://www.youtube.com/watch?v=..."
+              onKeyDown={e => {
+                if (e.key === "Enter" && url.trim() && !addMut.isPending) addMut.mutate();
+              }}
+            />
+            <Button disabled={addMut.isPending || url.trim().length < 5} onClick={() => addMut.mutate()}>
+              {addMut.isPending ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Добавляю…</>
+              ) : (
+                <><Plus className="w-4 h-4 mr-2" /> Добавить</>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="space-y-3">
         {list.map(m => (

@@ -391,7 +391,12 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
   const scriptMut = useMutation({
     mutationFn: async () =>
       (await genScript({
-        data: { materialId: id, essayId: essay!.id, comment: scriptComment || null },
+        data: {
+          materialId: id,
+          essayId: essay!.id,
+          comment: scriptComment || null,
+          promptId: scriptPromptId === "default" ? null : scriptPromptId,
+        },
       } as any)) as any,
     onSuccess: (r: any) => {
       setScript(r.generated_text ?? "");

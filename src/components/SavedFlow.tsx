@@ -355,7 +355,13 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
 
   const essayMut = useMutation({
     mutationFn: async () =>
-      (await genEssay({ data: { materialId: id, comment: essayComment || null } } as any)) as any,
+      (await genEssay({
+        data: {
+          materialId: id,
+          comment: essayComment || null,
+          focusThesis: focusIndex !== null ? focusText : null,
+        },
+      } as any)) as any,
     onSuccess: (r: any) => {
       setEssay({ id: r.id, text: r.generated_text ?? "" });
       setStage("essay");

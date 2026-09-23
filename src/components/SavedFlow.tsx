@@ -504,6 +504,12 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
             <CardTitle className="font-serif text-xl">Ваш комментарий к ролику</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {focusText && (
+              <div className="rounded-md border border-primary bg-primary/5 p-3 text-sm">
+                <div className="font-medium mb-1">Эссе по выбранной мысли №{(focusIndex ?? 0) + 1}</div>
+                <div className="whitespace-pre-wrap leading-relaxed">{focusText}</div>
+              </div>
+            )}
             <p className="text-sm text-muted-foreground">
               Комментарий учтётся вместе с промтом для эссе. Можно пропустить — тогда будет использован только промт.
             </p>

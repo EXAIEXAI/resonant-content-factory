@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { ArrowLeft, Download, ExternalLink, FileText, Mic, MicOff, Loader2 } from "lucide-react";
 import {
@@ -306,6 +307,7 @@ function TranscriptCard({
                 )}
               </Button>
             </div>
+            <ProgressBar active={mut.isPending} label="Сохраняю расшифровку и пересобираю разбор…" />
           </div>
         )}
       </CardContent>
@@ -401,9 +403,7 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
         </CardHeader>
         <CardContent className="space-y-4">
           {analyzing ? (
-            <div className="flex items-center text-sm text-muted-foreground">
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Готовлю краткое описание...
-            </div>
+            <ProgressBar active label="Готовлю описание и основные мысли…" />
           ) : (
             <>
               {analysis?.summary ? (
@@ -483,6 +483,7 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
                 {essayMut.isPending ? "Пишу эссе..." : "Написать эссе"}
               </Button>
             </div>
+            <ProgressBar active={essayMut.isPending} label="Пишу эссе…" />
           </CardContent>
         </Card>
       )}
@@ -520,6 +521,7 @@ export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {
                 {scriptMut.isPending ? "Пишу сценарий..." : "Написать сценарий"}
               </Button>
             </div>
+            <ProgressBar active={scriptMut.isPending} label="Пишу сценарий…" />
           </CardContent>
         </Card>
       )}

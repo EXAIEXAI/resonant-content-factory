@@ -15,7 +15,15 @@ import {
   generateMaterialEssay,
   generateMaterialScript,
   saveMaterialTranscript,
+  listGenerationPrompts,
 } from "@/lib/quickflow.functions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { downloadTextAsDocx } from "@/lib/docx-download";
 import { getOriginalUrl } from "@/components/MaterialCard";
 

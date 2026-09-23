@@ -323,6 +323,37 @@ function TranscriptCard({
   );
 }
 
+function PromptPicker({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: Array<{ id: string; name: string }>;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="text-sm font-medium">{label}</div>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="sm:max-w-md">
+          <SelectValue placeholder="По умолчанию" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="default">По умолчанию</SelectItem>
+          {options.map(o => (
+            <SelectItem key={o.id} value={o.id}>
+              {o.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
 type Stage = "summary" | "essay_comment" | "essay" | "script_comment" | "script";
 
 export function SavedFlow({ id, backTo }: { id: string; backTo: string }) {

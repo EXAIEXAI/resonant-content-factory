@@ -29,7 +29,9 @@ export const Route = createFileRoute("/_authenticated/briefing/")({
 });
 
 function BriefingPage() {
-  const { data: materials } = useQuery({
+  const addVideo = useServerFn(addBriefingVideo);
+  const [url, setUrl] = useState("");
+  const { data: materials, refetch } = useQuery({
     queryKey: ["materials-briefing", BRIEFING_PLAYLIST_ID],
     queryFn: async () =>
       (await supabase

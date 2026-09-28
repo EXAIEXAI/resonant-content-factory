@@ -167,8 +167,11 @@ export const generateMaterialEssay = createServerFn({ method: "POST" })
     const userComment = (data.comment ?? "").trim();
     const focus = (data.focusThesis ?? "").trim();
 
+    const { essayKnowledgeBlock } = await import("@/lib/essay-kb.server");
+    const kb = await essayKnowledgeBlock(context.supabase, `${focus} ${material.title} ${material.summary ?? ""}`);
     const system = `Ты — редактор экспертного контента компании. Пиши по-русски, в фирменной тональности.
 ${prompt?.prompt_body ? `Инструкция «${prompt.name}» (строго следуй):\n${prompt.prompt_body}\n` : ""}
+${kb}
 Факты ролика — контекст, позиция эксперта — основа.`;
     const user = `Материал:
 ${block}

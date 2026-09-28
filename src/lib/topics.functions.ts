@@ -191,8 +191,11 @@ export const generateTopicEssay = createServerFn({ method: "POST" })
 
     const allComments = (positions ?? []).map(fmtPosition).join("\n");
 
+    const { essayKnowledgeBlock } = await import("@/lib/essay-kb.server");
+    const kb = await essayKnowledgeBlock(context.supabase, `${topic.chosen_angle ?? ""} ${topic.title}`);
     const system = `Ты — редактор экспертного контента компании. Пиши в фирменной тональности.
 ${promptRow?.prompt_body ? `Инструкция «${promptRow.name}» (строго следуй):\n${promptRow.prompt_body}\n` : ""}
+${kb}
 Разделяй факты источников и позицию экспертов. Позиция экспертов — основа, факты — контекст.
 Комментарии экспертов обязательны к учёту: их оценки, согласия и возражения должны быть отражены в тексте.`;
 

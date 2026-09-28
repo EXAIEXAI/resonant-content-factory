@@ -43,8 +43,9 @@ const purposes: Record<string, string> = {
 const tabs: { key: string; label: string; match: (i: Item) => boolean }[] = [
   { key: "template", label: "Шаблоны контента", match: i => i.kind === "template" },
   { key: "prompt_essay", label: "Промты для эссе", match: i => i.kind === "prompt" && i.purpose === "essay" },
+  { key: "prompt_style", label: "Стиль эссе (с книгами)", match: i => i.kind === "prompt" && i.purpose === "essay_style" },
   { key: "prompt_script", label: "Промты для сценариев", match: i => i.kind === "prompt" && i.purpose === "script" },
-  { key: "prompt_general", label: "Прочие промты", match: i => i.kind === "prompt" && i.purpose !== "essay" && i.purpose !== "script" },
+  { key: "prompt_general", label: "Прочие промты", match: i => i.kind === "prompt" && !["essay", "script", "essay_style"].includes(i.purpose) },
 ];
 
 type Item = { id: string; name: string; kind: string; purpose: string; prompt_body: string | null };

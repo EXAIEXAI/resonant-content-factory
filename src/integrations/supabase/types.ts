@@ -342,6 +342,36 @@ export type Database = {
         }
         Relationships: []
       }
+      kb_book_chunks: {
+        Row: {
+          author: string
+          book: string
+          content: string
+          created_at: string
+          id: string
+          seq: number
+          tsv: unknown
+        }
+        Insert: {
+          author: string
+          book: string
+          content: string
+          created_at?: string
+          id?: string
+          seq: number
+          tsv?: unknown
+        }
+        Update: {
+          author?: string
+          book?: string
+          content?: string
+          created_at?: string
+          id?: string
+          seq?: number
+          tsv?: unknown
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -604,6 +634,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      search_book_chunks: {
+        Args: { per_book?: number; q: string }
+        Returns: {
+          author: string
+          book: string
+          content: string
+          rank: number
+        }[]
       }
     }
     Enums: {
